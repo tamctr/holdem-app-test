@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c0f15">
+<title>Hold'em Lab — Preflop Ranges & Equity</title>
+<style>
+:root{
+  --bg:#0c0f15; --bg2:#121722; --panel:#161c28; --panel2:#1b2231; --border:#262f40; --text:#e7eaf0; --muted:#8a94a8; --dim:#5d6678;
+  --accent:#4f8cff; --accent2:#3a6fd8; --good:#2fbf71; --bad:#ef4f5a; --warn:#f5b041;
+  --raise:#f2683c; --threebet:#a06bff; --call:#2fbf71; --fold:#2b3445;
+  --radius:12px; --shadow:0 6px 24px rgba(0,0,0,.35);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;background:radial-gradient(1200px 600px at 10% -10%,#16213a 0,transparent 60%),var(--bg)}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+header.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;padding:10px 20px;background:rgba(12,15,21,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;letter-spacing:.2px;white-space:nowrap}
+.logo .mark{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#4f8cff,#a06bff);color:#fff;font-size:17px}
+.tabs{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);padding:4px;border-radius:10px}
+.tabs button{border:0;background:transparent;padding:7px 14px;border-radius:7px;color:var(--muted);font-weight:600}
+.tabs button.active{background:var(--panel2);color:var(--text);box-shadow:0 1px 0 rgba(255,255,255,.05) inset}
+.spacer{flex:1}
+.top .note{color:var(--dim);font-size:12px}
+main{max-width:1280px;margin:0 auto;padding:18px 20px 60px}
+.tab{display:none}.tab.active{display:block}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.panel h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+.seg{display:inline-flex;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:6px;color:var(--muted);font-weight:600;font-size:13px}
+.seg button.active{background:var(--accent);color:#fff}
+select,input[type=text],input[type=number],textarea{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;outline:none}
+select:focus,input:focus,textarea:focus{border-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border);background:var(--panel2);padding:7px 12px;border-radius:8px;font-weight:600;font-size:13px;transition:background .12s,border-color .12s}
+.btn:hover{border-color:#3a465c;background:#212a3c}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent2)}
+.btn.danger{color:#ff9aa1}
+.btn.small{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:var(--bg2)}
+.pill.warn{color:#f8c471;border-color:#5a4520;background:#2a2112}
+.pill.edited{color:#9ec1ff;border-color:#2b4a85;background:#14213b}
+.muted{color:var(--muted)}.dim{color:var(--dim)}.small{font-size:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+
+/* 13x13 grid */
+.grid13{display:grid;grid-template-columns:repeat(13,1fr);gap:2px;user-select:none;-webkit-user-select:none;width:100%;max-width:640px;margin:0 auto}
+.grid13 .cell{position:relative;aspect-ratio:1/1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:clamp(8px,1.25vw,12.5px);font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45);cursor:default;overflow:hidden}
+.grid13 .cell.isfold{color:#7f8aa0;text-shadow:none;font-weight:600}
+.grid13.editing .cell,.grid13.pickable .cell{cursor:crosshair}
+.grid13.editing,.grid13.pickable{touch-action:none}
+.grid13.mini{max-width:360px}
+.grid13.mini .cell{font-size:clamp(7px,0.9vw,9.5px);border-radius:3px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px}
+.chart-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.chart-title{font-size:18px;font-weight:700}
+.info{min-height:44px;margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--bg2);border:1px solid var(--border);font-size:13px}
+
+/* stats */
+.stat{display:grid;grid-template-columns:14px 1fr auto;gap:8px;align-items:center;margin:8px 0;font-size:13px}
+.bar{height:6px;border-radius:4px;background:var(--bg2);overflow:hidden;grid-column:2/4}
+.bar > i{display:block;height:100%;border-radius:4px}
+.side .section{padding:12px 0;border-top:1px solid var(--border)}
+.side .section:first-child{border-top:0;padding-top:0}
+.brushes{display:flex;flex-wrap:wrap;gap:6px}
+.brush{border:2px solid transparent;padding:6px 10px;border-radius:8px;font-weight:700;font-size:13px;color:#fff}
+.brush.active{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.15)}
+.brush.fold{color:#c4cad6}
+
+/* cards */
+.pcard{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:2.3em;height:3.1em;background:#fbfbfd;border-radius:.32em;color:#222;font-weight:800;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.4);vertical-align:middle;margin-right:.18em;font-size:16px}
+.pcard .r{font-size:1.05em}.pcard .s{font-size:1.05em;margin-top:.08em}
+.pcard.big{font-size:36px}
+.pcard.s-s{color:#1b1f27}.pcard.s-h{color:#d7263d}.pcard.s-d{color:#1f6fd1}.pcard.s-c{color:#16924a}
+.slot{display:inline-flex;align-items:center;justify-content:center;width:2.3em;height:3.1em;border-radius:.32em;border:1.5px dashed #3a465c;color:var(--dim);font-size:16px;background:var(--bg2);cursor:pointer;margin-right:.18em;vertical-align:middle;padding:0}
+.slot:hover{border-color:var(--accent);color:var(--accent)}
+.slot.filled{border:0;background:transparent;padding:0}
+.slot.target{outline:2px solid var(--accent);outline-offset:2px;border-radius:.4em}
+
+/* trainer */
+.trainer-wrap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+@media (max-width:900px){.trainer-wrap{grid-template-columns:1fr}}
+.felt{position:relative;border-radius:22px;padding:22px 18px;background:radial-gradient(ellipse at center,#1d5a3e 0,#123a29 65%,#0d2a1e 100%);border:6px solid #2a2016;box-shadow:inset 0 0 40px rgba(0,0,0,.5),var(--shadow);text-align:center}
+.seats{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.seat{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;background:rgba(0,0,0,.35);color:#9fb3a8;border:1px solid rgba(255,255,255,.08)}
+.seat.hero{background:#4f8cff;color:#fff}
+.seat.villain{background:#f2683c;color:#fff}
+.seat.folded{opacity:.45;text-decoration:line-through}
+.scdesc{color:#d9efe2;font-size:15px;margin:6px 0 14px;font-weight:600}
+.hand-cards{margin:8px 0 6px}
+.hand-name{color:#b8d8c6;font-weight:700;letter-spacing:.06em;font-size:13px}
+.actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:18px}
+.act{min-width:110px;padding:12px 18px;border-radius:10px;border:0;font-weight:800;font-size:16px;color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.act:active{transform:translateY(2px);box-shadow:none}
+.act kbd{display:inline-block;margin-left:6px;font-size:10px;opacity:.75;border:1px solid rgba(255,255,255,.5);border-radius:4px;padding:0 4px;font-family:var(--mono)}
+.act:disabled{opacity:.5}
+.feedback{margin-top:16px;padding:12px;border-radius:10px;font-weight:600;min-height:48px}
+.feedback.good{background:rgba(47,191,113,.15);border:1px solid rgba(47,191,113,.45);color:#9ff0c3}
+.feedback.bad{background:rgba(239,79,90,.14);border:1px solid rgba(239,79,90,.45);color:#ffb3b9}
+.feedback.idle{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06);color:#9fb3a8;font-weight:500}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
+.kpi b{display:block;font-size:20px}.kpi span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th{color:var(--muted);font-weight:600;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:6px 6px;border-bottom:1px solid var(--border)}
+table.t td{padding:7px 6px;border-bottom:1px solid #1f2735;vertical-align:middle}
+table.t td.num,table.t th.num{text-align:right;font-variant-numeric:tabular-nums}
+.recent{display:flex;flex-wrap:wrap;gap:5px}
+.recent span{font-size:11px;padding:2px 7px;border-radius:6px;font-weight:700}
+.recent .y{background:rgba(47,191,113,.18);color:#8fe8b6}.recent .n{background:rgba(239,79,90,.18);color:#ffaab1}
+
+/* equity */
+.eq-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.eq-layout{grid-template-columns:1fr}}
+.player{border:1px solid var(--border);border-left:4px solid var(--pc,#4f8cff);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--panel2)}
+.player .ph{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.pname{font-weight:700}
+.player .x{margin-left:auto;border:0;background:transparent;color:var(--dim);font-size:18px;padding:0 6px}
+.player .x:hover{color:var(--bad)}
+.rinput{width:100%;font-family:var(--mono);font-size:13px}
+.rmeta{font-size:12px;color:var(--muted);margin:6px 0}
+.rmeta .err{color:var(--bad)}
+.rtools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rtools input[type=range]{width:120px;accent-color:var(--accent)}
+.rtools select{max-width:190px;font-size:12px;padding:5px 8px}
+.progress{height:8px;border-radius:5px;background:var(--bg2);overflow:hidden;margin:10px 0 4px;border:1px solid var(--border)}
+.progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,#4f8cff,#a06bff);transition:width .15s}
+.eqbar{position:relative;height:22px;border-radius:6px;background:var(--bg2);overflow:hidden;min-width:120px}
+.eqbar > i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;opacity:.85}
+.eqbar > b{position:relative;display:block;text-align:center;font-size:12.5px;line-height:22px;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.res-note{font-size:12px;color:var(--muted);margin-top:10px}
+details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:10px}
+.handdesc{font-family:var(--mono);font-size:12px;color:var(--muted);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(5,7,12,.7);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:100;padding:12px}
+.modal-bg.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);width:min(760px,100%);max-height:92vh;overflow:auto;padding:16px}
+.modal h2{margin:0 0 12px;font-size:17px}
+.picker{display:grid;grid-template-columns:repeat(13,1fr);gap:4px}
+.picker button{padding:0;border:0;background:transparent;font-size:clamp(10px,2.4vw,16px)}
+.picker .pcard{width:100%;height:auto;aspect-ratio:2.3/3.1;margin:0;font-size:inherit}
+.picker button:disabled .pcard{opacity:.18;box-shadow:none}
+.picker button:not(:disabled):hover .pcard{transform:translateY(-2px);box-shadow:0 4px 10px rgba(79,140,255,.5)}
+.modal-foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:14px;align-items:center}
+textarea.json{width:100%;min-height:220px;font-family:var(--mono);font-size:12px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#222b3c;border:1px solid var(--border);padding:10px 16px;border-radius:10px;opacity:0;transition:all .2s;z-index:200;pointer-events:none;font-size:14px}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+footer{max-width:1280px;margin:0 auto;padding:0 20px 30px;color:var(--dim);font-size:12px}
+@media (max-width:640px){
+  header.top{padding:8px 12px;gap:10px;flex-wrap:wrap}
+  .top .note{display:none}
+  .tabs{flex:1}.tabs button{flex:1;padding:7px 6px}
+  main{padding:12px 10px 50px}
+  .panel{padding:12px}
+  .grid13{gap:1px}.grid13 .cell{border-radius:2px;font-size:clamp(7px,2.3vw,11px)}
+  .pcard.big{font-size:30px}
+  .act{min-width:0;flex:1;padding:12px 8px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+}
+[hidden]{display:none!important}
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+#results .handdesc{max-width:150px}
+#results table.t td,#results table.t th{padding:6px 4px}
+.handdesc{display:inline-block;vertical-align:middle}
+#results .handdesc{max-width:130px}
+@media (max-width:640px){ .tabs{order:3;flex-basis:100%} #results .handdesc{max-width:90px} .eqbar{min-width:90px} }
+
+/* ---- highlight / selection states (all grids) ---- */
+.grid13 .cell{transition:transform .12s ease,filter .12s ease,box-shadow .12s ease}
+.grid13 .cell:hover{filter:brightness(1.18)}
+.grid13 .cell.hover-ring{box-shadow:inset 0 0 0 2px rgba(255,255,255,.85)}
+/* single highlighted / selected cell: bright yellow ring + dark separator + glow, scale-up, bold */
+.grid13 .cell.hl,.grid13 .cell.sel,.grid13 .cell.isfold.hl,.grid13 .cell.isfold.sel{
+  z-index:5;transform:scale(1.22);overflow:visible;filter:none!important;
+  box-shadow:0 0 0 2px #0b0e14,0 0 0 5px #ffe14d,0 0 18px 7px rgba(255,225,77,.7);
+  color:#fff;font-weight:900;text-shadow:0 1px 3px #000,0 0 2px #000;border-radius:4px}
+.grid13 .cell.isfold.hl,.grid13 .cell.isfold.sel{background:#55627a!important}
+.grid13.has-sel .cell:not(.hl):not(.sel){filter:brightness(.55) saturate(.75)}
+.grid13.has-sel .cell:not(.hl):not(.sel):hover{filter:brightness(.9)}
+.grid13.mini .cell.hl{transform:scale(1.35)}
+@media (max-width:640px){.grid13 .cell.hl,.grid13 .cell.sel{box-shadow:0 0 0 1.5px #0b0e14,0 0 0 4px #ffe14d,0 0 12px 5px rgba(255,225,77,.75)}}
+/* equity range-grid: selected = vivid fill + bold; unselected = dark and dim */
+.grid13 .cell.off{background:#141a25!important;color:#4b5568;text-shadow:none;font-weight:500}
+.grid13 .cell.on{background:#2f7bff!important;color:#fff;font-weight:900;box-shadow:inset 0 0 0 2px #a9c8ff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.grid13 .cell.on:hover{filter:brightness(1.12)}
+.info.selected{border-color:#ffe14d;box-shadow:0 0 0 1px rgba(255,225,77,.35)}
+
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo"><span class="mark">&#9824;</span>Hold'em Lab</div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="ranges" class="active">Preflop Ranges</button>
+    <button data-tab="equity">Equity Calculator</button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="note">6-max NLHE &middot; 100bb cash</div>
+</header>
+<main>
+  <!-- ============ RANGES TAB ============ -->
+  <section class="tab active" id="tab-ranges">
+    <div class="toolbar">
+      <div class="seg" id="rmode">
+        <button data-m="chart">Chart</button>
+        <button data-m="train">Trainer</button>
+      </div>
+      <span class="pill warn" title="These are widely-used approximate charts, not solver output. Edit them to match your own strategy.">&#9888; Approximate starter ranges &mdash; editable</span>
+    </div>
+
+    <div id="chart-view" class="layout">
+      <div class="panel">
+        <div class="chart-head">
+          <div class="row">
+            <select id="sc-select" aria-label="Scenario"></select>
+            <span class="pill edited" id="edited-pill" hidden>Edited</span>
+          </div>
+          <div class="row">
+            <button class="btn" id="edit-toggle">&#9998; Edit chart</button>
+          </div>
+        </div>
+        <div class="muted small" id="sc-desc" style="margin-bottom:10px"></div>
+        <div id="grid" class="grid13"></div>
+        <div class="legend" id="legend"></div>
+        <div class="info" id="cell-info"><span class="dim">Hover or tap a cell to see its frequencies.</span></div>
+      </div>
+      <div class="panel side">
+        <div class="section">
+          <h3>Range stats</h3>
+          <div id="stats"></div>
+        </div>
+        <div class="section" id="edit-tools" hidden>
+          <h3>Paint brush</h3>
+          <div class="brushes" id="brushes"></div>
+          <div class="row" style="margin-top:10px">
+            <label class="small muted">Frequency</label>
+            <select id="brush-freq">
+              <option value="1">100%</option><option value="0.75">75%</option><option value="0.5">50%</option><option value="0.25">25%</option>
+            </select>
+            <label class="small muted">rest &rarr;</label>
+            <select id="brush-rest"></select>
+          </div>
+          <p class="small dim" style="margin:10px 0 0">Click or drag across cells to paint. Mixed cells are shown as split colours. Edits save automatically in this browser.</p>
+        </div>
+        <div class="section">
+          <h3>Manage</h3>
+          <div class="row">
+            <button class="btn small" id="reset-sc">Reset this chart</button>
+            <button class="btn small danger" id="reset-all">Reset all charts</button>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn small" id="export-btn">&#8681; Export JSON</button>
+            <button class="btn small" id="import-btn">&#8679; Import JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="train-view" class="trainer-wrap" hidden>
+      <div>
+        <div class="panel" style="margin-bottom:16px">
+          <div class="row">
+            <select id="tr-sc" aria-label="Trainer scenario"></select>
+            <select id="tr-weight" aria-label="Hand selection">
+              <option value="uniform">Uniform (realistic deal)</option>
+              <option value="border">Focus on borderline hands</option>
+              <option value="only">Borderline hands only</option>
+            </select>
+            <label class="small muted row" style="gap:6px"><input type="checkbox" id="tr-showchart"> Show chart after answering</label>
+          </div>
+        </div>
+        <div class="felt">
+          <div class="seats" id="tr-seats"></div>
+          <div class="scdesc" id="tr-desc"></div>
+          <div class="hand-cards" id="tr-cards"></div>
+          <div class="hand-name" id="tr-handname"></div>
+          <div class="actions" id="tr-actions"></div>
+          <div class="feedback idle" id="tr-feedback">Pick an action. Keys: <b>F</b> fold &middot; <b>C</b> call &middot; <b>R</b> raise &middot; <b>3</b> 3-bet &middot; <b>Space</b> next hand</div>
+          <div class="row" style="justify-content:center;margin-top:12px"><button class="btn primary" id="tr-next">Next hand &rarr;</button></div>
+        </div>
+        <div class="panel" id="tr-chart-panel" style="margin-top:16px" hidden>
+          <h3 id="tr-chart-title">Chart</h3>
+          <div id="tr-grid" class="grid13 mini"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Your score</h3>
+        <div class="kpis" id="tr-kpis"></div>
+        <h3 style="margin-top:16px">Recent</h3>
+        <div class="recent" id="tr-recent"></div>
+        <h3 style="margin-top:16px">Accuracy by scenario</h3>
+        <table class="t" id="tr-table"></table>
+        <div class="row" style="margin-top:12px"><button class="btn small danger" id="tr-reset">Reset stats</button></div>
+        <p class="small dim">Mixed-frequency hands accept any action played at least 25% of the time. Grading uses your current (possibly edited) charts.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EQUITY TAB ============ -->
+  <section class="tab" id="tab-equity">
+    <div class="eq-layout">
+      <div class="panel">
+        <h3>Players</h3>
+        <div id="players"></div>
+        <div class="row">
+          <button class="btn" id="add-player">+ Add player</button>
+          <span class="small dim">Up to 6 players. Empty cards = random hand.</span>
+        </div>
+      </div>
+      <div>
+        <div class="panel" style="margin-bottom:16px">
+          <h3>Board</h3>
+          <div id="board-slots"></div>
+          <div class="row" style="margin-top:8px"><button class="btn small" id="clear-board">Clear board</button><button class="btn small" id="rand-flop">Random flop</button></div>
+          <h3 style="margin-top:16px">Dead cards</h3>
+          <div id="dead-slots"></div>
+          <div class="row" style="margin-top:8px"><button class="btn small" id="clear-dead">Clear dead cards</button></div>
+          <h3 style="margin-top:16px">Calculation</h3>
+          <div class="row">
+            <select id="eq-mode"><option value="auto">Auto (exact if feasible)</option><option value="exact">Force exact</option><option value="mc">Monte Carlo</option></select>
+            <select id="eq-trials"><option value="100000">100k trials</option><option value="300000">300k trials</option><option value="1000000">1M trials</option><option value="3000000">3M trials</option><option value="10000000">10M trials</option></select>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn primary" id="calc">&#9654; Calculate equity</button>
+            <button class="btn" id="stop" disabled>Stop</button>
+          </div>
+          <div class="progress"><i id="prog"></i></div>
+          <div class="small muted" id="eq-status">Ready.</div>
+        </div>
+        <div class="panel" id="results-panel">
+          <h3>Results</h3>
+          <div id="results"><div class="dim small">Run a calculation to see equities.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>Hold'em Lab &middot; single-file study tool. Charts are approximate starter ranges for 6-max 100bb cash (not solver output). Data is stored only in this browser (localStorage).</footer>
+
+<div class="modal-bg" id="modal-bg"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script id="core-src">
+/* Hold'em core: cards, 7-card evaluator, range parser, equity engine.
+   Works in browser (window/self.HoldemCore), Web Worker, and Node (module.exports). */
+(function (root) {
+  'use strict';
+  var RANKS = '23456789TJQKA';
+  var SUITS = 'cdhs';
+  var SUIT_SYM = { c: '\u2663', d: '\u2666', h: '\u2665', s: '\u2660' };
+  var CAT_NAMES = ['High card', 'Pair', 'Two pair', 'Three of a kind', 'Straight', 'Flush', 'Full house', 'Four of a kind', 'Straight flush'];
+
+  function cardStr(c) { return RANKS[c >> 2] + SUITS[c & 3]; }
+  function parseCard(s) {
+    if (!s || s.length !== 2) return -1;
+    var r = RANKS.indexOf(s[0].toUpperCase());
+    var su = SUITS.indexOf(s[1].toLowerCase());
+    if (r < 0 || su < 0) return -1;
+    return r * 4 + su;
+  }
+  function parseCards(str) {
+    var t = String(str || '').replace(/[\s,]+/g, '');
+    if (t.length % 2) return null;
+    var out = [];
+    for (var i = 0; i < t.length; i += 2) {
+      var c = parseCard(t.substr(i, 2));
+      if (c < 0 || out.indexOf(c) >= 0) return null;
+      out.push(c);
+    }
+    return out;
+  }
+
+  /* ---------- evaluator tables ---------- */
+  var POPC = new Uint8Array(8192), STR = new Int8Array(8192);
+  var TOP1 = new Int32Array(8192), TOP2 = new Int32Array(8192), TOP3 = new Int32Array(8192), TOP5 = new Int32Array(8192);
+  (function () {
+    for (var m = 0; m < 8192; m++) {
+      var pc = 0, r;
+      for (r = 0; r < 13; r++) if (m & (1 << r)) pc++;
+      POPC[m] = pc;
+      var sh = -1;
+      for (r = 12; r >= 4; r--) if (((m >> (r - 4)) & 31) === 31) { sh = r; break; }
+      if (sh < 0 && (m & 0x100F) === 0x100F) sh = 3; // wheel A-2-3-4-5, 5-high
+      STR[m] = sh;
+      var tops = [0, 0, 0, 0, 0, 0], v = 0, k = 0;
+      for (r = 12; r >= 0 && k < 5; r--) if (m & (1 << r)) { v = (v << 4) | r; k++; tops[k] = v; }
+      for (var n = 1; n <= 5; n++) if (n > k) tops[n] = tops[k] << (4 * (n - k));
+      TOP1[m] = tops[1]; TOP2[m] = tops[2]; TOP3[m] = tops[3]; TOP5[m] = tops[5];
+    }
+  })();
+
+  var CNT = new Int8Array(13);
+  /* Evaluate best 5-card hand from n (5..7) cards. Higher score = better hand.
+     score = category<<20 | tiebreak nibbles. */
+  function evalHand(cs, n) {
+    if (n === undefined) n = cs.length;
+    var s0 = 0, s1 = 0, s2 = 0, s3 = 0, i, c, r;
+    for (i = 0; i < n; i++) {
+      c = cs[i]; r = c >> 2;
+      switch (c & 3) { case 0: s0 |= 1 << r; break; case 1: s1 |= 1 << r; break; case 2: s2 |= 1 << r; break; default: s3 |= 1 << r; }
+      CNT[r]++;
+    }
+    var fm = POPC[s0] >= 5 ? s0 : POPC[s1] >= 5 ? s1 : POPC[s2] >= 5 ? s2 : POPC[s3] >= 5 ? s3 : 0;
+    var quad = -1, t1 = -1, t2 = -1, p1 = -1, p2 = -1, mask = 0;
+    for (r = 12; r >= 0; r--) {
+      c = CNT[r];
+      if (!c) continue;
+      CNT[r] = 0;
+      mask |= 1 << r;
+      if (c === 4) quad = r;
+      else if (c === 3) { if (t1 < 0) t1 = r; else if (t2 < 0) t2 = r; }
+      else if (c === 2) { if (p1 < 0) p1 = r; else if (p2 < 0) p2 = r; }
+    }
+    if (fm) {
+      var sf = STR[fm];
+      if (sf >= 0) return (8 << 20) | sf;
+    }
+    if (quad >= 0) return (7 << 20) | (quad << 4) | TOP1[mask & ~(1 << quad)];
+    if (t1 >= 0 && (t2 >= 0 || p1 >= 0)) return (6 << 20) | (t1 << 4) | (t2 > p1 ? t2 : p1);
+    if (fm) return (5 << 20) | TOP5[fm];
+    var st = STR[mask];
+    if (st >= 0) return (4 << 20) | st;
+    if (t1 >= 0) return (3 << 20) | (t1 << 8) | TOP2[mask & ~(1 << t1)];
+    if (p2 >= 0) return (2 << 20) | (p1 << 8) | (p2 << 4) | TOP1[mask & ~(1 << p1) & ~(1 << p2)];
+    if (p1 >= 0) return (1 << 20) | (p1 << 12) | TOP3[mask & ~(1 << p1)];
+    return TOP5[mask];
+  }
+  function handCategory(score) { return score >> 20; }
+
+  /* ---------- hand classes & ranges ---------- */
+  // grid (i,j) with 0 = Ace ... 12 = deuce
+  function gridKey(i, j) {
+    var ri = 12 - i, rj = 12 - j;
+    if (i === j) return RANKS[ri] + RANKS[ri];
+    if (i < j) return RANKS[ri] + RANKS[rj] + 's';
+    return RANKS[rj] + RANKS[ri] + 'o';
+  }
+  function keyToGrid(key) {
+    var a = 12 - RANKS.indexOf(key[0]), b = 12 - RANKS.indexOf(key[1]);
+    if (key.length === 2) return [a, a];
+    return key[2] === 's' ? [a, b] : [b, a];
+  }
+  var CLASSES = [];
+  for (var gi = 0; gi < 13; gi++) for (var gj = 0; gj < 13; gj++) CLASSES.push(gridKey(gi, gj));
+
+  function classCount(key) { return key.length === 2 ? 6 : key[2] === 's' ? 4 : 12; }
+  var COMBO_CACHE = {};
+  function classCombos(key) {
+    if (COMBO_CACHE[key]) return COMBO_CACHE[key];
+    var r1 = RANKS.indexOf(key[0]), r2 = RANKS.indexOf(key[1]), out = [], a, b;
+    if (key.length === 2) {
+      for (a = 0; a < 4; a++) for (b = a + 1; b < 4; b++) out.push([r1 * 4 + b, r1 * 4 + a]);
+    } else if (key[2] === 's') {
+      for (a = 0; a < 4; a++) out.push([r1 * 4 + a, r2 * 4 + a]);
+    } else {
+      for (a = 0; a < 4; a++) for (b = 0; b < 4; b++) if (a !== b) out.push([r1 * 4 + a, r2 * 4 + b]);
+    }
+    COMBO_CACHE[key] = out;
+    return out;
+  }
+  function comboClass(c1, c2) {
+    var r1 = c1 >> 2, r2 = c2 >> 2;
+    if (r1 < r2) { var t = r1; r1 = r2; r2 = t; }
+    if (r1 === r2) return RANKS[r1] + RANKS[r1];
+    return RANKS[r1] + RANKS[r2] + ((c1 & 3) === (c2 & 3) ? 's' : 'o');
+  }
+
+  // Ordering of the 169 classes by all-in equity vs one random hand (generated offline with this evaluator).
+  var HAND_ORDER = /*ORDER*/["AA","KK","QQ","JJ","TT","99","88","AKs","77","AQs","AKo","AJs","ATs","AQo","AJo","KQs","66","A9s","ATo","KJs","A8s","KTs","KQo","A7s","A9o","KJo","55","QJs","A6s","K9s","A8o","A5s","KTo","QTs","A4s","A7o","K8s","A3s","QJo","K9o","A5o","A6o","JTs","Q9s","A2s","K7s","QTo","44","A4o","K6s","Q8s","A3o","K8o","K5s","J9s","Q9o","JTo","K7o","A2o","K4s","J8s","K6o","Q7s","K3s","T9s","33","Q8o","Q6s","J9o","K5o","K2s","Q5s","K4o","J7s","T8s","Q4s","K3o","Q7o","J8o","T9o","98s","Q6o","Q3s","J6s","T7s","K2o","22","Q2s","Q5o","J5s","J7o","T8o","Q4o","97s","T6s","J4s","J3s","Q3o","87s","98o","T7o","J6o","96s","J2s","Q2o","J5o","T5s","T4s","97o","86s","J4o","T6o","95s","T3s","76s","J3o","87o","T2s","85s","96o","J2o","T5o","94s","75s","T4o","93s","65s","86o","95o","84s","T3o","76o","92s","74s","T2o","85o","54s","64s","83s","94o","75o","82s","93o","73s","65o","53s","63s","84o","92o","43s","74o","54o","72s","64o","52s","62s","83o","42s","82o","73o","53o","63o","32s","43o","72o","52o","62o","42o","32o"]/*END*/;
+
+  function topPercentClasses(pct) {
+    var target = Math.max(0, Math.min(100, pct)) / 100 * 1326, cum = 0, out = [];
+    if (!HAND_ORDER) return out;
+    for (var i = 0; i < HAND_ORDER.length; i++) {
+      var k = HAND_ORDER[i], n = classCount(k);
+      if (cum + n / 2 > target) break;
+      out.push(k); cum += n;
+    }
+    return out;
+  }
+
+  function normPair(a, b) { // returns [hi, lo] rank indices
+    return a >= b ? [a, b] : [b, a];
+  }
+  function addClass(set, hi, lo, kind) { // kind: 's','o','' (both) for non-pairs
+    if (hi === lo) { set[RANKS[hi] + RANKS[hi]] = 1; return; }
+    if (kind !== 'o') set[RANKS[hi] + RANKS[lo] + 's'] = 1;
+    if (kind !== 's') set[RANKS[hi] + RANKS[lo] + 'o'] = 1;
+  }
+  var RE_SPEC = /^([2-9TJQKA])([cdhs])([2-9TJQKA])([cdhs])$/i;
+  var RE_HAND = /^([2-9TJQKA])([2-9TJQKA])([SO]?)(\+?)$/;
+  var RE_DASH = /^([2-9TJQKA])([2-9TJQKA])([SO]?)-([2-9TJQKA])([2-9TJQKA])([SO]?)$/;
+
+  /* Parse standard range notation. Returns {classes:{key:1}, specific:[[c1,c2]], combos:[[c1,c2]], errors:[]}. */
+  function parseRange(str) {
+    var set = {}, specific = [], errors = [];
+    var tokens = String(str || '').split(/[,;\s]+/).filter(Boolean);
+    tokens.forEach(function (tok0) {
+      var tok = tok0.trim(), m;
+      if (!tok) return;
+      var low = tok.toLowerCase();
+      if (low === 'any' || low === 'random' || low === 'all' || low === '100%') { CLASSES.forEach(function (k) { set[k] = 1; }); return; }
+      m = /^(?:top)?(\d+(?:\.\d+)?)%$/i.exec(tok);
+      if (m) { topPercentClasses(parseFloat(m[1])).forEach(function (k) { set[k] = 1; }); return; }
+      m = RE_SPEC.exec(tok);
+      if (m) {
+        var c1 = parseCard(m[1] + m[2]), c2 = parseCard(m[3] + m[4]);
+        if (c1 === c2) { errors.push(tok); return; }
+        specific.push(c1 > c2 ? [c1, c2] : [c2, c1]);
+        return;
+      }
+      var up = tok.toUpperCase();
+      m = RE_HAND.exec(up);
+      if (m) {
+        var hl = normPair(RANKS.indexOf(m[1]), RANKS.indexOf(m[2])), hi = hl[0], lo = hl[1];
+        var kind = m[3].toLowerCase(), plus = !!m[4], r;
+        if (hi === lo) {
+          if (kind) { errors.push(tok); return; }
+          if (plus) for (r = hi; r <= 12; r++) addClass(set, r, r, '');
+          else addClass(set, hi, hi, '');
+        } else if (plus) {
+          for (r = lo; r < hi; r++) addClass(set, hi, r, kind);
+        } else addClass(set, hi, lo, kind);
+        return;
+      }
+      m = RE_DASH.exec(up);
+      if (m) {
+        var a = normPair(RANKS.indexOf(m[1]), RANKS.indexOf(m[2]));
+        var b = normPair(RANKS.indexOf(m[4]), RANKS.indexOf(m[5]));
+        var k1 = m[3].toLowerCase(), k2 = m[6].toLowerCase();
+        if (k1 !== k2) { errors.push(tok); return; }
+        if (a[0] === a[1] && b[0] === b[1]) { // pairs 22-66
+          var from = Math.min(a[0], b[0]), to = Math.max(a[0], b[0]);
+          for (var p = from; p <= to; p++) addClass(set, p, p, '');
+          return;
+        }
+        if (a[0] !== b[0] || a[0] === a[1] || b[0] === b[1]) { errors.push(tok); return; }
+        var lo2 = Math.min(a[1], b[1]), hi2 = Math.max(a[1], b[1]);
+        for (var q = lo2; q <= hi2; q++) addClass(set, a[0], q, k1);
+        return;
+      }
+      errors.push(tok);
+    });
+    // build combos (dedup)
+    var seen = {}, combos = [];
+    function push(c) { var hi = Math.max(c[0], c[1]), lo = Math.min(c[0], c[1]), id = hi * 52 + lo; if (!seen[id]) { seen[id] = 1; combos.push([hi, lo]); } }
+    Object.keys(set).forEach(function (k) { classCombos(k).forEach(push); });
+    specific.forEach(push);
+    return { classes: set, specific: specific, combos: combos, errors: errors };
+  }
+
+  /* Compress a set of class keys to compact notation. */
+  function rangeToString(set) {
+    var parts = [], r, k;
+    var has = function (key) { return !!set[key]; };
+    // pairs
+    r = 12;
+    while (r >= 0) {
+      if (!has(RANKS[r] + RANKS[r])) { r--; continue; }
+      var top = r;
+      while (r - 1 >= 0 && has(RANKS[r - 1] + RANKS[r - 1])) r--;
+      var bot = r;
+      var P = function (x) { return RANKS[x] + RANKS[x]; };
+      if (top === bot) parts.push(P(top));
+      else if (top === 12) parts.push(P(bot) + '+');
+      else parts.push(P(top) + '-' + P(bot));
+      r--;
+    }
+    ['s', 'o'].forEach(function (kind) {
+      for (var hi = 12; hi >= 1; hi--) {
+        k = hi - 1;
+        while (k >= 0) {
+          if (!has(RANKS[hi] + RANKS[k] + kind)) { k--; continue; }
+          var t = k;
+          while (k - 1 >= 0 && has(RANKS[hi] + RANKS[k - 1] + kind)) k--;
+          var b = k, H = RANKS[hi];
+          if (t === b) parts.push(H + RANKS[t] + kind);
+          else if (t === hi - 1) parts.push(H + RANKS[b] + kind + '+');
+          else parts.push(H + RANKS[t] + kind + '-' + H + RANKS[b] + kind);
+          k--;
+        }
+      }
+    });
+    return parts.join(', ');
+  }
+
+  /* ---------- RNG ---------- */
+  function mulberry32(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function nCk(n, k) { if (k < 0 || k > n) return 0; var r = 1; for (var i = 1; i <= k; i++) r = r * (n - k + i) / i; return Math.round(r); }
+
+  /* ---------- Equity engine ----------
+     spec = { players: [ [[c1,c2],...], ... ]  (combo list per player),
+              board: [cards], dead: [cards], mode: 'auto'|'exact'|'mc', trials: N, seed, exactLimit } */
+  function EquityJob(spec) {
+    var P = spec.players.length;
+    if (P < 2) throw new Error('Need at least 2 players');
+    var board = (spec.board || []).slice(), dead = spec.dead || [];
+    if (board.length > 5) throw new Error('Board has more than 5 cards');
+    var base = new Uint8Array(52);
+    board.concat(dead).forEach(function (c) {
+      if (base[c]) throw new Error('Duplicate card ' + cardStr(c));
+      base[c] = 1;
+    });
+    // filter combos vs known cards; fixed (single-combo) players block others
+    var lists = spec.players.map(function (l) { return l.filter(function (cb) { return !base[cb[0]] && !base[cb[1]] && cb[0] !== cb[1]; }); });
+    var fixed = new Uint8Array(52);
+    lists.forEach(function (l, i) {
+      if (spec.players[i].length === 1) {
+        if (!l.length) throw new Error('Player ' + (i + 1) + ' cards conflict with board/dead cards');
+        if (fixed[l[0][0]] || fixed[l[0][1]]) throw new Error('Duplicate card between players');
+        fixed[l[0][0]] = fixed[l[0][1]] = 1;
+      }
+    });
+    lists = lists.map(function (l, i) {
+      if (spec.players[i].length === 1) return l;
+      return l.filter(function (cb) { return !fixed[cb[0]] && !fixed[cb[1]]; });
+    });
+    lists.forEach(function (l, i) { if (!l.length) throw new Error('Player ' + (i + 1) + ' has no possible hands (range empty after card removal)'); });
+
+    this.P = P; this.lists = lists; this.base = base; this.board = board;
+    this.k = 5 - board.length;
+    var assignments = 1;
+    lists.forEach(function (l) { assignments *= l.length; });
+    this.assignments = assignments;
+    var deckN = 52 - board.length - dead.length - 2 * P;
+    this.boardsPer = nCk(deckN, this.k);
+    this.exactCost = assignments * this.boardsPer * P;
+    var limit = spec.exactLimit || 8e6;
+    var mode = spec.mode || 'auto';
+    this.exact = mode === 'exact' ? this.exactCost <= 4e8 : mode === 'auto' ? this.exactCost <= limit : false;
+    this.target = this.exact ? Infinity : (spec.trials || 200000);
+    this.rng = mulberry32(spec.seed != null ? spec.seed : (Math.random() * 4294967296) >>> 0);
+
+    this.wins = new Float64Array(P); this.ties = new Float64Array(P); this.eq = new Float64Array(P);
+    this.cats = []; for (var p = 0; p < P; p++) this.cats.push(new Float64Array(9));
+    this.total = 0; this.done = false; this.rejects = 0;
+    this.hands = []; for (p = 0; p < P; p++) { var h = new Int32Array(7); for (var b = 0; b < board.length; b++) h[2 + b] = board[b]; this.hands.push(h); }
+    this.scores = new Int32Array(P);
+    this.mark = new Int32Array(52); this.stamp = 0;
+    if (this.exact) this._exactInit();
+  }
+  EquityJob.prototype._showdown = function () {
+    var P = this.P, best = -1, nb = 0, s, p, sc = this.scores;
+    for (p = 0; p < P; p++) {
+      s = evalHand(this.hands[p], 7); sc[p] = s;
+      if (s > best) { best = s; nb = 1; } else if (s === best) nb++;
+    }
+    for (p = 0; p < P; p++) {
+      this.cats[p][sc[p] >> 20]++;
+      if (sc[p] === best) {
+        if (nb === 1) { this.wins[p]++; this.eq[p]++; } else { this.ties[p]++; this.eq[p] += 1 / nb; }
+      }
+    }
+    this.total++;
+  };
+  /* exact enumeration */
+  EquityJob.prototype._exactInit = function () {
+    this.idx = new Int32Array(this.P);
+    this.assignDone = 0;
+    this.haveAssign = this._findValid(true);
+    if (!this.haveAssign) this.done = true; else this._setupAssign();
+  };
+  EquityJob.prototype._valid = function () {
+    var used = this.mark, st = ++this.stamp, base = this.base;
+    for (var p = 0; p < this.P; p++) {
+      var cb = this.lists[p][this.idx[p]];
+      if (base[cb[0]] || base[cb[1]] || used[cb[0]] === st || used[cb[1]] === st) return false;
+      used[cb[0]] = st; used[cb[1]] = st;
+    }
+    return true;
+  };
+  EquityJob.prototype._advance = function () {
+    for (var p = this.P - 1; p >= 0; p--) {
+      this.idx[p]++;
+      if (this.idx[p] < this.lists[p].length) return true;
+      this.idx[p] = 0;
+    }
+    return false;
+  };
+  EquityJob.prototype._findValid = function (first) {
+    if (!first && !this._advance()) return false;
+    for (;;) { if (this._valid()) return true; if (!this._advance()) return false; }
+  };
+  EquityJob.prototype._setupAssign = function () {
+    var used = new Uint8Array(52), p;
+    for (var c = 0; c < 52; c++) used[c] = this.base[c];
+    for (p = 0; p < this.P; p++) {
+      var cb = this.lists[p][this.idx[p]];
+      this.hands[p][0] = cb[0]; this.hands[p][1] = cb[1];
+      used[cb[0]] = used[cb[1]] = 1;
+    }
+    var deck = [];
+    for (c = 0; c < 52; c++) if (!used[c]) deck.push(c);
+    this.deck = deck;
+    this.comb = new Int32Array(this.k);
+    for (var i = 0; i < this.k; i++) this.comb[i] = i;
+    this.combDone = false;
+  };
+  EquityJob.prototype._assignIndexFrac = function () {
+    var f = 0, mult = 1;
+    for (var p = this.P - 1; p >= 0; p--) { f += this.idx[p] * mult; mult *= this.lists[p].length; }
+    return f / mult;
+  };
+  EquityJob.prototype.step = function (budget) {
+    if (this.done) return true;
+    var n = 0, P = this.P, p, i;
+    if (this.exact) {
+      var k = this.k, nb0 = this.board.length;
+      while (n < budget) {
+        var deck = this.deck, comb = this.comb, N = deck.length;
+        for (i = 0; i < k; i++) { var cc = deck[comb[i]]; for (p = 0; p < P; p++) this.hands[p][2 + nb0 + i] = cc; }
+        this._showdown(); n++;
+        // next combination
+        i = k - 1;
+        while (i >= 0 && comb[i] === N - k + i) i--;
+        if (i < 0) {
+          if (!this._findValid(false)) { this.done = true; return true; }
+          this._setupAssign();
+        } else {
+          comb[i]++;
+          for (var j = i + 1; j < k; j++) comb[j] = comb[j - 1] + 1;
+        }
+      }
+      return false;
+    }
+    // Monte Carlo
+    var rng = this.rng, base = this.base, used = this.mark, lists = this.lists, hands = this.hands;
+    var bstart = 2 + this.board.length;
+    while (n < budget && this.total < this.target) {
+      var st = ++this.stamp, ok = true;
+      for (p = 0; p < P; p++) {
+        var l = lists[p], cb = l.length === 1 ? l[0] : l[(rng() * l.length) | 0];
+        if (used[cb[0]] === st || used[cb[1]] === st) { ok = false; break; }
+        used[cb[0]] = st; used[cb[1]] = st;
+        hands[p][0] = cb[0]; hands[p][1] = cb[1];
+      }
+      if (!ok) {
+        this.rejects++;
+        if (this.rejects > 2000000 && this.total < this.rejects / 1000) throw new Error('Ranges overlap too much: could not deal non-conflicting hands');
+        continue;
+      }
+      for (i = bstart; i < 7; i++) {
+        var c;
+        do { c = (rng() * 52) | 0; } while (base[c] || used[c] === st);
+        used[c] = st;
+        for (p = 0; p < P; p++) hands[p][i] = c;
+      }
+      this._showdown(); n++;
+    }
+    if (this.total >= this.target) this.done = true;
+    return this.done;
+  };
+  EquityJob.prototype.progress = function () {
+    if (this.done) return 1;
+    if (this.exact) {
+      var frac = this.k && this.deck ? this.comb[0] / Math.max(1, this.deck.length - this.k + 1) : 0;
+      var per = 1; for (var p = 0; p < this.P; p++) per *= this.lists[p].length;
+      return Math.min(0.999, this._assignIndexFrac() + frac / per);
+    }
+    return this.total / this.target;
+  };
+  EquityJob.prototype.result = function () {
+    var T = this.total || 1, out = [];
+    for (var p = 0; p < this.P; p++) {
+      var cats = [];
+      for (var c = 0; c < 9; c++) cats.push(this.cats[p][c] / T);
+      out.push({ win: this.wins[p] / T, tie: this.ties[p] / T, equity: this.eq[p] / T, cats: cats, combos: this.lists[p].length });
+    }
+    return { players: out, total: this.total, exact: this.exact, done: this.done, progress: this.progress() };
+  };
+  function runEquity(spec) { // synchronous convenience
+    var job = new EquityJob(spec);
+    while (!job.step(1 << 20)) { /* loop */ }
+    return job.result();
+  }
+
+  var API = {
+    RANKS: RANKS, SUITS: SUITS, SUIT_SYM: SUIT_SYM, CAT_NAMES: CAT_NAMES, CLASSES: CLASSES, HAND_ORDER: HAND_ORDER,
+    cardStr: cardStr, parseCard: parseCard, parseCards: parseCards, evalHand: evalHand, handCategory: handCategory,
+    gridKey: gridKey, keyToGrid: keyToGrid, classCount: classCount, classCombos: classCombos, comboClass: comboClass,
+    topPercentClasses: topPercentClasses, parseRange: parseRange, rangeToString: rangeToString,
+    mulberry32: mulberry32, nCk: nCk, EquityJob: EquityJob, runEquity: runEquity
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  else root.HoldemCore = API;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script id="ranges-src">
+/* Approximate starter ranges for 6-max 100bb NLHE cash. NOT solver output.
+   Each scenario: layers applied in order (later overrides earlier). A layer is [mix, rangeString]
+   where mix is an action name (100%) or an object of action -> frequency (remainder = fold). */
+(function (root) {
+  'use strict';
+  var SCENARIOS = [
+    { id: 'rfi_utg', group: 'RFI (open)', name: 'UTG open', hero: 'UTG', actions: ['raise', 'fold'],
+      desc: 'Folded to you UTG. Open (2.5bb) or fold?',
+      layers: [['raise', '33+, A2s+, KTs+, QTs+, JTs, T9s, 98s, AJo+, KQo'],
+               [{ raise: 0.5 }, '22, K9s, Q9s, 87s, 76s, 65s, ATo, KJo']] },
+    { id: 'rfi_hj', group: 'RFI (open)', name: 'HJ open', hero: 'HJ', actions: ['raise', 'fold'],
+      desc: 'Folded to you in the HJ (LJ). Open or fold?',
+      layers: [['raise', '22+, A2s+, K9s+, Q9s+, J9s+, T9s, 98s, 87s, 76s, ATo+, KJo+'],
+               [{ raise: 0.5 }, 'K8s, T8s, 65s, 54s, A9o, KTo, QJo']] },
+    { id: 'rfi_co', group: 'RFI (open)', name: 'CO open', hero: 'CO', actions: ['raise', 'fold'],
+      desc: 'Folded to you in the CO. Open or fold?',
+      layers: [['raise', '22+, A2s+, K6s+, Q8s+, J8s+, T8s+, 97s+, 87s, 76s, 65s, 54s, A8o+, KTo+, QTo+, JTo'],
+               [{ raise: 0.5 }, 'K5s, Q7s, 86s, 75s, 64s, A7o, A5o, K9o, T9o']] },
+    { id: 'rfi_btn', group: 'RFI (open)', name: 'BTN open', hero: 'BTN', actions: ['raise', 'fold'],
+      desc: 'Folded to you on the BTN. Open or fold?',
+      layers: [['raise', '22+, A2s+, K2s+, Q4s+, J6s+, T6s+, 96s+, 85s+, 74s+, 64s+, 53s+, 43s, A2o+, K8o+, Q9o+, J9o+, T8o+, 98o'],
+               [{ raise: 0.5 }, 'Q3s, Q2s, J5s, 63s, 52s, K7o, K6o, Q8o, J8o, 97o, 87o']] },
+    { id: 'rfi_sb', group: 'RFI (open)', name: 'SB open (raise-or-fold)', hero: 'SB', actions: ['raise', 'fold'],
+      desc: 'Folded to you in the SB (raise-or-fold strategy). Open or fold?',
+      layers: [['raise', '22+, A2s+, K4s+, Q6s+, J7s+, T7s+, 96s+, 86s+, 75s+, 64s+, 54s, A4o+, K9o+, QTo+, JTo'],
+               [{ raise: 0.5 }, 'K3s, K2s, Q5s, J6s, 53s, A3o, A2o, K8o, Q9o, J9o, T9o']] },
+
+    { id: 'bb_vs_utg', group: 'Facing an open', name: 'BB vs UTG open', hero: 'BB', villain: 'UTG', actions: ['3bet', 'call', 'fold'],
+      desc: 'UTG opens 2.5bb, folds to you in the BB.',
+      layers: [['call', '22-TT, A2s-AJs, K9s+, Q9s+, J9s+, T8s+, 97s+, 86s+, 75s+, 65s, 54s, AJo, AQo, KQo'],
+               ['3bet', 'QQ+, AKs, AKo'],
+               [{ '3bet': 0.5, call: 0.5 }, 'JJ, AQs, A5s'],
+               [{ call: 0.5 }, 'ATo, KJo, QJo, K8s, 64s, 53s']] },
+    { id: 'bb_vs_co', group: 'Facing an open', name: 'BB vs CO open', hero: 'BB', villain: 'CO', actions: ['3bet', 'call', 'fold'],
+      desc: 'CO opens 2.5bb, folds to you in the BB.',
+      layers: [['call', '22-TT, A2s-AJs, K5s+, Q7s+, J7s+, T7s+, 96s+, 85s+, 74s+, 64s+, 53s+, 43s, A7o-AJo, A5o, KTo+, QTo+, JTo, T9o, 98o'],
+               ['3bet', 'JJ+, AQs+, AKo, A5s-A4s'],
+               [{ '3bet': 0.5, call: 0.5 }, 'TT, AJs, KQs, KJs, AQo, A3s, 76s, 65s'],
+               [{ call: 0.5 }, 'K4s-K2s, Q6s, J6s, A6o, A4o, K9o, Q9o, J9o, 87o']] },
+    { id: 'bb_vs_btn', group: 'Facing an open', name: 'BB vs BTN open', hero: 'BB', villain: 'BTN', actions: ['3bet', 'call', 'fold'],
+      desc: 'BTN opens 2.5bb, SB folds, you are in the BB.',
+      layers: [['call', '22-99, A2s-ATs, K2s+, Q2s+, J4s+, T5s+, 95s+, 84s+, 74s+, 63s+, 52s+, 42s+, 32s, A2o-ATo, K5o+, Q7o+, J7o+, T7o+, 97o+, 86o+, 76o, 65o'],
+               ['3bet', 'TT+, AJs+, KQs, AQo+, A5s-A4s'],
+               [{ '3bet': 0.5, call: 0.5 }, '99, ATs, KJs, QJs, K9s, AJo, KQo, 76s, 65s, 54s'],
+               [{ call: 0.5 }, 'K2o-K4o, Q5o-Q6o, J6o, T6o, 96o, 85o, 75o, 64o, 54o']] },
+    { id: 'sb_vs_btn', group: 'Facing an open', name: 'SB vs BTN open', hero: 'SB', villain: 'BTN', actions: ['3bet', 'call', 'fold'],
+      desc: 'BTN opens 2.5bb, you are in the SB (mostly 3-bet or fold).',
+      layers: [['3bet', '88+, A9s+, A5s-A4s, KTs+, QTs+, JTs, AJo+, KQo'],
+               [{ '3bet': 0.5 }, '77-66, A8s, A7s, A3s, K9s, Q9s, J9s, T9s, 98s, 87s, ATo, KJo'],
+               [{ call: 0.5 }, '22-55']] },
+    { id: 'btn_vs_co', group: 'Facing an open', name: 'BTN vs CO open', hero: 'BTN', villain: 'CO', actions: ['3bet', 'call', 'fold'],
+      desc: 'CO opens 2.5bb, you are on the BTN.',
+      layers: [['call', '22-TT, A2s-AQs, K9s+, Q9s+, J9s+, T8s+, 97s+, 86s+, 76s, 65s, AJo, AQo, KQo'],
+               ['3bet', 'QQ+, AKs, AKo, A5s-A4s'],
+               [{ '3bet': 0.5, call: 0.5 }, 'JJ, TT, AQs, AJs, KQs, A3s, AQo'],
+               [{ call: 0.5 }, 'ATo, KJo, QJo, 54s, K8s']] },
+    { id: 'co_vs_hj', group: 'Facing an open', name: 'CO vs HJ open', hero: 'CO', villain: 'HJ', actions: ['3bet', 'call', 'fold'],
+      desc: 'HJ opens 2.5bb, you are in the CO.',
+      layers: [['call', '22-JJ, ATs-AQs, KTs+, QTs+, JTs, T9s, 98s, AQo'],
+               ['3bet', 'QQ+, AKs, AKo, A5s-A4s'],
+               [{ '3bet': 0.5, call: 0.5 }, 'JJ, AQs, KQs, AQo, A9s'],
+               [{ call: 0.5 }, '87s, 76s, AJo, KQo, K9s']] },
+    { id: 'bb_vs_sb', group: 'Facing an open', name: 'BB vs SB open', hero: 'BB', villain: 'SB', actions: ['3bet', 'call', 'fold'],
+      desc: 'SB opens to 3bb, you are in the BB.',
+      layers: [['call', '22-99, A2s-AJs, K2s+, Q2s+, J2s+, T4s+, 95s+, 84s+, 73s+, 63s+, 52s+, 42s+, 32s, A2o-AJo, K4o+, Q6o+, J7o+, T7o+, 97o+, 86o+, 76o, 65o'],
+               ['3bet', 'TT+, AQs+, AQo+, A5s-A4s, KQs'],
+               [{ '3bet': 0.5, call: 0.5 }, '99, AJs, ATs, KJs, QJs, AJo, KQo, 65s, 54s'],
+               [{ call: 0.5 }, 'K2o-K3o, Q4o-Q5o, J5o-J6o, T6o, 96o, 85o, 75o, 64o, 54o']] }
+  ];
+  var ACTIONS = {
+    raise: { label: 'Raise', color: '#f2683c', key: 'r' },
+    '3bet': { label: '3-Bet', color: '#a06bff', key: '3' },
+    call: { label: 'Call', color: '#2fbf71', key: 'c' },
+    fold: { label: 'Fold', color: '#2b3445', key: 'f' }
+  };
+  /* Build chart {classKey: {action: freq}} from layers. Needs HoldemCore.parseRange. */
+  function buildChart(sc, core) {
+    var chart = {};
+    core.CLASSES.forEach(function (k) { chart[k] = { fold: 1 }; });
+    sc.layers.forEach(function (layer) {
+      var mix = typeof layer[0] === 'string' ? (function () { var o = {}; o[layer[0]] = 1; return o; })() : layer[0];
+      var parsed = core.parseRange(layer[1]);
+      if (parsed.errors.length) throw new Error(sc.id + ': bad tokens ' + parsed.errors.join(','));
+      Object.keys(parsed.classes).forEach(function (k) {
+        var cell = {}, tot = 0;
+        Object.keys(mix).forEach(function (a) { if (mix[a] > 0) { cell[a] = mix[a]; tot += mix[a]; } });
+        if (tot < 0.999) cell.fold = Math.round((1 - tot) * 1000) / 1000;
+        chart[k] = cell;
+      });
+    });
+    return chart;
+  }
+  var API = { SCENARIOS: SCENARIOS, ACTIONS: ACTIONS, buildChart: buildChart };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  else root.HoldemRanges = API;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script type="text/plain" id="worker-src">
+/* Equity worker: expects HoldemCore defined above in the same blob. */
+self.onmessage = function (e) {
+  var d = e.data;
+  if (d.cmd !== 'run') return;
+  var job;
+  try { job = new HoldemCore.EquityJob(d.spec); } catch (err) { self.postMessage({ type: 'error', message: err.message }); return; }
+  var t0 = Date.now();
+  self.postMessage({ type: 'start', exact: job.exact, boards: job.exact ? job.assignments * job.boardsPer : job.target });
+  (function loop() {
+    try {
+      var end = Date.now() + 80, done = false;
+      while (Date.now() < end && !(done = job.step(25000))) { /* chunk */ }
+      var r = job.result(); r.elapsed = Date.now() - t0;
+      self.postMessage({ type: done ? 'done' : 'progress', result: r });
+      if (!done) setTimeout(loop, 0);
+    } catch (err) { self.postMessage({ type: 'error', message: err.message }); }
+  })();
+};
+
+</script>
+<script>
+(function () {
+  'use strict';
+  const H = window.HoldemCore, R = window.HoldemRanges, A = R.ACTIONS;
+  const LS = { charts: 'holdem.charts.v1', stats: 'holdem.trainer.v1', eq: 'holdem.equity.v1', ui: 'holdem.ui.v1' };
+  const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } };
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const pct = (x, d = 1) => (x * 100).toFixed(d) + '%';
+  const fmtN = (x, d = 0) => Number(x).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: 0 });
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2200); }
+
+  /* ---------------- modal ---------------- */
+  let modalClose = null;
+  function openModal(html, onClose) { $('#modal').innerHTML = html; $('#modal-bg').classList.add('open'); modalClose = onClose || null; return $('#modal'); }
+  function closeModal() { $('#modal-bg').classList.remove('open'); $('#modal').innerHTML = ''; const f = modalClose; modalClose = null; if (f) f(); }
+  $('#modal-bg').addEventListener('mousedown', e => { if (e.target.id === 'modal-bg') closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal-bg').classList.contains('open')) closeModal(); });
+
+  /* ---------------- cards ---------------- */
+  function cardHTML(c, cls) {
+    const r = H.RANKS[c >> 2], s = H.SUITS[c & 3];
+    return `<span class="pcard s-${s} ${cls || ''}"><span class="r">${r}</span><span class="s">${H.SUIT_SYM[s]}</span></span>`;
+  }
+
+  /* ---------------- UI state ---------------- */
+  const ui = Object.assign({ tab: 'ranges', rmode: 'chart', sc: 'rfi_btn', brush: 'raise', freq: 1, rest: 'fold', trSc: 'all', trWeight: 'border', trShowChart: true }, load(LS.ui, {}));
+  const saveUI = () => save(LS.ui, ui);
+
+  function setTab(t) {
+    ui.tab = t; saveUI();
+    $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+    $$('.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + t));
+  }
+  $$('#tabs button').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+
+  /* ================= PREFLOP CHARTS ================= */
+  const SC = {}; R.SCENARIOS.forEach(s => { SC[s.id] = s; });
+  const DEFAULTS = {}; R.SCENARIOS.forEach(s => { DEFAULTS[s.id] = R.buildChart(s, H); });
+  let overrides = sanitizeCharts(load(LS.charts, {})) || {};
+  const ORDER = ['raise', '3bet', 'call', 'fold'];
+
+  function normCell(cell, actions) {
+    const out = {}; let tot = 0;
+    for (const a of actions) { const v = Number(cell && cell[a]) || 0; if (v > 0) { out[a] = Math.min(1, v); tot += out[a]; } }
+    if (tot <= 0) return { fold: 1 };
+    if (tot > 1.0001) { for (const a in out) out[a] = out[a] / tot; tot = 1; }
+    if (tot < 0.999) out.fold = Math.round(((out.fold || 0) + 1 - tot) * 1000) / 1000;
+    return out;
+  }
+  function sanitizeCharts(obj) {
+    if (!obj || typeof obj !== 'object') return null;
+    const out = {};
+    for (const id of Object.keys(obj)) {
+      if (!SC[id] || typeof obj[id] !== 'object') continue;
+      const ch = {};
+      for (const k of H.CLASSES) ch[k] = normCell(obj[id][k] || { fold: 1 }, SC[id].actions);
+      out[id] = ch;
+    }
+    return out;
+  }
+  const chartOf = id => overrides[id] || DEFAULTS[id];
+  const saveCharts = () => save(LS.charts, overrides);
+  function ensureEditable(id) { if (!overrides[id]) overrides[id] = JSON.parse(JSON.stringify(DEFAULTS[id])); return overrides[id]; }
+  const mixEntries = cell => ORDER.filter(a => cell[a] > 0).map(a => [a, cell[a]]);
+  function dominant(cell) { let best = 'fold', bv = -1; for (const a of ORDER) { const v = cell[a] || 0; if (v > bv + 1e-9) { bv = v; best = a; } } return best; }
+  function cellBg(cell) {
+    const e = mixEntries(cell);
+    if (e.length === 1) return A[e[0][0]].color;
+    let acc = 0; const stops = [];
+    for (const [a, f] of e) { stops.push(`${A[a].color} ${(acc * 100).toFixed(1)}% ${((acc + f) * 100).toFixed(1)}%`); acc += f; }
+    return `linear-gradient(90deg, ${stops.join(', ')})`;
+  }
+  function paintCell(d, cell) {
+    d.style.background = cellBg(cell);
+    d.classList.toggle('isfold', (cell.fold || 0) >= 0.999);
+  }
+  function renderGrid(container, chart, opts) {
+    opts = opts || {};
+    container.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    for (const k of H.CLASSES) {
+      const d = document.createElement('div');
+      d.className = 'cell'; d.dataset.key = k; d.textContent = k;
+      paintCell(d, chart[k]);
+      if (opts.highlight === k) d.classList.add('hl');
+      frag.appendChild(d);
+    }
+    container.appendChild(frag);
+  }
+  function mixText(cell, actions) {
+    return mixEntries(cell).sort((a, b) => b[1] - a[1]).map(([a, f]) => `<span style="color:${a === 'fold' ? '#aab3c3' : A[a].color};font-weight:700">${A[a].label} ${Math.round(f * 100)}%</span>`).join(' &middot; ');
+  }
+  function chartStats(chart) {
+    const t = {};
+    for (const k of H.CLASSES) { const n = H.classCount(k); for (const a in chart[k]) t[a] = (t[a] || 0) + chart[k][a] * n; }
+    return t;
+  }
+
+  // scenario selects
+  function fillScenarioSelect(sel, extra) {
+    let html = extra || '', group = null;
+    R.SCENARIOS.forEach(s => {
+      if (s.group !== group) { if (group) html += '</optgroup>'; html += `<optgroup label="${esc(s.group)}">`; group = s.group; }
+      html += `<option value="${s.id}">${esc(s.name)}${overrides[s.id] ? ' ✎' : ''}</option>`;
+    });
+    sel.innerHTML = html + '</optgroup>';
+  }
+  let editing = false, selKey = null;
+  function applySel() {
+    const g = $('#grid');
+    $$('.cell.sel', g).forEach(c => c.classList.remove('sel'));
+    const on = !!selKey && !editing;
+    g.classList.toggle('has-sel', on);
+    if (on) { const c = $(`.cell[data-key="${selKey}"]`, g); if (c) c.classList.add('sel'); }
+    $('#cell-info').classList.toggle('selected', on);
+  }
+  function renderChartView() {
+    const s = SC[ui.sc] || R.SCENARIOS[3]; ui.sc = s.id;
+    fillScenarioSelect($('#sc-select')); $('#sc-select').value = s.id;
+    const chart = chartOf(s.id);
+    $('#edited-pill').hidden = !overrides[s.id];
+    $('#sc-desc').textContent = s.desc + ' 6-max, 100bb effective.';
+    const g = $('#grid');
+    renderGrid(g, chart);
+    g.classList.toggle('editing', editing);
+    applySel();
+    if (selKey && !editing) showInfo(selKey);
+    $('#legend').innerHTML = s.actions.map(a => `<span><i class="sw" style="background:${A[a].color}"></i>${A[a].label}</span>`).join('') + `<span><i class="sw" style="background:linear-gradient(90deg,${A[s.actions[0]].color} 50%,${A.fold.color} 50%)"></i>Mixed</span>`;
+    renderStats();
+    // brushes
+    if (!s.actions.includes(ui.brush)) ui.brush = s.actions[0];
+    if (!s.actions.includes(ui.rest) || ui.rest === ui.brush) ui.rest = 'fold';
+    $('#brushes').innerHTML = s.actions.map(a => `<button class="brush ${a === 'fold' ? 'fold' : ''} ${a === ui.brush ? 'active' : ''}" data-a="${a}" style="background:${A[a].color}">${A[a].label}</button>`).join('');
+    $('#brush-rest').innerHTML = s.actions.filter(a => a !== ui.brush).map(a => `<option value="${a}">${A[a].label}</option>`).join('');
+    $('#brush-rest').value = ui.rest;
+    $('#brush-freq').value = String(ui.freq);
+    $('#edit-tools').hidden = !editing;
+    $('#edit-toggle').innerHTML = editing ? '&#10003; Done editing' : '&#9998; Edit chart';
+    $('#edit-toggle').classList.toggle('primary', editing);
+  }
+  function renderStats() {
+    const s = SC[ui.sc], chart = chartOf(s.id), t = chartStats(chart);
+    let html = '';
+    for (const a of s.actions) {
+      const v = t[a] || 0;
+      html += `<div class="stat"><i class="sw" style="background:${A[a].color}"></i><span>${A[a].label}</span><span><b>${pct(v / 1326)}</b> <span class="dim small">${fmtN(v, 1)} combos</span></span><div class="bar"><i style="width:${(v / 1326 * 100).toFixed(2)}%;background:${A[a].color}"></i></div></div>`;
+    }
+    const play = 1326 - (t.fold || 0);
+    const cells = H.CLASSES.filter(k => (chart[k].fold || 0) < 0.999).length;
+    html += `<div class="small muted" style="margin-top:10px">${s.group.startsWith('RFI') ? 'Opening' : 'Continuing (VPIP)'}: <b style="color:var(--text)">${pct(play / 1326)}</b> &middot; ${fmtN(play, 1)} / 1326 combos &middot; ${cells} of 169 hand classes</div>`;
+    $('#stats').innerHTML = html;
+  }
+  $('#sc-select').addEventListener('change', e => { ui.sc = e.target.value; saveUI(); renderChartView(); });
+  $('#edit-toggle').addEventListener('click', () => { editing = !editing; renderChartView(); });
+  $('#brushes').addEventListener('click', e => { const b = e.target.closest('.brush'); if (!b) return; ui.brush = b.dataset.a; saveUI(); renderChartView(); });
+  $('#brush-freq').addEventListener('change', e => { ui.freq = parseFloat(e.target.value); saveUI(); });
+  $('#brush-rest').addEventListener('change', e => { ui.rest = e.target.value; saveUI(); });
+
+  // hover info + painting
+  let painting = false, dirty = false;
+  const grid = $('#grid');
+  function showInfo(k) {
+    const s = SC[ui.sc], cell = chartOf(s.id)[k];
+    $('#cell-info').innerHTML = `${selKey === k && !editing ? '<span class="pill" style="color:#ffe14d;border-color:#6b5d17;background:#2a250c;margin-right:6px">Selected</span>' : ''}<b style="font-size:15px">${k}</b> <span class="dim">(${H.classCount(k)} combos)</span><br>${mixText(cell, s.actions)}`;
+  }
+  function paintKey(k, el) {
+    const s = SC[ui.sc], ch = ensureEditable(s.id);
+    const cell = {};
+    if (ui.freq >= 1 || ui.rest === ui.brush) cell[ui.brush] = 1;
+    else { cell[ui.brush] = ui.freq; cell[ui.rest] = Math.round((1 - ui.freq) * 1000) / 1000; }
+    ch[k] = cell;
+    paintCell(el, cell);
+    dirty = true;
+    showInfo(k);
+  }
+  function cellAt(x, y) { const el = document.elementFromPoint(x, y); return el && el.closest && el.closest('#grid .cell'); }
+  grid.addEventListener('pointerdown', e => {
+    const c = e.target.closest('.cell'); if (!c) return;
+    if (!editing) { selKey = selKey === c.dataset.key && e.pointerType === 'mouse' ? null : c.dataset.key; applySel(); if (selKey) showInfo(selKey); else $('#cell-info').innerHTML = '<span class="dim">Hover or tap a cell to see its frequencies.</span>'; return; }
+    e.preventDefault(); painting = true; paintKey(c.dataset.key, c);
+  });
+  grid.addEventListener('pointermove', e => {
+    const c = painting ? cellAt(e.clientX, e.clientY) : e.target.closest('.cell');
+    if (!c) return;
+    if (painting) paintKey(c.dataset.key, c); else if (e.pointerType === 'mouse') showInfo(c.dataset.key);
+  });
+  grid.addEventListener('pointerleave', () => { if (!painting && selKey && !editing) showInfo(selKey); });
+  window.addEventListener('pointerup', () => {
+    if (painting) { painting = false; if (dirty) { dirty = false; saveCharts(); renderStats(); $('#edited-pill').hidden = false; fillScenarioSelect($('#sc-select')); $('#sc-select').value = ui.sc; } }
+  });
+  $('#reset-sc').addEventListener('click', () => {
+    if (!overrides[ui.sc]) { toast('This chart is already at its default.'); return; }
+    if (!confirm('Reset "' + SC[ui.sc].name + '" to the default starter range?')) return;
+    delete overrides[ui.sc]; saveCharts(); renderChartView(); toast('Chart reset to default');
+  });
+  $('#reset-all').addEventListener('click', () => {
+    if (!confirm('Reset ALL charts to the default starter ranges? Your edits will be lost.')) return;
+    overrides = {}; saveCharts(); renderChartView(); toast('All charts reset');
+  });
+  function exportJSON() {
+    const charts = {};
+    R.SCENARIOS.forEach(s => {
+      const ch = chartOf(s.id), out = {};
+      for (const k of H.CLASSES) { const c = ch[k]; if (!((c.fold || 0) >= 0.999)) out[k] = c; }
+      charts[s.id] = out;
+    });
+    return JSON.stringify({ app: 'holdem-lab', version: 1, exported: new Date().toISOString(), note: 'Cells omitted = 100% fold. Values are frequencies 0..1.', charts }, null, 1);
+  }
+  $('#export-btn').addEventListener('click', () => {
+    const json = exportJSON();
+    const m = openModal(`<h2>Export ranges</h2><p class="small muted">All ${R.SCENARIOS.length} charts (including your edits). Download the file or copy the JSON.</p><textarea class="json" readonly></textarea><div class="modal-foot"><button class="btn" id="m-copy">Copy</button><button class="btn primary" id="m-dl">Download .json</button><button class="btn" id="m-close">Close</button></div>`);
+    $('textarea', m).value = json;
+    $('#m-copy').onclick = () => { const ta = $('textarea', m); ta.select(); (navigator.clipboard ? navigator.clipboard.writeText(json) : Promise.reject()).then(() => toast('Copied'), () => { document.execCommand('copy'); toast('Copied'); }); };
+    $('#m-dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' })); a.download = 'holdem-ranges.json'; document.body.appendChild(a); a.click(); a.remove(); };
+    $('#m-close').onclick = closeModal;
+  });
+  $('#import-btn').addEventListener('click', () => {
+    const m = openModal(`<h2>Import ranges</h2><p class="small muted">Paste JSON exported from this app, or choose a file. Only charts present in the file are replaced.</p><input type="file" accept=".json,application/json" id="m-file"><textarea class="json" placeholder='{"charts": {"rfi_btn": {"AA": {"raise": 1}, ...}}}' style="margin-top:10px"></textarea><div class="modal-foot"><span class="small" id="m-err" style="color:var(--bad);margin-right:auto"></span><button class="btn" id="m-close">Cancel</button><button class="btn primary" id="m-apply">Import</button></div>`);
+    $('#m-file').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { $('textarea', m).value = t; }); };
+    $('#m-close').onclick = closeModal;
+    $('#m-apply').onclick = () => {
+      try {
+        const obj = JSON.parse($('textarea', m).value);
+        const src = obj.charts || obj;
+        const filled = {};
+        for (const id of Object.keys(src)) { if (!SC[id]) continue; const ch = {}; for (const k of H.CLASSES) ch[k] = src[id][k] || { fold: 1 }; filled[id] = ch; }
+        const clean = sanitizeCharts(filled);
+        const n = Object.keys(clean).length;
+        if (!n) throw new Error('No known scenario ids found (expected e.g. "rfi_btn").');
+        Object.assign(overrides, clean); saveCharts(); closeModal(); renderChartView(); toast(`Imported ${n} chart${n > 1 ? 's' : ''}`);
+      } catch (err) { $('#m-err').textContent = err.message; }
+    };
+  });
+
+  /* ================= TRAINER ================= */
+  let stats = Object.assign({ total: 0, correct: 0, streak: 0, best: 0, per: {}, recent: [] }, load(LS.stats, {}));
+  let cur = null;
+  const SEATS = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+  function trainerPool() {
+    if (ui.trSc === 'all') return R.SCENARIOS.map(s => s.id);
+    if (ui.trSc === 'rfi') return R.SCENARIOS.filter(s => s.group.startsWith('RFI')).map(s => s.id);
+    if (ui.trSc === 'facing') return R.SCENARIOS.filter(s => !s.group.startsWith('RFI')).map(s => s.id);
+    return SC[ui.trSc] ? [ui.trSc] : R.SCENARIOS.map(s => s.id);
+  }
+  function isBorderline(chart, k) {
+    const cell = chart[k];
+    if (mixEntries(cell).length > 1) return true;
+    const [i, j] = H.keyToGrid(k), d = dominant(cell);
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
+      const a = i + di, b = j + dj;
+      if ((di || dj) && a >= 0 && a < 13 && b >= 0 && b < 13 && dominant(chart[H.gridKey(a, b)]) !== d) return true;
+    }
+    return false;
+  }
+  function deal() {
+    const pool = trainerPool(), id = pool[(Math.random() * pool.length) | 0], chart = chartOf(id);
+    let items = H.CLASSES.map(k => ({ k, w: H.classCount(k), b: isBorderline(chart, k) }));
+    if (ui.trWeight === 'border') items.forEach(it => { if (it.b) it.w *= 5; });
+    if (ui.trWeight === 'only') { const f = items.filter(it => it.b); if (f.length) items = f; }
+    let tot = items.reduce((s, it) => s + it.w, 0), r = Math.random() * tot, pick = items[items.length - 1];
+    for (const it of items) { r -= it.w; if (r < 0) { pick = it; break; } }
+    const combos = H.classCombos(pick.k), cb = combos[(Math.random() * combos.length) | 0];
+    let cards = [cb[0], cb[1]].sort((a, b) => b - a);
+    if ((cards[0] >> 2) === (cards[1] >> 2) && Math.random() < 0.5) cards.reverse();
+    cur = { id, k: pick.k, cards, answered: false, border: pick.b };
+    renderTrainer();
+  }
+  function renderTrainer() {
+    if (!cur) { deal(); return; }
+    const s = SC[cur.id];
+    const heroIdx = SEATS.indexOf(s.hero), vIdx = s.villain ? SEATS.indexOf(s.villain) : -1;
+    $('#tr-seats').innerHTML = SEATS.map((p, i) => {
+      let cls = 'seat';
+      if (i === heroIdx) cls += ' hero'; else if (i === vIdx) cls += ' villain';
+      else if (i < heroIdx || (s.villain && i !== vIdx && i < heroIdx)) cls += ' folded';
+      const lbl = i === heroIdx ? p + ' (you)' : i === vIdx ? p + ' raises' : p;
+      return `<span class="${cls}">${lbl}</span>`;
+    }).join('');
+    $('#tr-desc').textContent = s.desc;
+    $('#tr-cards').innerHTML = cur.cards.map(c => cardHTML(c, 'big')).join('');
+    $('#tr-handname').textContent = cur.k + (cur.border ? '' : '');
+    $('#tr-actions').innerHTML = s.actions.slice().reverse().map(a => `<button class="act" data-a="${a}" style="background:${A[a].color}${a === 'fold' ? ';color:#cfd5e0;background:#3a4558' : ''}" ${cur.answered ? 'disabled' : ''}>${A[a].label}<kbd>${A[a].key.toUpperCase()}</kbd></button>`).join('');
+    if (!cur.answered) {
+      $('#tr-feedback').className = 'feedback idle';
+      $('#tr-feedback').innerHTML = 'Pick an action. Keys: <b>F</b> fold &middot; <b>C</b> call &middot; <b>R</b> raise &middot; <b>3</b> 3-bet &middot; <b>Space</b> next hand';
+      $('#tr-chart-panel').hidden = true;
+    }
+    renderTrainerStats();
+  }
+  function answer(a) {
+    if (!cur || cur.answered) return;
+    const s = SC[cur.id];
+    if (!s.actions.includes(a)) return;
+    const cell = chartOf(cur.id)[cur.k], f = cell[a] || 0;
+    const maxF = Math.max(...Object.values(cell));
+    const correct = f >= 0.25 - 1e-9 || f >= maxF - 1e-9;
+    cur.answered = true;
+    stats.total++; if (correct) { stats.correct++; stats.streak++; stats.best = Math.max(stats.best, stats.streak); } else stats.streak = 0;
+    const p = stats.per[cur.id] || (stats.per[cur.id] = { n: 0, c: 0 }); p.n++; if (correct) p.c++;
+    stats.recent.unshift({ k: cur.k, id: cur.id, ok: correct }); stats.recent = stats.recent.slice(0, 16);
+    save(LS.stats, stats);
+    const mixed = mixEntries(cell).length > 1;
+    const fb = $('#tr-feedback');
+    fb.className = 'feedback ' + (correct ? 'good' : 'bad');
+    fb.innerHTML = `${correct ? '&#10003; Correct' : '&#10007; Not quite'} &mdash; you chose <b>${A[a].label}</b>. Chart for <b>${cur.k}</b>: ${mixText(cell, s.actions)}${mixed ? ' <span class="small">(mixed hand)</span>' : ''}`;
+    $$('#tr-actions .act').forEach(b => { b.disabled = true; if (b.dataset.a === a) b.style.outline = '3px solid #fff'; });
+    if (ui.trShowChart) {
+      $('#tr-chart-panel').hidden = false;
+      $('#tr-chart-title').textContent = s.name + (overrides[s.id] ? ' (edited)' : '');
+      renderGrid($('#tr-grid'), chartOf(cur.id), { highlight: cur.k });
+      $('#tr-grid').classList.add('has-sel');
+    }
+    renderTrainerStats();
+  }
+  function renderTrainerStats() {
+    const acc = stats.total ? stats.correct / stats.total : 0;
+    $('#tr-kpis').innerHTML = `<div class="kpi"><b>${stats.total ? pct(acc, 0) : '—'}</b><span>Accuracy</span></div><div class="kpi"><b>${stats.correct}/${stats.total}</b><span>Correct</span></div><div class="kpi"><b>${stats.streak}</b><span>Streak</span></div><div class="kpi"><b>${stats.best}</b><span>Best streak</span></div>`;
+    $('#tr-recent').innerHTML = stats.recent.length ? stats.recent.map(r => `<span class="${r.ok ? 'y' : 'n'}" title="${esc(SC[r.id] ? SC[r.id].name : r.id)}">${esc(r.k)}</span>`).join('') : '<span class="dim small">No hands yet.</span>';
+    const rows = R.SCENARIOS.filter(s => stats.per[s.id]).map(s => { const p = stats.per[s.id], a = p.c / p.n; return `<tr><td>${esc(s.name)}</td><td class="num">${p.c}/${p.n}</td><td style="width:38%"><div class="bar" style="height:8px"><i style="width:${a * 100}%;background:${a >= 0.8 ? 'var(--good)' : a >= 0.6 ? 'var(--warn)' : 'var(--bad)'}"></i></div></td><td class="num">${pct(a, 0)}</td></tr>`; }).join('');
+    $('#tr-table').innerHTML = rows ? `<tr><th>Scenario</th><th class="num">Score</th><th></th><th class="num">Acc</th></tr>${rows}` : '<tr><td class="dim small">Answer some hands to see per-scenario accuracy.</td></tr>';
+  }
+  fillScenarioSelect($('#tr-sc'), '<option value="all">Random: all scenarios</option><option value="rfi">Random: all RFI (opens)</option><option value="facing">Random: facing an open</option>');
+  $('#tr-sc').value = ui.trSc; if (!$('#tr-sc').value) { ui.trSc = 'all'; $('#tr-sc').value = 'all'; }
+  $('#tr-weight').value = ui.trWeight;
+  $('#tr-showchart').checked = !!ui.trShowChart;
+  $('#tr-sc').addEventListener('change', e => { ui.trSc = e.target.value; saveUI(); deal(); });
+  $('#tr-weight').addEventListener('change', e => { ui.trWeight = e.target.value; saveUI(); deal(); });
+  $('#tr-showchart').addEventListener('change', e => { ui.trShowChart = e.target.checked; saveUI(); if (!ui.trShowChart) $('#tr-chart-panel').hidden = true; });
+  $('#tr-actions').addEventListener('click', e => { const b = e.target.closest('.act'); if (b) answer(b.dataset.a); });
+  $('#tr-next').addEventListener('click', deal);
+  $('#tr-reset').addEventListener('click', () => { if (!confirm('Reset trainer stats?')) return; stats = { total: 0, correct: 0, streak: 0, best: 0, per: {}, recent: [] }; save(LS.stats, stats); renderTrainerStats(); });
+  document.addEventListener('keydown', e => {
+    if (ui.tab !== 'ranges' || ui.rmode !== 'train' || $('#modal-bg').classList.contains('open')) return;
+    if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement && document.activeElement.tagName)) return;
+    const key = e.key.toLowerCase();
+    if (key === ' ' || key === 'enter' || key === 'n') { e.preventDefault(); if (cur && cur.answered) deal(); return; }
+    if (!cur || cur.answered) return;
+    const s = SC[cur.id];
+    let a = null;
+    if (key === 'f') a = 'fold'; else if (key === 'c') a = 'call'; else if (key === '3') a = '3bet';
+    else if (key === 'r') a = s.actions.includes('raise') ? 'raise' : '3bet';
+    if (a && s.actions.includes(a)) { e.preventDefault(); answer(a); }
+  });
+
+  function setRMode(m) {
+    ui.rmode = m; saveUI();
+    $$('#rmode button').forEach(b => b.classList.toggle('active', b.dataset.m === m));
+    $('#chart-view').hidden = m !== 'chart';
+    $('#train-view').hidden = m !== 'train';
+    if (m === 'train') { fillScenarioSelect($('#tr-sc'), '<option value="all">Random: all scenarios</option><option value="rfi">Random: all RFI (opens)</option><option value="facing">Random: facing an open</option>'); $('#tr-sc').value = ui.trSc; renderTrainer(); }
+    else renderChartView();
+  }
+  $$('#rmode button').forEach(b => b.addEventListener('click', () => setRMode(b.dataset.m)));
+
+  /* ================= EQUITY ================= */
+  const PCOLORS = ['#4f8cff', '#f2683c', '#2fbf71', '#a06bff', '#f5b041', '#e84f9b'];
+  const pc = H.parseCard;
+  const defaultEq = () => ({
+    players: [{ mode: 'cards', cards: [pc('As'), pc('Ks')], range: '' }, { mode: 'range', cards: [null, null], range: 'QQ+, AKo' }],
+    board: [null, null, null, null, null], dead: [null, null, null, null, null, null], mode: 'auto', trials: 300000
+  });
+  let eq = load(LS.eq, null);
+  if (!eq || !Array.isArray(eq.players) || eq.players.length < 2) eq = defaultEq();
+  const saveEq = () => save(LS.eq, eq);
+  const allCombos = (() => { const o = []; for (let a = 51; a >= 0; a--) for (let b = a - 1; b >= 0; b--) o.push([a, b]); return o; })();
+
+  function usedCards(exceptTarget) {
+    const u = new Map();
+    eq.players.forEach((p, i) => { if (p.mode === 'cards') p.cards.forEach((c, j) => { if (c != null) u.set(c, `p:${i}:${j}`); }); });
+    eq.board.forEach((c, j) => { if (c != null) u.set(c, `b:${j}`); });
+    eq.dead.forEach((c, j) => { if (c != null) u.set(c, `d:${j}`); });
+    if (exceptTarget) for (const [c, t] of u) if (t === exceptTarget) u.delete(c);
+    return u;
+  }
+  function getSlot(t) { const p = t.split(':'); if (p[0] === 'p') return eq.players[+p[1]].cards[+p[2]]; if (p[0] === 'b') return eq.board[+p[1]]; return eq.dead[+p[1]]; }
+  function setSlot(t, c) { const p = t.split(':'); if (p[0] === 'p') eq.players[+p[1]].cards[+p[2]] = c; else if (p[0] === 'b') eq.board[+p[1]] = c; else eq.dead[+p[1]] = c; }
+  function groupSlots(t) {
+    const p = t.split(':');
+    if (p[0] === 'p') return [`p:${p[1]}:0`, `p:${p[1]}:1`];
+    if (p[0] === 'b') return [0, 1, 2, 3, 4].map(i => 'b:' + i);
+    return eq.dead.map((_, i) => 'd:' + i);
+  }
+  function slotHTML(t, extra) {
+    const c = getSlot(t);
+    return `<button class="slot ${c != null ? 'filled' : ''} ${extra || ''}" data-t="${t}" title="${c != null ? 'Change card' : 'Pick card'}">${c != null ? cardHTML(c) : '+'}</button>`;
+  }
+  function openPicker(target) {
+    let tgt = target;
+    const draw = () => {
+      const used = usedCards(tgt), group = groupSlots(tgt);
+      let html = `<h2>Pick a card <span class="small muted">&mdash; ${tgt[0] === 'p' ? (+tgt.split(':')[1] === 0 ? 'Hero' : 'Villain ' + tgt.split(':')[1]) : tgt[0] === 'b' ? ['Flop 1', 'Flop 2', 'Flop 3', 'Turn', 'River'][+tgt.split(':')[1]] : 'Dead card'}</span></h2>`;
+      html += `<div class="row" style="margin-bottom:10px;gap:4px">${group.map(g => slotHTML(g, g === tgt ? 'target' : '')).join('')}</div><div class="picker">`;
+      for (const s of [3, 2, 1, 0]) for (let r = 12; r >= 0; r--) { const c = r * 4 + s; html += `<button data-c="${c}" ${used.has(c) ? 'disabled' : ''}>${cardHTML(c)}</button>`; }
+      html += `</div><div class="modal-foot"><input type="text" id="m-type" placeholder="or type e.g. Ah Kd 7c" style="flex:1;min-width:160px"><button class="btn" id="m-clear">Clear card</button><button class="btn primary" id="m-done">Done</button></div>`;
+      const m = openModal(html, () => { saveEq(); renderEquityInputs(); });
+      $$('.picker button', m).forEach(b => b.onclick = () => choose(+b.dataset.c));
+      $$('.slot', m).forEach(b => b.onclick = () => { tgt = b.dataset.t; draw(); });
+      $('#m-clear', m).onclick = () => { setSlot(tgt, null); draw(); };
+      $('#m-done', m).onclick = closeModal;
+      const ti = $('#m-type', m);
+      ti.addEventListener('keydown', e => {
+        if (e.key !== 'Enter') return;
+        const cs = H.parseCards(ti.value);
+        if (!cs) { toast('Could not parse cards'); return; }
+        const idx = group.indexOf(tgt), targets = group.slice(idx, idx + cs.length);
+        if (cs.length > targets.length) { toast(`Only ${targets.length} slot(s) left here`); return; }
+        const old = targets.map(getSlot);
+        targets.forEach(t => setSlot(t, null));
+        const used2 = usedCards();
+        const clash = cs.find(c => used2.has(c));
+        if (clash != null) { targets.forEach((t, j) => setSlot(t, old[j])); toast(H.cardStr(clash) + ' is already used'); return; }
+        targets.forEach((t, j) => setSlot(t, cs[j]));
+        closeModal();
+      });
+      if (window.matchMedia('(pointer:fine)').matches) ti.focus();
+    };
+    const choose = c => {
+      setSlot(tgt, c);
+      const group = groupSlots(tgt), i = group.indexOf(tgt);
+      const next = group.slice(i + 1).concat(group.slice(0, i)).find(g => getSlot(g) == null);
+      if (next && (tgt[0] !== 'd')) { tgt = next; draw(); } else closeModal();
+    };
+    draw();
+  }
+
+  function rangeInfo(p) {
+    const r = H.parseRange(p.range || '');
+    return r;
+  }
+  function chartOptions() {
+    let html = '<option value="">Load from chart…</option>';
+    R.SCENARIOS.forEach(s => s.actions.filter(a => a !== 'fold').forEach(a => { html += `<option value="${s.id}|${a}">${esc(s.name)}: ${A[a].label}</option>`; }));
+    return html;
+  }
+  function renderEquityInputs() {
+    const box = $('#players');
+    box.innerHTML = eq.players.map((p, i) => {
+      const name = i === 0 ? 'Hero' : 'Villain ' + i;
+      let body;
+      if (p.mode === 'cards') {
+        body = `<div>${slotHTML(`p:${i}:0`)}${slotHTML(`p:${i}:1`)} <button class="btn small" data-act="clearcards" data-i="${i}" style="margin-left:6px">Clear</button></div><div class="rmeta">${p.cards.every(c => c == null) ? 'No cards = random hand (all 1326 combos).' : p.cards.some(c => c == null) ? '<span class="err">Pick both cards (or none for a random hand).</span>' : ''}</div>`;
+      } else {
+        const r = rangeInfo(p), n = r.combos.length;
+        const top = p.top != null ? p.top : 15;
+        body = `<input class="rinput" type="text" data-i="${i}" value="${esc(p.range)}" placeholder="e.g. QQ+, AKs, AJs+, KQo, 22-66, 15%" spellcheck="false" autocapitalize="off" autocomplete="off">
+          <div class="rmeta" data-meta="${i}">${rangeMeta(r)}</div>
+          <div class="rtools"><label class="small muted">Top</label><input type="range" min="0" max="100" step="0.5" value="${top}" data-top="${i}"><span class="small" data-topv="${i}" style="min-width:42px">${top}%</span>
+          <button class="btn small" data-act="grid" data-i="${i}">&#9638; Grid</button>
+          <select data-chart="${i}">${chartOptions()}</select></div>`;
+      }
+      return `<div class="player" style="--pc:${PCOLORS[i]}"><div class="ph"><span class="pname" style="color:${PCOLORS[i]}">${name}</span>
+        <div class="seg"><button data-act="mode" data-m="cards" data-i="${i}" class="${p.mode === 'cards' ? 'active' : ''}">Cards</button><button data-act="mode" data-m="range" data-i="${i}" class="${p.mode === 'range' ? 'active' : ''}">Range</button></div>
+        ${eq.players.length > 2 ? `<button class="x" data-act="remove" data-i="${i}" title="Remove player">&times;</button>` : ''}</div>${body}</div>`;
+    }).join('');
+    $('#add-player').disabled = eq.players.length >= 6;
+    $('#board-slots').innerHTML = eq.board.map((_, j) => slotHTML('b:' + j) + (j === 2 || j === 3 ? '<span style="display:inline-block;width:8px"></span>' : '')).join('');
+    $('#dead-slots').innerHTML = eq.dead.map((_, j) => slotHTML('d:' + j)).join('');
+    $('#eq-mode').value = eq.mode; $('#eq-trials').value = String(eq.trials);
+  }
+  function rangeMeta(r) {
+    const n = r.combos.length;
+    return `<b style="color:var(--text)">${n}</b> combos (${pct(n / 1326)})${r.errors.length ? ` &middot; <span class="err">Unrecognised: ${esc(r.errors.join(', '))}</span>` : ''}`;
+  }
+  $('#tab-equity').addEventListener('click', e => {
+    const slot = e.target.closest('.slot');
+    if (slot && !e.target.closest('.modal')) { openPicker(slot.dataset.t); return; }
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const i = +b.dataset.i, act = b.dataset.act;
+    if (act === 'mode') { eq.players[i].mode = b.dataset.m; }
+    else if (act === 'remove') { eq.players.splice(i, 1); }
+    else if (act === 'clearcards') { eq.players[i].cards = [null, null]; }
+    else if (act === 'grid') { openRangeGrid(i); return; }
+    saveEq(); renderEquityInputs();
+  });
+  $('#players').addEventListener('input', e => {
+    const t = e.target;
+    if (t.classList.contains('rinput')) {
+      const i = +t.dataset.i; eq.players[i].range = t.value; saveEq();
+      $(`[data-meta="${i}"]`).innerHTML = rangeMeta(H.parseRange(t.value));
+    } else if (t.dataset.top != null) {
+      const i = +t.dataset.top, v = parseFloat(t.value);
+      eq.players[i].top = v;
+      const set = {}; H.topPercentClasses(v).forEach(k => { set[k] = 1; });
+      eq.players[i].range = H.rangeToString(set);
+      $(`[data-topv="${i}"]`).textContent = v + '%';
+      const inp = $(`.rinput[data-i="${i}"]`); inp.value = eq.players[i].range;
+      $(`[data-meta="${i}"]`).innerHTML = rangeMeta(H.parseRange(inp.value));
+      saveEq();
+    }
+  });
+  $('#players').addEventListener('change', e => {
+    const t = e.target;
+    if (t.dataset.chart != null && t.value) {
+      const i = +t.dataset.chart, [id, a] = t.value.split('|'), ch = chartOf(id), set = {};
+      H.CLASSES.forEach(k => { if ((ch[k][a] || 0) >= 0.5) set[k] = 1; });
+      eq.players[i].range = H.rangeToString(set); saveEq(); renderEquityInputs();
+      toast(`Loaded ${SC[id].name}: ${A[a].label} (cells ≥50%)`);
+    }
+  });
+  $('#add-player').addEventListener('click', () => { if (eq.players.length >= 6) return; eq.players.push({ mode: 'range', cards: [null, null], range: '' }); saveEq(); renderEquityInputs(); });
+  $('#clear-board').addEventListener('click', () => { eq.board = [null, null, null, null, null]; saveEq(); renderEquityInputs(); });
+  $('#clear-dead').addEventListener('click', () => { eq.dead = eq.dead.map(() => null); saveEq(); renderEquityInputs(); });
+  $('#rand-flop').addEventListener('click', () => {
+    const used = usedCards(); eq.board = [null, null, null, null, null];
+    eq.board.forEach((c, j) => used.delete(c));
+    for (let j = 0; j < 3; j++) { let c; do { c = (Math.random() * 52) | 0; } while (used.has(c)); used.set(c, 'b:' + j); eq.board[j] = c; }
+    saveEq(); renderEquityInputs();
+  });
+  $('#eq-mode').addEventListener('change', e => { eq.mode = e.target.value; saveEq(); });
+  $('#eq-trials').addEventListener('change', e => { eq.trials = +e.target.value; saveEq(); });
+
+  function openRangeGrid(i) {
+    const p = eq.players[i], parsed = H.parseRange(p.range || '');
+    const set = Object.assign({}, parsed.classes);
+    const specific = parsed.specific.map(cb => H.cardStr(cb[0]) + H.cardStr(cb[1]));
+    const m = openModal(`<h2>Select range &mdash; ${i === 0 ? 'Hero' : 'Villain ' + i}</h2>
+      <p class="small muted" style="margin-top:-6px">Click or drag to toggle hands. Pairs on the diagonal, suited above, offsuit below.</p>
+      <div class="grid13 pickable" id="rg"></div>
+      <div class="row" style="margin-top:10px"><label class="small muted">Top</label><input type="range" min="0" max="100" step="0.5" value="${p.top != null ? p.top : 15}" id="rg-top" style="accent-color:var(--accent)"><span class="small" id="rg-topv"></span><span class="small muted" id="rg-count" style="margin-left:auto"></span></div>
+      ${specific.length ? `<p class="small dim">Specific combos kept: ${esc(specific.join(', '))}</p>` : ''}
+      <div class="modal-foot"><button class="btn" id="rg-clear">Clear</button><button class="btn" id="rg-all">All</button><span style="flex:1"></span><button class="btn" id="rg-cancel">Cancel</button><button class="btn primary" id="rg-apply">Apply</button></div>`);
+    const g = $('#rg', m);
+    H.CLASSES.forEach(k => { const d = document.createElement('div'); d.className = 'cell'; d.dataset.key = k; d.textContent = k; g.appendChild(d); });
+    const refresh = () => {
+      let n = 0;
+      $$('.cell', g).forEach(d => { const on = !!set[d.dataset.key]; d.classList.toggle('on', on); d.classList.toggle('off', !on); if (on) n += H.classCount(d.dataset.key); });
+      $('#rg-count', m).textContent = `${n} combos · ${pct(n / 1326)}`;
+    };
+    let drag = null;
+    g.addEventListener('pointerdown', e => { const c = e.target.closest('.cell'); if (!c) return; e.preventDefault(); drag = !set[c.dataset.key]; toggle(c.dataset.key); });
+    g.addEventListener('pointermove', e => { if (drag === null) return; const el = document.elementFromPoint(e.clientX, e.clientY), c = el && el.closest && el.closest('#rg .cell'); if (c) toggle(c.dataset.key); });
+    const up = () => { drag = null; };
+    window.addEventListener('pointerup', up);
+    function toggle(k) { if (drag) set[k] = 1; else delete set[k]; refresh(); }
+    const top = $('#rg-top', m);
+    $('#rg-topv', m).textContent = top.value + '%';
+    top.oninput = () => { $('#rg-topv', m).textContent = top.value + '%'; Object.keys(set).forEach(k => delete set[k]); H.topPercentClasses(+top.value).forEach(k => { set[k] = 1; }); p.top = +top.value; refresh(); };
+    $('#rg-clear', m).onclick = () => { Object.keys(set).forEach(k => delete set[k]); refresh(); };
+    $('#rg-all', m).onclick = () => { H.CLASSES.forEach(k => { set[k] = 1; }); refresh(); };
+    $('#rg-cancel', m).onclick = closeModal;
+    $('#rg-apply', m).onclick = () => { const s = H.rangeToString(set); p.range = [s].concat(specific).filter(Boolean).join(', '); closeModal(); };
+    modalClose = () => { window.removeEventListener('pointerup', up); saveEq(); renderEquityInputs(); };
+    refresh();
+  }
+
+  // ---- calculation ----
+  const coreSrc = $('#core-src').textContent, workerSrc = $('#worker-src').textContent;
+  let worker = null, running = false, lastResult = null, lastSpecInfo = null, fallbackCancel = null, startT = 0;
+  function makeWorker() {
+    try { const url = URL.createObjectURL(new Blob([coreSrc + '\n' + workerSrc], { type: 'text/javascript' })); return new Worker(url); } catch (e) { return null; }
+  }
+  function buildSpec() {
+    const players = [], descs = [];
+    eq.players.forEach((p, i) => {
+      const name = i === 0 ? 'Hero' : 'Villain ' + i;
+      if (p.mode === 'cards') {
+        const cs = p.cards.filter(c => c != null);
+        if (cs.length === 1) throw new Error(`${name}: pick both cards or leave both empty for a random hand.`);
+        if (cs.length === 2) { players.push([[cs[0], cs[1]]]); descs.push({ cards: cs }); }
+        else { players.push(allCombos); descs.push({ text: 'Random hand' }); }
+      } else {
+        const r = H.parseRange(p.range || '');
+        if (r.errors.length) throw new Error(`${name}: unrecognised range token(s): ${r.errors.join(', ')}`);
+        if (!r.combos.length) throw new Error(`${name}: range is empty.`);
+        players.push(r.combos); descs.push({ text: p.range });
+      }
+    });
+    const board = eq.board.filter(c => c != null), dead = eq.dead.filter(c => c != null);
+    return { spec: { players, board, dead, mode: eq.mode, trials: eq.trials }, descs, board };
+  }
+  function setRunning(on) {
+    running = on;
+    $('#calc').disabled = on; $('#stop').disabled = !on;
+    $('#calc').innerHTML = on ? 'Calculating…' : '&#9654; Calculate equity';
+  }
+  function calc() {
+    if (running) return;
+    let built;
+    try { built = buildSpec(); } catch (e) { $('#eq-status').innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`; return; }
+    try { new H.EquityJob(Object.assign({}, built.spec, { trials: 1 })); } catch (e) { $('#eq-status').innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`; return; }
+    lastSpecInfo = built; lastResult = null;
+    setRunning(true); startT = performance.now();
+    $('#prog').style.width = '0%';
+    $('#eq-status').textContent = 'Starting…';
+    const onMsg = d => {
+      if (d.type === 'start') { $('#eq-status').textContent = d.exact ? `Exact enumeration (≈${fmtN(d.boards)} deals)…` : `Monte Carlo: ${fmtN(d.boards)} trials…`; return; }
+      if (d.type === 'error') { setRunning(false); $('#eq-status').innerHTML = `<span style="color:var(--bad)">${esc(d.message)}</span>`; return; }
+      lastResult = d.result;
+      $('#prog').style.width = (d.result.progress * 100).toFixed(1) + '%';
+      renderResults(d.result, d.type === 'done');
+      if (d.type === 'done') { setRunning(false); $('#eq-status').textContent = `Done in ${(d.result.elapsed / 1000).toFixed(2)}s${worker ? ' (Web Worker)' : ''}.`; }
+      else $('#eq-status').textContent = `${d.result.exact ? 'Enumerating' : 'Simulating'}… ${fmtN(d.result.total)} ${d.result.exact ? 'boards' : 'trials'} (${(d.result.progress * 100).toFixed(0)}%)`;
+    };
+    if (!worker) worker = makeWorker();
+    if (worker) {
+      worker.onmessage = e => onMsg(e.data);
+      worker.onerror = e => { e.preventDefault && e.preventDefault(); worker.terminate(); worker = null; runFallback(built.spec, onMsg); };
+      worker.postMessage({ cmd: 'run', spec: built.spec });
+    } else runFallback(built.spec, onMsg);
+  }
+  function runFallback(spec, onMsg) {
+    let job; try { job = new H.EquityJob(spec); } catch (e) { onMsg({ type: 'error', message: e.message }); return; }
+    let cancelled = false; fallbackCancel = () => { cancelled = true; };
+    const t0 = performance.now();
+    onMsg({ type: 'start', exact: job.exact, boards: job.exact ? job.assignments * job.boardsPer : job.target });
+    (function loop() {
+      if (cancelled) return;
+      try {
+        const end = performance.now() + 40; let done = false;
+        while (performance.now() < end && !(done = job.step(10000))) { /* chunk */ }
+        const r = job.result(); r.elapsed = performance.now() - t0;
+        onMsg({ type: done ? 'done' : 'progress', result: r });
+        if (!done) setTimeout(loop, 0);
+      } catch (e) { onMsg({ type: 'error', message: e.message }); }
+    })();
+  }
+  function stop() {
+    if (!running) return;
+    if (worker) { worker.terminate(); worker = null; }
+    if (fallbackCancel) { fallbackCancel(); fallbackCancel = null; }
+    setRunning(false);
+    if (lastResult) renderResults(lastResult, false, true);
+    $('#eq-status').textContent = `Stopped. Showing partial result (${fmtN(lastResult ? lastResult.total : 0)} ${lastResult && lastResult.exact ? 'boards' : 'trials'}).`;
+  }
+  $('#calc').addEventListener('click', calc);
+  $('#stop').addEventListener('click', stop);
+
+  function renderResults(r, done, stopped) {
+    const info = lastSpecInfo;
+    const rows = r.players.map((p, i) => {
+      const d = info.descs[i];
+      const desc = d.cards ? d.cards.map(c => cardHTML(c)).join('') : `<span class="handdesc" title="${esc(d.text)}">${esc(d.text)}</span>`;
+      const se = !r.exact && r.total ? Math.sqrt(p.equity * (1 - p.equity) / r.total) : 0;
+      return `<tr><td><span class="dot" style="background:${PCOLORS[i]}"></span><b>${i === 0 ? 'Hero' : 'V' + i}</b></td><td style="font-size:11px">${desc}</td>
+        <td style="min-width:130px"><div class="eqbar"><i style="width:${(p.equity * 100).toFixed(2)}%;background:${PCOLORS[i]}"></i><b>${pct(p.equity, 2)}</b></div>${se ? `<div class="dim" style="font-size:10.5px;text-align:center">±${(se * 196).toFixed(2)}%</div>` : ''}</td>
+        <td class="num">${pct(p.win, 2)}</td><td class="num">${pct(p.tie, 2)}</td></tr>`;
+    }).join('');
+    const kind = r.exact ? 'Exact enumeration' : 'Monte Carlo';
+    let cats = '<tr><th>Made hand</th>' + r.players.map((_, i) => `<th class="num">${i === 0 ? 'Hero' : 'V' + i}</th>`).join('') + '</tr>';
+    for (let c = 8; c >= 0; c--) cats += `<tr><td>${H.CAT_NAMES[c]}</td>${r.players.map(p => `<td class="num">${pct(p.cats[c], 1)}</td>`).join('')}</tr>`;
+    $('#results').innerHTML = `<div class="tscroll"><table class="t"><tr><th>Player</th><th>Hand / range</th><th>Equity</th><th class="num">Win</th><th class="num">Tie</th></tr>${rows}</table></div>
+      <div class="res-note">${info.board.length ? 'Board: ' + info.board.map(c => cardHTML(c)).join('') + ' &middot; ' : 'Preflop &middot; '}${kind} &middot; <b>${fmtN(r.total)}</b> ${r.exact ? 'boards evaluated' : 'trials'}${r.elapsed != null ? ' &middot; ' + (r.elapsed / 1000).toFixed(2) + 's' : ''}${!done ? (stopped ? ' &middot; <span style="color:var(--warn)">partial (stopped)</span>' : ' &middot; running…') : ''}${!r.exact ? ' &middot; ± = 95% CI' : ''}</div>
+      <details><summary>Hand distribution at showdown</summary><div class="tscroll"><table class="t" style="margin-top:6px">${cats}</table></div></details>`;
+  }
+
+  /* ---------------- init ---------------- */
+  setTab(ui.tab);
+  setRMode(ui.rmode);
+  renderEquityInputs();
+  window.__holdemApp = { calc, deal, answer, get cur() { return cur; } }; // for tests
+})();
+
+</script>
+</body>
+</html>
