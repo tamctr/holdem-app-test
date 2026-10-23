@@ -199,17 +199,153 @@ footer{max-width:1280px;margin:0 auto;padding:0 20px 30px;color:var(--dim);font-
 .grid13 .cell.on:hover{filter:brightness(1.12)}
 .info.selected{border-color:#ffe14d;box-shadow:0 0 0 1px rgba(255,225,77,.35)}
 
+/* =================== ONE-SCREEN COMPACT LAYOUT =================== */
+:root{--hdr:46px}
+html,body{font-size:14px}
+header.top{height:var(--hdr);padding:0 14px;gap:12px}
+.logo{font-size:15px}.logo .mark{width:26px;height:26px;font-size:15px}
+.tabs{padding:3px}.tabs button{padding:5px 12px;font-size:13px}
+main{max-width:1320px;padding:10px 14px 12px}
+.toolbar{gap:8px;margin-bottom:10px}
+.toolbar select{padding:5px 8px;font-size:13px;max-width:240px}
+.seg button{padding:5px 11px}
+.panel{padding:12px;box-shadow:none}
+.panel h3{margin-bottom:8px}
+#tab-ranges:not(.mode-train) .train-only,#tab-ranges.mode-train .chart-only{display:none!important}
+.rlayout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start}
+.side{display:flex;flex-direction:column;gap:8px;min-width:0}
+/* grid sized to the remaining viewport height */
+.grid13.main{max-width:none;width:min(100%,calc(100vh - 212px));width:min(100%,calc(100dvh - 212px))}
+.gridpanel{display:flex;flex-direction:column;align-items:center}
+.gridfoot{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;justify-content:center;margin-top:8px;width:100%}
+.gridfoot .legend{margin:0}
+.summary{font-size:12.5px;color:var(--muted)}
+.summary b{color:var(--text)}
+.info{min-height:0;margin-top:6px;padding:6px 10px;font-size:12.5px;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* collapsible sections */
+details.fold{background:var(--panel);border:1px solid var(--border);border-radius:10px}
+details.fold > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 12px;font-weight:700;font-size:12.5px;color:var(--text);margin:0;user-select:none}
+details.fold > summary::-webkit-details-marker{display:none}
+details.fold > summary::before{content:'\25B8';color:var(--muted);font-size:11px;transition:transform .15s;display:inline-block}
+details.fold[open] > summary::before{transform:rotate(90deg)}
+details.fold > summary:hover{background:rgba(255,255,255,.03)}
+details.fold > summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:10px}
+.sumval{margin-left:auto;font-weight:500;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+.fold-body{padding:2px 12px 12px}
+.eqin details.fold{margin-top:8px;background:var(--panel2)}
+/* trainer */
+.felt{padding:12px 14px;border-width:5px;border-radius:18px}
+.seats{margin-bottom:6px}
+.scdesc{margin:2px 0 8px;font-size:14px}
+.hand-cards{margin:4px 0 2px}
+.actions{margin-top:10px;gap:8px}
+.act{padding:10px 16px;font-size:15px;min-width:100px}
+.fbrow{display:flex;gap:8px;align-items:stretch;margin-top:10px}
+.fbrow .feedback{flex:1;margin:0;min-height:0;padding:8px 10px;font-size:13px;display:flex;align-items:center;justify-content:center;text-align:center}
+.scoreline{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;align-items:center;margin-top:8px;padding:7px 10px;background:var(--panel);border:1px solid var(--border);border-radius:10px;font-size:13px;color:var(--muted)}
+.scoreline b{color:var(--text);font-size:14px}
+#tr-grid:empty{display:none}
+.grid13.mini{max-width:100%}
+/* equity */
+.eq-layout{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:12px}
+.player{padding:7px 8px;margin-bottom:6px}
+.prow{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0}
+.prow .pname{min-width:54px;font-size:13px}
+.seg.mini button{padding:3px 8px;font-size:11.5px}
+.prow .rinput{flex:1;min-width:0;padding:5px 8px;font-size:12.5px}
+.prow .slot{font-size:13px}
+.prow .rmeta{margin:0;font-size:11.5px;white-space:nowrap}
+.prow .x{margin-left:0}
+.prow .cardsbox{flex:1;display:flex;align-items:center;gap:4px;min-width:0}
+.ptools{margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)}
+.iconbtn{border:1px solid var(--border);background:var(--bg2);border-radius:7px;padding:4px 8px;font-size:12px;color:var(--muted);white-space:nowrap}
+.iconbtn:hover{color:var(--text);border-color:#3a465c}
+.iconbtn.on{color:var(--text);border-color:var(--accent)}
+.boardrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border)}
+.boardrow .lbl,.calcrow .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;min-width:44px}
+.boardrow .slot{font-size:14px}
+.calcrow{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--border)}
+.calcrow .progress{flex:1;margin:0}
+#eq-status{margin-top:4px}
+#results table.t td,#results table.t th{padding:5px 4px}
+footer{display:none}
+@media (max-width:900px){
+  .rlayout{grid-template-columns:1fr;gap:8px}
+  .grid13.main{width:min(100%,calc(100vh - 330px));width:min(100%,calc(100dvh - 330px))}
+}
+@media (max-width:640px){
+  :root{--hdr:44px}
+  header.top{flex-wrap:nowrap;padding:0 10px;height:var(--hdr)}
+  .logo .lname,.tabs .lg{display:none}
+  .tabs{order:0;flex:1;flex-basis:auto}
+  main{padding:8px 8px 10px}
+  .toolbar{gap:6px;margin-bottom:8px}
+  .toolbar select{max-width:none;flex:1;min-width:0}
+  .toolbar .pill.warn{font-size:11px;padding:2px 8px}
+  .panel{padding:8px}
+  .grid13.main{width:100%}
+  .gridfoot{gap:2px 10px;margin-top:6px}
+  .legend{font-size:11px;gap:8px}
+  .felt{padding:10px 8px}
+  .pcard.big{font-size:28px}
+  .scdesc{font-size:13px;margin-bottom:6px}
+  .act{padding:10px 6px;font-size:14px}
+  .act kbd,.kbdhint{display:none}
+  .player .prow{flex-wrap:wrap}
+  .prow .rinput{order:5;flex-basis:100%}
+  .prow .rmeta{order:6}
+  .prow .x{margin-left:auto}
+  .calcrow .btn{padding:7px 10px}
+}
+@media (pointer:coarse){.kbdhint{display:none}}
+.pname .sh{display:none}
+@media (max-width:900px){.eq-layout{grid-template-columns:1fr;gap:8px}}
+@media (max-width:640px){
+  .pname .lg{display:none}.pname .sh{display:inline}
+  .prow{gap:5px}
+  .prow .pname{min-width:30px}
+  .player .prow{flex-wrap:wrap}
+  .prow .rinput{order:5;flex:1 1 calc(100% - 100px);font-size:13px}
+  .prow .rmeta{order:6;flex:0 0 auto}
+  .prow .x{margin-left:auto}
+  .prow .slot{font-size:12px}
+  .prow .cardsbox{flex:1 1 auto}
+  .player{padding:6px 7px;margin-bottom:5px}
+  #add-player + .small{font-size:11px}
+  .boardrow{gap:6px;padding:6px 0;flex-wrap:nowrap}
+  .boardrow .lbl{min-width:0}
+  .boardrow .slot{font-size:11.5px}
+  .boardrow #board-slots > span{width:3px!important}
+  .boardrow .btn{padding:4px 7px;font-size:11.5px}
+  .calcrow{padding-top:6px}
+  .eqin details.fold{margin-top:6px}
+  details.fold > summary{padding:7px 10px}
+  #results-panel h3{margin-bottom:4px}
+  #results table.t td,#results table.t th{padding:3px 3px;font-size:12px}
+  #results .pcard{font-size:12px}
+  .eqbar{min-width:80px}
+  .res-note{font-size:11px;margin-top:4px}
+}
+@media (max-width:900px){.eq-layout{grid-template-columns:minmax(0,1fr)}.eqin,.player,.prow{min-width:0;max-width:100%}}
+@media (max-width:640px){.prow .rinput{min-width:0;width:0}}
+@media (max-width:640px){
+  #results td[style*="min-width"]{min-width:74px!important}
+  #results .eqbar{min-width:70px}
+  #results .handdesc{max-width:62px}
+  #results .pcard{font-size:10.5px}
+}
+
 </style>
 </head>
 <body>
 <header class="top">
-  <div class="logo"><span class="mark">&#9824;</span>Hold'em Lab</div>
+  <div class="logo"><span class="mark">&#9824;</span><span class="lname">Hold'em Lab</span></div>
   <nav class="tabs" id="tabs">
-    <button data-tab="ranges" class="active">Preflop Ranges</button>
-    <button data-tab="equity">Equity Calculator</button>
+    <button data-tab="ranges" class="active"><span class="lg">Preflop </span>Ranges</button>
+    <button data-tab="equity">Equity<span class="lg"> Calculator</span></button>
   </nav>
   <div class="spacer"></div>
-  <div class="note">6-max NLHE &middot; 100bb cash</div>
+  <div class="note">6-max NLHE &middot; 100bb cash &middot; data stays in this browser</div>
 </header>
 <main>
   <!-- ============ RANGES TAB ============ -->
@@ -219,93 +355,93 @@ footer{max-width:1280px;margin:0 auto;padding:0 20px 30px;color:var(--dim);font-
         <button data-m="chart">Chart</button>
         <button data-m="train">Trainer</button>
       </div>
-      <span class="pill warn" title="These are widely-used approximate charts, not solver output. Edit them to match your own strategy.">&#9888; Approximate starter ranges &mdash; editable</span>
+      <select id="sc-select" class="chart-only" aria-label="Scenario"></select>
+      <select id="tr-sc" class="train-only" aria-label="Trainer scenario"></select>
+      <span class="pill edited chart-only" id="edited-pill" hidden>Edited</span>
+      <button class="btn small chart-only" id="edit-toggle">&#9998; Edit</button>
+      <span class="pill warn" title="Widely-used approximate charts, NOT solver output. Edit them to match your own strategy.">&#9888; Approximate starter ranges &mdash; editable</span>
     </div>
 
-    <div id="chart-view" class="layout">
-      <div class="panel">
-        <div class="chart-head">
-          <div class="row">
-            <select id="sc-select" aria-label="Scenario"></select>
-            <span class="pill edited" id="edited-pill" hidden>Edited</span>
-          </div>
-          <div class="row">
-            <button class="btn" id="edit-toggle">&#9998; Edit chart</button>
-          </div>
-        </div>
-        <div class="muted small" id="sc-desc" style="margin-bottom:10px"></div>
-        <div id="grid" class="grid13"></div>
-        <div class="legend" id="legend"></div>
+    <div id="chart-view" class="rlayout">
+      <div class="panel gridpanel">
+        <div id="grid" class="grid13 main"></div>
+        <div class="gridfoot"><div class="legend" id="legend"></div><div class="summary" id="summary"></div></div>
         <div class="info" id="cell-info"><span class="dim">Hover or tap a cell to see its frequencies.</span></div>
       </div>
-      <div class="panel side">
-        <div class="section">
-          <h3>Range stats</h3>
-          <div id="stats"></div>
-        </div>
-        <div class="section" id="edit-tools" hidden>
-          <h3>Paint brush</h3>
-          <div class="brushes" id="brushes"></div>
-          <div class="row" style="margin-top:10px">
-            <label class="small muted">Frequency</label>
-            <select id="brush-freq">
-              <option value="1">100%</option><option value="0.75">75%</option><option value="0.5">50%</option><option value="0.25">25%</option>
-            </select>
-            <label class="small muted">rest &rarr;</label>
-            <select id="brush-rest"></select>
+      <div class="side">
+        <details class="fold" data-fold="r-stats"><summary>Range stats <span class="sumval" id="stats-sum"></span></summary>
+          <div class="fold-body"><div class="small muted" id="sc-desc" style="margin-bottom:6px"></div><div id="stats"></div></div>
+        </details>
+        <details class="fold" data-fold="r-edit" id="edit-fold"><summary>Edit tools &amp; brush <span class="sumval" id="edit-sum">off</span></summary>
+          <div class="fold-body">
+            <p class="small dim" id="edit-hint" style="margin:0 0 8px">Press <b>&#9998; Edit</b> (top bar) to paint cells.</p>
+            <div id="edit-tools">
+              <div class="brushes" id="brushes"></div>
+              <div class="row" style="margin-top:8px">
+                <label class="small muted">Freq</label>
+                <select id="brush-freq">
+                  <option value="1">100%</option><option value="0.75">75%</option><option value="0.5">50%</option><option value="0.25">25%</option>
+                </select>
+                <label class="small muted">rest &rarr;</label>
+                <select id="brush-rest"></select>
+              </div>
+              <p class="small dim" style="margin:8px 0 0">Click or drag across cells to paint. Mixed cells show as split colours. Edits save automatically.</p>
+            </div>
           </div>
-          <p class="small dim" style="margin:10px 0 0">Click or drag across cells to paint. Mixed cells are shown as split colours. Edits save automatically in this browser.</p>
-        </div>
-        <div class="section">
-          <h3>Manage</h3>
-          <div class="row">
-            <button class="btn small" id="reset-sc">Reset this chart</button>
-            <button class="btn small danger" id="reset-all">Reset all charts</button>
+        </details>
+        <details class="fold" data-fold="r-manage"><summary>Reset &middot; Import &middot; Export</summary>
+          <div class="fold-body">
+            <div class="row">
+              <button class="btn small" id="reset-sc">Reset this chart</button>
+              <button class="btn small danger" id="reset-all">Reset all charts</button>
+            </div>
+            <div class="row" style="margin-top:8px">
+              <button class="btn small" id="export-btn">&#8681; Export JSON</button>
+              <button class="btn small" id="import-btn">&#8679; Import JSON</button>
+            </div>
+            <p class="small dim" style="margin:8px 0 0">Charts are approximate starter ranges for 6-max 100bb cash (not solver output). Edits are stored only in this browser.</p>
           </div>
-          <div class="row" style="margin-top:8px">
-            <button class="btn small" id="export-btn">&#8681; Export JSON</button>
-            <button class="btn small" id="import-btn">&#8679; Import JSON</button>
-          </div>
-        </div>
+        </details>
       </div>
     </div>
 
-    <div id="train-view" class="trainer-wrap" hidden>
-      <div>
-        <div class="panel" style="margin-bottom:16px">
-          <div class="row">
-            <select id="tr-sc" aria-label="Trainer scenario"></select>
-            <select id="tr-weight" aria-label="Hand selection">
-              <option value="uniform">Uniform (realistic deal)</option>
-              <option value="border">Focus on borderline hands</option>
-              <option value="only">Borderline hands only</option>
-            </select>
-            <label class="small muted row" style="gap:6px"><input type="checkbox" id="tr-showchart"> Show chart after answering</label>
-          </div>
-        </div>
+    <div id="train-view" class="rlayout" hidden>
+      <div class="trmain">
         <div class="felt">
           <div class="seats" id="tr-seats"></div>
           <div class="scdesc" id="tr-desc"></div>
           <div class="hand-cards" id="tr-cards"></div>
           <div class="hand-name" id="tr-handname"></div>
           <div class="actions" id="tr-actions"></div>
-          <div class="feedback idle" id="tr-feedback">Pick an action. Keys: <b>F</b> fold &middot; <b>C</b> call &middot; <b>R</b> raise &middot; <b>3</b> 3-bet &middot; <b>Space</b> next hand</div>
-          <div class="row" style="justify-content:center;margin-top:12px"><button class="btn primary" id="tr-next">Next hand &rarr;</button></div>
+          <div class="fbrow">
+            <div class="feedback idle" id="tr-feedback"></div>
+            <button class="btn primary" id="tr-next">Next &rarr;</button>
+          </div>
         </div>
-        <div class="panel" id="tr-chart-panel" style="margin-top:16px" hidden>
-          <h3 id="tr-chart-title">Chart</h3>
-          <div id="tr-grid" class="grid13 mini"></div>
-        </div>
+        <div class="scoreline" id="tr-kpis"></div>
       </div>
-      <div class="panel">
-        <h3>Your score</h3>
-        <div class="kpis" id="tr-kpis"></div>
-        <h3 style="margin-top:16px">Recent</h3>
-        <div class="recent" id="tr-recent"></div>
-        <h3 style="margin-top:16px">Accuracy by scenario</h3>
-        <table class="t" id="tr-table"></table>
-        <div class="row" style="margin-top:12px"><button class="btn small danger" id="tr-reset">Reset stats</button></div>
-        <p class="small dim">Mixed-frequency hands accept any action played at least 25% of the time. Grading uses your current (possibly edited) charts.</p>
+      <div class="side">
+        <details class="fold" data-fold="t-chart" id="tr-chart-fold"><summary>Chart for this hand <span class="sumval" id="tr-chart-title"></span></summary>
+          <div class="fold-body"><div class="small dim" id="tr-chart-empty">Answer to reveal the chart with the dealt hand highlighted.</div><div id="tr-grid" class="grid13 mini"></div></div>
+        </details>
+        <details class="fold" data-fold="t-acc"><summary>Accuracy by scenario</summary>
+          <div class="fold-body"><table class="t" id="tr-table"></table>
+          <div class="row" style="margin-top:8px"><button class="btn small danger" id="tr-reset">Reset stats</button></div>
+          <p class="small dim" style="margin:8px 0 0">Mixed-frequency hands accept any action played at least 25% of the time. Grading uses your current (possibly edited) charts.</p></div>
+        </details>
+        <details class="fold" data-fold="t-recent"><summary>Recent hands</summary>
+          <div class="fold-body"><div class="recent" id="tr-recent"></div></div>
+        </details>
+        <details class="fold" data-fold="t-settings"><summary>Dealing settings <span class="sumval" id="tr-set-sum"></span></summary>
+          <div class="fold-body">
+            <select id="tr-weight" aria-label="Hand selection" style="width:100%">
+              <option value="uniform">Uniform (realistic deal)</option>
+              <option value="border">Focus on borderline hands</option>
+              <option value="only">Borderline hands only</option>
+            </select>
+            <label class="small muted row" style="gap:6px;margin-top:8px"><input type="checkbox" id="tr-showchart"> Auto-expand chart after answering</label>
+          </div>
+        </details>
       </div>
     </div>
   </section>
@@ -313,43 +449,41 @@ footer{max-width:1280px;margin:0 auto;padding:0 20px 30px;color:var(--dim);font-
   <!-- ============ EQUITY TAB ============ -->
   <section class="tab" id="tab-equity">
     <div class="eq-layout">
-      <div class="panel">
-        <h3>Players</h3>
+      <div class="panel eqin">
         <div id="players"></div>
-        <div class="row">
-          <button class="btn" id="add-player">+ Add player</button>
-          <span class="small dim">Up to 6 players. Empty cards = random hand.</span>
+        <div class="row" style="margin-bottom:8px">
+          <button class="btn small" id="add-player">+ Player</button>
+          <span class="small dim">Up to 6. Empty cards = random hand.</span>
         </div>
-      </div>
-      <div>
-        <div class="panel" style="margin-bottom:16px">
-          <h3>Board</h3>
-          <div id="board-slots"></div>
-          <div class="row" style="margin-top:8px"><button class="btn small" id="clear-board">Clear board</button><button class="btn small" id="rand-flop">Random flop</button></div>
-          <h3 style="margin-top:16px">Dead cards</h3>
-          <div id="dead-slots"></div>
-          <div class="row" style="margin-top:8px"><button class="btn small" id="clear-dead">Clear dead cards</button></div>
-          <h3 style="margin-top:16px">Calculation</h3>
-          <div class="row">
+        <div class="boardrow">
+          <span class="lbl">Board</span>
+          <span id="board-slots"></span>
+          <span class="row" style="gap:6px"><button class="btn small" id="clear-board">Clear</button><button class="btn small" id="rand-flop">Random flop</button></span>
+        </div>
+        <div class="calcrow">
+          <button class="btn primary" id="calc">&#9654; Calculate equity</button>
+          <button class="btn" id="stop" disabled>Stop</button>
+          <div class="progress"><i id="prog"></i></div>
+        </div>
+        <div class="small muted" id="eq-status">Ready.</div>
+        <details class="fold" data-fold="e-dead"><summary>Dead cards <span class="sumval" id="dead-sum"></span></summary>
+          <div class="fold-body"><div id="dead-slots"></div>
+          <div class="row" style="margin-top:8px"><button class="btn small" id="clear-dead">Clear dead cards</button></div></div>
+        </details>
+        <details class="fold" data-fold="e-settings"><summary>Method &amp; trials <span class="sumval" id="set-sum"></span></summary>
+          <div class="fold-body"><div class="row">
             <select id="eq-mode"><option value="auto">Auto (exact if feasible)</option><option value="exact">Force exact</option><option value="mc">Monte Carlo</option></select>
             <select id="eq-trials"><option value="100000">100k trials</option><option value="300000">300k trials</option><option value="1000000">1M trials</option><option value="3000000">3M trials</option><option value="10000000">10M trials</option></select>
-          </div>
-          <div class="row" style="margin-top:12px">
-            <button class="btn primary" id="calc">&#9654; Calculate equity</button>
-            <button class="btn" id="stop" disabled>Stop</button>
-          </div>
-          <div class="progress"><i id="prog"></i></div>
-          <div class="small muted" id="eq-status">Ready.</div>
-        </div>
-        <div class="panel" id="results-panel">
-          <h3>Results</h3>
-          <div id="results"><div class="dim small">Run a calculation to see equities.</div></div>
-        </div>
+          </div></div>
+        </details>
+      </div>
+      <div class="panel" id="results-panel">
+        <h3>Results</h3>
+        <div id="results"><div class="dim small">Run a calculation to see equities.</div></div>
       </div>
     </div>
   </section>
 </main>
-<footer>Hold'em Lab &middot; single-file study tool. Charts are approximate starter ranges for 6-max 100bb cash (not solver output). Data is stored only in this browser (localStorage).</footer>
 
 <div class="modal-bg" id="modal-bg"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -958,7 +1092,15 @@ self.onmessage = function (e) {
   }
 
   /* ---------------- UI state ---------------- */
-  const ui = Object.assign({ tab: 'ranges', rmode: 'chart', sc: 'rfi_btn', brush: 'raise', freq: 1, rest: 'fold', trSc: 'all', trWeight: 'border', trShowChart: true }, load(LS.ui, {}));
+  const LS_FOLDS = 'holdem.folds.v1';
+  const folds = Object.assign({}, load(LS_FOLDS, {}));
+  document.addEventListener('toggle', e => {
+    const d = e.target;
+    if (!d || d.tagName !== 'DETAILS' || !d.dataset.fold) return;
+    folds[d.dataset.fold] = d.open; save(LS_FOLDS, folds);
+  }, true);
+  const foldAttr = id => (folds[id] ? ' open' : '');
+  const ui = Object.assign({ tab: 'ranges', rmode: 'chart', sc: 'rfi_btn', brush: 'raise', freq: 1, rest: 'fold', trSc: 'all', trWeight: 'border', trAutoChart: false }, load(LS.ui, {}));
   const saveUI = () => save(LS.ui, ui);
 
   function setTab(t) {
@@ -1055,6 +1197,7 @@ self.onmessage = function (e) {
     const chart = chartOf(s.id);
     $('#edited-pill').hidden = !overrides[s.id];
     $('#sc-desc').textContent = s.desc + ' 6-max, 100bb effective.';
+    $('#sc-select').title = s.desc;
     const g = $('#grid');
     renderGrid(g, chart);
     g.classList.toggle('editing', editing);
@@ -1070,7 +1213,9 @@ self.onmessage = function (e) {
     $('#brush-rest').value = ui.rest;
     $('#brush-freq').value = String(ui.freq);
     $('#edit-tools').hidden = !editing;
-    $('#edit-toggle').innerHTML = editing ? '&#10003; Done editing' : '&#9998; Edit chart';
+    $('#edit-hint').hidden = editing;
+    $('#edit-sum').textContent = editing ? `on · ${A[ui.brush].label} ${Math.round(ui.freq * 100)}%` : 'off';
+    $('#edit-toggle').innerHTML = editing ? '&#10003; Done' : '&#9998; Edit';
     $('#edit-toggle').classList.toggle('primary', editing);
   }
   function renderStats() {
@@ -1084,9 +1229,13 @@ self.onmessage = function (e) {
     const cells = H.CLASSES.filter(k => (chart[k].fold || 0) < 0.999).length;
     html += `<div class="small muted" style="margin-top:10px">${s.group.startsWith('RFI') ? 'Opening' : 'Continuing (VPIP)'}: <b style="color:var(--text)">${pct(play / 1326)}</b> &middot; ${fmtN(play, 1)} / 1326 combos &middot; ${cells} of 169 hand classes</div>`;
     $('#stats').innerHTML = html;
+    const rfi = s.group.startsWith('RFI');
+    const parts = s.actions.filter(a => a !== 'fold').map(a => `${A[a].label} ${pct((t[a] || 0) / 1326)}`);
+    $('#summary').innerHTML = `${rfi ? 'Open' : 'Continue'} <b>${pct(play / 1326)}</b> &middot; ${fmtN(play, 1)} combos${!rfi && parts.length > 1 ? ' <span class="dim">(' + parts.join(' · ') + ')</span>' : ''}`;
+    $('#stats-sum').textContent = `${cells} classes`;
   }
   $('#sc-select').addEventListener('change', e => { ui.sc = e.target.value; saveUI(); renderChartView(); });
-  $('#edit-toggle').addEventListener('click', () => { editing = !editing; renderChartView(); });
+  $('#edit-toggle').addEventListener('click', () => { editing = !editing; if (editing) $('#edit-fold').open = true; renderChartView(); });
   $('#brushes').addEventListener('click', e => { const b = e.target.closest('.brush'); if (!b) return; ui.brush = b.dataset.a; saveUI(); renderChartView(); });
   $('#brush-freq').addEventListener('change', e => { ui.freq = parseFloat(e.target.value); saveUI(); });
   $('#brush-rest').addEventListener('change', e => { ui.rest = e.target.value; saveUI(); });
@@ -1096,7 +1245,7 @@ self.onmessage = function (e) {
   const grid = $('#grid');
   function showInfo(k) {
     const s = SC[ui.sc], cell = chartOf(s.id)[k];
-    $('#cell-info').innerHTML = `${selKey === k && !editing ? '<span class="pill" style="color:#ffe14d;border-color:#6b5d17;background:#2a250c;margin-right:6px">Selected</span>' : ''}<b style="font-size:15px">${k}</b> <span class="dim">(${H.classCount(k)} combos)</span><br>${mixText(cell, s.actions)}`;
+    $('#cell-info').innerHTML = `${selKey === k && !editing ? '<span class="pill" style="color:#ffe14d;border-color:#6b5d17;background:#2a250c;margin-right:6px;padding:1px 7px">Selected</span>' : ''}<b style="font-size:14px">${k}</b> <span class="dim">(${H.classCount(k)})</span> &middot; ${mixText(cell, s.actions)}`;
   }
   function paintKey(k, el) {
     const s = SC[ui.sc], ch = ensureEditable(s.id);
@@ -1217,8 +1366,9 @@ self.onmessage = function (e) {
     $('#tr-actions').innerHTML = s.actions.slice().reverse().map(a => `<button class="act" data-a="${a}" style="background:${A[a].color}${a === 'fold' ? ';color:#cfd5e0;background:#3a4558' : ''}" ${cur.answered ? 'disabled' : ''}>${A[a].label}<kbd>${A[a].key.toUpperCase()}</kbd></button>`).join('');
     if (!cur.answered) {
       $('#tr-feedback').className = 'feedback idle';
-      $('#tr-feedback').innerHTML = 'Pick an action. Keys: <b>F</b> fold &middot; <b>C</b> call &middot; <b>R</b> raise &middot; <b>3</b> 3-bet &middot; <b>Space</b> next hand';
-      $('#tr-chart-panel').hidden = true;
+      $('#tr-feedback').innerHTML = 'Pick an action.<span class="kbdhint">&nbsp;Keys: <b>F</b> fold &middot; <b>C</b> call &middot; <b>R</b> raise &middot; <b>3</b> 3-bet &middot; <b>Space</b> next</span>';
+      $('#tr-grid').innerHTML = ''; $('#tr-grid').classList.remove('has-sel');
+      $('#tr-chart-empty').hidden = false; $('#tr-chart-title').textContent = '';
     }
     renderTrainerStats();
   }
@@ -1237,19 +1387,20 @@ self.onmessage = function (e) {
     const mixed = mixEntries(cell).length > 1;
     const fb = $('#tr-feedback');
     fb.className = 'feedback ' + (correct ? 'good' : 'bad');
-    fb.innerHTML = `${correct ? '&#10003; Correct' : '&#10007; Not quite'} &mdash; you chose <b>${A[a].label}</b>. Chart for <b>${cur.k}</b>: ${mixText(cell, s.actions)}${mixed ? ' <span class="small">(mixed hand)</span>' : ''}`;
+    fb.innerHTML = `<span>${correct ? '&#10003; Correct' : '&#10007; Not quite'} &mdash; you: <b>${A[a].label}</b> &middot; chart <b>${cur.k}</b>: ${mixText(cell, s.actions)}${mixed ? ' <span class="small">(mixed)</span>' : ''}</span>`;
     $$('#tr-actions .act').forEach(b => { b.disabled = true; if (b.dataset.a === a) b.style.outline = '3px solid #fff'; });
-    if (ui.trShowChart) {
-      $('#tr-chart-panel').hidden = false;
-      $('#tr-chart-title').textContent = s.name + (overrides[s.id] ? ' (edited)' : '');
-      renderGrid($('#tr-grid'), chartOf(cur.id), { highlight: cur.k });
-      $('#tr-grid').classList.add('has-sel');
-    }
+    $('#tr-chart-empty').hidden = true;
+    $('#tr-chart-title').textContent = s.name + (overrides[s.id] ? ' (edited)' : '');
+    renderGrid($('#tr-grid'), chartOf(cur.id), { highlight: cur.k });
+    $('#tr-grid').classList.add('has-sel');
+    if (ui.trAutoChart) $('#tr-chart-fold').open = true;
     renderTrainerStats();
   }
   function renderTrainerStats() {
     const acc = stats.total ? stats.correct / stats.total : 0;
-    $('#tr-kpis').innerHTML = `<div class="kpi"><b>${stats.total ? pct(acc, 0) : '—'}</b><span>Accuracy</span></div><div class="kpi"><b>${stats.correct}/${stats.total}</b><span>Correct</span></div><div class="kpi"><b>${stats.streak}</b><span>Streak</span></div><div class="kpi"><b>${stats.best}</b><span>Best streak</span></div>`;
+    $('#tr-kpis').innerHTML = `<span>Accuracy <b>${stats.total ? pct(acc, 0) : '—'}</b></span><span>Correct <b>${stats.correct}/${stats.total}</b></span><span>Streak <b>${stats.streak}</b></span><span>Best <b>${stats.best}</b></span>`;
+    const wl = { uniform: 'Uniform', border: 'Borderline focus', only: 'Borderline only' };
+    $('#tr-set-sum').textContent = wl[ui.trWeight] || '';
     $('#tr-recent').innerHTML = stats.recent.length ? stats.recent.map(r => `<span class="${r.ok ? 'y' : 'n'}" title="${esc(SC[r.id] ? SC[r.id].name : r.id)}">${esc(r.k)}</span>`).join('') : '<span class="dim small">No hands yet.</span>';
     const rows = R.SCENARIOS.filter(s => stats.per[s.id]).map(s => { const p = stats.per[s.id], a = p.c / p.n; return `<tr><td>${esc(s.name)}</td><td class="num">${p.c}/${p.n}</td><td style="width:38%"><div class="bar" style="height:8px"><i style="width:${a * 100}%;background:${a >= 0.8 ? 'var(--good)' : a >= 0.6 ? 'var(--warn)' : 'var(--bad)'}"></i></div></td><td class="num">${pct(a, 0)}</td></tr>`; }).join('');
     $('#tr-table').innerHTML = rows ? `<tr><th>Scenario</th><th class="num">Score</th><th></th><th class="num">Acc</th></tr>${rows}` : '<tr><td class="dim small">Answer some hands to see per-scenario accuracy.</td></tr>';
@@ -1257,10 +1408,10 @@ self.onmessage = function (e) {
   fillScenarioSelect($('#tr-sc'), '<option value="all">Random: all scenarios</option><option value="rfi">Random: all RFI (opens)</option><option value="facing">Random: facing an open</option>');
   $('#tr-sc').value = ui.trSc; if (!$('#tr-sc').value) { ui.trSc = 'all'; $('#tr-sc').value = 'all'; }
   $('#tr-weight').value = ui.trWeight;
-  $('#tr-showchart').checked = !!ui.trShowChart;
+  $('#tr-showchart').checked = !!ui.trAutoChart;
   $('#tr-sc').addEventListener('change', e => { ui.trSc = e.target.value; saveUI(); deal(); });
   $('#tr-weight').addEventListener('change', e => { ui.trWeight = e.target.value; saveUI(); deal(); });
-  $('#tr-showchart').addEventListener('change', e => { ui.trShowChart = e.target.checked; saveUI(); if (!ui.trShowChart) $('#tr-chart-panel').hidden = true; });
+  $('#tr-showchart').addEventListener('change', e => { ui.trAutoChart = e.target.checked; saveUI(); });
   $('#tr-actions').addEventListener('click', e => { const b = e.target.closest('.act'); if (b) answer(b.dataset.a); });
   $('#tr-next').addEventListener('click', deal);
   $('#tr-reset').addEventListener('click', () => { if (!confirm('Reset trainer stats?')) return; stats = { total: 0, correct: 0, streak: 0, best: 0, per: {}, recent: [] }; save(LS.stats, stats); renderTrainerStats(); });
@@ -1281,6 +1432,7 @@ self.onmessage = function (e) {
     ui.rmode = m; saveUI();
     $$('#rmode button').forEach(b => b.classList.toggle('active', b.dataset.m === m));
     $('#chart-view').hidden = m !== 'chart';
+    $('#tab-ranges').classList.toggle('mode-train', m === 'train');
     $('#train-view').hidden = m !== 'train';
     if (m === 'train') { fillScenarioSelect($('#tr-sc'), '<option value="all">Random: all scenarios</option><option value="rfi">Random: all RFI (opens)</option><option value="facing">Random: facing an open</option>'); $('#tr-sc').value = ui.trSc; renderTrainer(); }
     else renderChartView();
@@ -1371,30 +1523,38 @@ self.onmessage = function (e) {
     const box = $('#players');
     box.innerHTML = eq.players.map((p, i) => {
       const name = i === 0 ? 'Hero' : 'Villain ' + i;
-      let body;
+      const seg = `<div class="seg mini"><button data-act="mode" data-m="cards" data-i="${i}" class="${p.mode === 'cards' ? 'active' : ''}" title="Exact hole cards">Cards</button><button data-act="mode" data-m="range" data-i="${i}" class="${p.mode === 'range' ? 'active' : ''}" title="Range of hands">Range</button></div>`;
+      const rm = eq.players.length > 2 ? `<button class="x" data-act="remove" data-i="${i}" title="Remove player">&times;</button>` : '';
+      let mid, extra = '';
       if (p.mode === 'cards') {
-        body = `<div>${slotHTML(`p:${i}:0`)}${slotHTML(`p:${i}:1`)} <button class="btn small" data-act="clearcards" data-i="${i}" style="margin-left:6px">Clear</button></div><div class="rmeta">${p.cards.every(c => c == null) ? 'No cards = random hand (all 1326 combos).' : p.cards.some(c => c == null) ? '<span class="err">Pick both cards (or none for a random hand).</span>' : ''}</div>`;
+        const st = p.cards.every(c => c == null) ? '<span class="dim">random hand</span>' : p.cards.some(c => c == null) ? '<span class="err">pick both</span>' : '';
+        mid = `<span class="cardsbox">${slotHTML(`p:${i}:0`)}${slotHTML(`p:${i}:1`)}<button class="iconbtn" data-act="clearcards" data-i="${i}" title="Clear cards">Clear</button><span class="rmeta">${st}</span></span>`;
       } else {
-        const r = rangeInfo(p), n = r.combos.length;
+        const r = rangeInfo(p);
         const top = p.top != null ? p.top : 15;
-        body = `<input class="rinput" type="text" data-i="${i}" value="${esc(p.range)}" placeholder="e.g. QQ+, AKs, AJs+, KQo, 22-66, 15%" spellcheck="false" autocapitalize="off" autocomplete="off">
-          <div class="rmeta" data-meta="${i}">${rangeMeta(r)}</div>
-          <div class="rtools"><label class="small muted">Top</label><input type="range" min="0" max="100" step="0.5" value="${top}" data-top="${i}"><span class="small" data-topv="${i}" style="min-width:42px">${top}%</span>
-          <button class="btn small" data-act="grid" data-i="${i}">&#9638; Grid</button>
-          <select data-chart="${i}">${chartOptions()}</select></div>`;
+        mid = `<input class="rinput" type="text" data-i="${i}" value="${esc(p.range)}" placeholder="e.g. QQ+, AKs, 22-66, 15%" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="${name} range">
+          <span class="rmeta" data-meta="${i}">${rangeMeta(r)}</span>
+          <button class="iconbtn" data-act="grid" data-i="${i}" title="Pick range on a 13x13 grid">&#9638; Grid</button>
+          <button class="iconbtn ${p.open ? 'on' : ''}" data-act="tools" data-i="${i}" title="More range tools (top-% slider, load from chart)" aria-expanded="${!!p.open}">${p.open ? '&#9662;' : '&#8943;'}</button>`;
+        if (p.open) extra = `<div class="ptools"><div class="rtools" style="margin:0"><label class="small muted">Top</label><input type="range" min="0" max="100" step="0.5" value="${top}" data-top="${i}"><span class="small" data-topv="${i}" style="min-width:42px">${top}%</span>
+          <select data-chart="${i}">${chartOptions()}</select></div><div class="small err" data-errs="${i}">${r.errors.length ? 'Unrecognised: ' + esc(r.errors.join(', ')) : ''}</div></div>`;
       }
-      return `<div class="player" style="--pc:${PCOLORS[i]}"><div class="ph"><span class="pname" style="color:${PCOLORS[i]}">${name}</span>
-        <div class="seg"><button data-act="mode" data-m="cards" data-i="${i}" class="${p.mode === 'cards' ? 'active' : ''}">Cards</button><button data-act="mode" data-m="range" data-i="${i}" class="${p.mode === 'range' ? 'active' : ''}">Range</button></div>
-        ${eq.players.length > 2 ? `<button class="x" data-act="remove" data-i="${i}" title="Remove player">&times;</button>` : ''}</div>${body}</div>`;
+      return `<div class="player" style="--pc:${PCOLORS[i]}"><div class="prow"><span class="pname" style="color:${PCOLORS[i]}">${i === 0 ? 'Hero' : `<span class="lg">Villain </span><span class="sh">V</span>${i}`}</span>${seg}${mid}${rm}</div>${extra}</div>`;
     }).join('');
     $('#add-player').disabled = eq.players.length >= 6;
     $('#board-slots').innerHTML = eq.board.map((_, j) => slotHTML('b:' + j) + (j === 2 || j === 3 ? '<span style="display:inline-block;width:8px"></span>' : '')).join('');
     $('#dead-slots').innerHTML = eq.dead.map((_, j) => slotHTML('d:' + j)).join('');
     $('#eq-mode').value = eq.mode; $('#eq-trials').value = String(eq.trials);
+    updateEqSums();
+  }
+  function updateEqSums() {
+    const nd = eq.dead.filter(c => c != null).length;
+    $('#dead-sum').innerHTML = nd ? eq.dead.filter(c => c != null).map(c => cardHTML(c)).join('') : 'none';
+    $('#set-sum').textContent = (eq.mode === 'auto' ? 'Auto' : eq.mode === 'exact' ? 'Exact' : 'Monte Carlo') + ' · ' + (eq.trials >= 1e6 ? eq.trials / 1e6 + 'M' : eq.trials / 1e3 + 'k') + ' trials';
   }
   function rangeMeta(r) {
     const n = r.combos.length;
-    return `<b style="color:var(--text)">${n}</b> combos (${pct(n / 1326)})${r.errors.length ? ` &middot; <span class="err">Unrecognised: ${esc(r.errors.join(', '))}</span>` : ''}`;
+    return `<b style="color:var(--text)">${n}</b>c ${pct(n / 1326, 1)}${r.errors.length ? ` <span class="err" title="Unrecognised: ${esc(r.errors.join(', '))}">&#9888; ${esc(r.errors.join(', '))}</span>` : ''}`;
   }
   $('#tab-equity').addEventListener('click', e => {
     const slot = e.target.closest('.slot');
@@ -1405,13 +1565,15 @@ self.onmessage = function (e) {
     else if (act === 'remove') { eq.players.splice(i, 1); }
     else if (act === 'clearcards') { eq.players[i].cards = [null, null]; }
     else if (act === 'grid') { openRangeGrid(i); return; }
+    else if (act === 'tools') { eq.players[i].open = !eq.players[i].open; }
     saveEq(); renderEquityInputs();
   });
   $('#players').addEventListener('input', e => {
     const t = e.target;
     if (t.classList.contains('rinput')) {
       const i = +t.dataset.i; eq.players[i].range = t.value; saveEq();
-      $(`[data-meta="${i}"]`).innerHTML = rangeMeta(H.parseRange(t.value));
+      const pr = H.parseRange(t.value); $(`[data-meta="${i}"]`).innerHTML = rangeMeta(pr);
+      const er = $(`[data-errs="${i}"]`); if (er) er.textContent = pr.errors.length ? 'Unrecognised: ' + pr.errors.join(', ') : '';
     } else if (t.dataset.top != null) {
       const i = +t.dataset.top, v = parseFloat(t.value);
       eq.players[i].top = v;
@@ -1441,8 +1603,8 @@ self.onmessage = function (e) {
     for (let j = 0; j < 3; j++) { let c; do { c = (Math.random() * 52) | 0; } while (used.has(c)); used.set(c, 'b:' + j); eq.board[j] = c; }
     saveEq(); renderEquityInputs();
   });
-  $('#eq-mode').addEventListener('change', e => { eq.mode = e.target.value; saveEq(); });
-  $('#eq-trials').addEventListener('change', e => { eq.trials = +e.target.value; saveEq(); });
+  $('#eq-mode').addEventListener('change', e => { eq.mode = e.target.value; saveEq(); updateEqSums(); });
+  $('#eq-trials').addEventListener('change', e => { eq.trials = +e.target.value; saveEq(); updateEqSums(); });
 
   function openRangeGrid(i) {
     const p = eq.players[i], parsed = H.parseRange(p.range || '');
@@ -1575,10 +1737,11 @@ self.onmessage = function (e) {
     for (let c = 8; c >= 0; c--) cats += `<tr><td>${H.CAT_NAMES[c]}</td>${r.players.map(p => `<td class="num">${pct(p.cats[c], 1)}</td>`).join('')}</tr>`;
     $('#results').innerHTML = `<div class="tscroll"><table class="t"><tr><th>Player</th><th>Hand / range</th><th>Equity</th><th class="num">Win</th><th class="num">Tie</th></tr>${rows}</table></div>
       <div class="res-note">${info.board.length ? 'Board: ' + info.board.map(c => cardHTML(c)).join('') + ' &middot; ' : 'Preflop &middot; '}${kind} &middot; <b>${fmtN(r.total)}</b> ${r.exact ? 'boards evaluated' : 'trials'}${r.elapsed != null ? ' &middot; ' + (r.elapsed / 1000).toFixed(2) + 's' : ''}${!done ? (stopped ? ' &middot; <span style="color:var(--warn)">partial (stopped)</span>' : ' &middot; running…') : ''}${!r.exact ? ' &middot; ± = 95% CI' : ''}</div>
-      <details><summary>Hand distribution at showdown</summary><div class="tscroll"><table class="t" style="margin-top:6px">${cats}</table></div></details>`;
+      <details class="fold" data-fold="e-dist"${foldAttr('e-dist')} style="margin-top:8px"><summary>Hand distribution at showdown</summary><div class="fold-body tscroll"><table class="t">${cats}</table></div></details>`;
   }
 
   /* ---------------- init ---------------- */
+  $$('details[data-fold]').forEach(d => { d.open = !!folds[d.dataset.fold]; });
   setTab(ui.tab);
   setRMode(ui.rmode);
   renderEquityInputs();
