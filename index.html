@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0c0f15">
-<title>Hold'em Lab — Preflop Ranges & Equity</title>
+<title>Hold'em Lab — Preflop Ranges, Trainer &amp; Equity</title>
 <style>
 :root{
-  --bg:#0c0f15; --bg2:#121722; --panel:#161c28; --panel2:#1b2231; --border:#262f40; --text:#e7eaf0; --muted:#8a94a8; --dim:#5d6678;
+  --bg:#0c0f15; --bg2:#121722; --panel:#161c28; --panel2:#1b2231; --border:#262f40; --text:#e7eaf0; --muted:#9aa4b8; --dim:#8590a5;
   --accent:#4f8cff; --accent2:#3a6fd8; --good:#2fbf71; --bad:#ef4f5a; --warn:#f5b041;
   --raise:#f2683c; --threebet:#a06bff; --call:#2fbf71; --fold:#2b3445;
   --radius:12px; --shadow:0 6px 24px rgba(0,0,0,.35);
@@ -199,298 +199,405 @@ footer{max-width:1280px;margin:0 auto;padding:0 20px 30px;color:var(--dim);font-
 .grid13 .cell.on:hover{filter:brightness(1.12)}
 .info.selected{border-color:#ffe14d;box-shadow:0 0 0 1px rgba(255,225,77,.35)}
 
-/* =================== ONE-SCREEN COMPACT LAYOUT =================== */
-:root{--hdr:46px}
+
+/* =================== LAYOUT (one screen) =================== */
+:root{--hdr:48px;--gap:12px;--ctrl:330px;--accent-soft:rgba(79,140,255,.16)}
 html,body{font-size:14px}
-header.top{height:var(--hdr);padding:0 14px;gap:12px}
-.logo{font-size:15px}.logo .mark{width:26px;height:26px;font-size:15px}
-.tabs{padding:3px}.tabs button{padding:5px 12px;font-size:13px}
-main{max-width:1320px;padding:10px 14px 12px}
-.toolbar{gap:8px;margin-bottom:10px}
-.toolbar select{padding:5px 8px;font-size:13px;max-width:240px}
-.seg button{padding:5px 11px}
+header.top{height:var(--hdr);padding:0 16px;gap:14px}
+.logo{font-size:15px}.logo .mark{width:28px;height:28px;font-size:15px}
+.tabs{padding:3px;gap:3px}
+.tabs button{padding:6px 16px;font-size:14px;min-height:34px}
+.tabs button.active{background:var(--accent);color:#fff}
+.top .note{color:var(--muted)}
+main{max-width:1360px;padding:var(--gap) 16px}
 .panel{padding:12px;box-shadow:none}
-.panel h3{margin-bottom:8px}
 #tab-ranges:not(.mode-train) .train-only,#tab-ranges.mode-train .chart-only{display:none!important}
-.rlayout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start}
+.rlayout{display:grid;grid-template-columns:var(--ctrl) minmax(0,1fr);gap:var(--gap);align-items:start}
+.ctrl{display:flex;flex-direction:column;gap:10px;min-width:0}
 .side{display:flex;flex-direction:column;gap:8px;min-width:0}
-/* grid sized to the remaining viewport height */
-.grid13.main{max-width:none;width:min(100%,calc(100vh - 212px));width:min(100%,calc(100dvh - 212px))}
-.gridpanel{display:flex;flex-direction:column;align-items:center}
-.gridfoot{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;justify-content:center;margin-top:8px;width:100%}
-.gridfoot .legend{margin:0}
-.summary{font-size:12.5px;color:var(--muted)}
-.summary b{color:var(--text)}
-.info{min-height:0;margin-top:6px;padding:6px 10px;font-size:12.5px;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stage{min-width:0}
+
+/* labels + segmented controls */
+.flabel{display:flex;align-items:baseline;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em;margin-bottom:6px}
+.field{margin-top:12px}
+.seg{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;min-height:34px;padding:0 8px;border-radius:7px;color:#b9c1d0;font-weight:700;font-size:13.5px;transition:background .12s,color .12s}
+.seg button:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.seg button.active{background:var(--accent);color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.seg.game button{min-height:38px;font-size:14.5px}
+.seg.game button[data-g="mtt"].active{background:#c2410c}
+.seg.nums button{padding:0;min-width:0}
+.seats-btns{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:6px}
+.seats-btns button{min-width:0;min-height:36px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:#c9d0dc;font-weight:700;font-size:13.5px}
+.seats-btns button:hover{border-color:#4a5873;color:#fff}
+.seats-btns button.active{background:var(--accent);border-color:#9fc0ff;color:#fff;box-shadow:0 0 0 2px rgba(79,140,255,.35)}
+.seats-btns.vill button.active{background:#e0552a;border-color:#ffb69c;box-shadow:0 0 0 2px rgba(242,104,60,.35)}
+button:focus-visible{outline:2px solid #ffe14d;outline-offset:2px}
+
+/* setup panel + long stack slider */
+.setup-sum{display:none}
+#cfg-stack-v{font-size:22px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.bbslider{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer;--p:50%;display:block}
+.bbslider::-webkit-slider-runnable-track{height:8px;border-radius:6px;background:linear-gradient(90deg,var(--accent) 0 var(--p),#2c3648 var(--p) 100%)}
+.bbslider::-moz-range-track{height:8px;border-radius:6px;background:#2c3648}
+.bbslider::-moz-range-progress{height:8px;border-radius:6px;background:var(--accent)}
+.bbslider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:4px solid var(--accent);margin-top:-9px;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.bbslider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:4px solid var(--accent)}
+.bbslider:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(255,225,77,.6)}
+.ticks{position:relative;height:22px;margin:0 13px}
+.tk{position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;min-width:14px}
+.tk i{display:block;width:2px;height:5px;background:#3f4b61;border-radius:1px}
+.tk.major i{height:7px;background:#74819a}
+.tk b{font-size:11.5px;color:#aeb7c7;font-weight:600;margin-top:1px;line-height:1.1}
+.tk:hover b{color:#fff}
+.gnote{margin-top:6px;font-size:12px;line-height:1.45;color:var(--muted)}
+.gnote b{color:#d6dbe5}
+#tab-ranges.g-mtt .bbslider::-webkit-slider-thumb{border-color:#f97316}
+#tab-ranges.g-mtt .bbslider::-webkit-slider-runnable-track{background:linear-gradient(90deg,#f97316 0 var(--p),#2c3648 var(--p) 100%)}
+.sitpanel .field:first-of-type{margin-top:10px}
+
+/* chart stage */
+.gridpanel{display:flex;flex-direction:column;align-items:center;padding:12px 14px;position:relative;transition:border-color .15s,box-shadow .15s}
+.gridpanel.editing{border-color:#f5b041;box-shadow:0 0 0 2px rgba(245,176,65,.35)}
+.chead{display:flex;align-items:flex-start;gap:10px;width:100%;margin-bottom:8px}
+.ctitle{flex:1;min-width:0}
+#headline{margin:0;font-size:18px;font-weight:800;line-height:1.25;letter-spacing:-.01em}
+.hsep{color:#5f6b82;font-weight:400}
+.hp-s{display:none}
+@media (max-width:640px){.hp-s{display:inline}}
+.hspot{color:#fff}
+.hgame{display:inline-block;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:6px;vertical-align:2px;background:#1e3a70;color:#cfe0ff}
+.hgame.mtt{background:#5a2a0c;color:#ffd7b8}
+.subline{font-size:13px;color:#b3bccb;margin-top:3px;line-height:1.4}
+.cact{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.chip{border:1px solid #3a465c;background:var(--bg2);color:#c9d0dc;border-radius:999px;padding:0 12px;min-height:32px;font-size:12.5px;font-weight:600}
+.chip:hover{color:#fff;border-color:#55637d}
+.popwrap{position:relative}
+.pop{position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:340px;max-width:calc(100vw - 24px);background:#1d2536;border:1px solid #3a465c;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5;color:#d4dae4;box-shadow:var(--shadow)}
+.pop p{margin:6px 0 0}
+#edit-toggle{min-height:34px}
+.editbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;margin:0 0 8px;padding:6px 8px;border-radius:9px;background:#2a2112;border:1px solid #6b5420}
+.editbar label{color:#f3d9a6;display:inline-flex;gap:5px;align-items:center}
+.editbar select{padding:4px 6px}
+.ebadge{font-weight:800;color:#ffd27a;font-size:13px}
+.editbar .brushes{gap:5px}
+.brush{min-height:32px;padding:0 10px}
+.grid13.main{max-width:none;width:min(100%,calc(100dvh - 232px))}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:center;margin-top:10px;font-size:13px;color:#c3cad7}
+.legend b{color:#fff;font-variant-numeric:tabular-nums}
+.lg-i{display:inline-flex;align-items:center;gap:6px}
+.sw{width:13px;height:13px}
+.sw-fold{background:var(--fold);box-shadow:inset 0 0 0 1px #4a5568}
+.lg-mix{color:var(--muted)}
+.lg-tot{padding-left:12px;border-left:1px solid var(--border);color:var(--muted)}
+.info{min-height:0;margin-top:8px;padding:7px 12px;font-size:13px;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.info .ik{font-size:15px}
+.isep{color:#5f6b82}
+.selpill{display:inline-block;color:#ffe14d;border:1px solid #6b5d17;background:#2a250c;border-radius:999px;padding:0 8px;margin-right:8px;font-size:12px;font-weight:700}
+.grid13 .cell.isfold{color:#9ba6b9}
+
 /* collapsible sections */
 details.fold{background:var(--panel);border:1px solid var(--border);border-radius:10px}
-details.fold > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 12px;font-weight:700;font-size:12.5px;color:var(--text);margin:0;user-select:none}
+details.fold > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:38px;padding:0 12px;font-weight:700;font-size:13px;color:var(--text);margin:0;user-select:none}
 details.fold > summary::-webkit-details-marker{display:none}
 details.fold > summary::before{content:'\25B8';color:var(--muted);font-size:11px;transition:transform .15s;display:inline-block}
 details.fold[open] > summary::before{transform:rotate(90deg)}
 details.fold > summary:hover{background:rgba(255,255,255,.03)}
 details.fold > summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:10px}
-.sumval{margin-left:auto;font-weight:500;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+.sumval{margin-left:auto;font-weight:500;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
 .fold-body{padding:2px 12px 12px}
-.eqin details.fold{margin-top:8px;background:var(--panel2)}
+.btn.small{min-height:30px;padding:0 10px;font-size:12.5px}
+
 /* trainer */
-.felt{padding:12px 14px;border-width:5px;border-radius:18px}
-.seats{margin-bottom:6px}
-.scdesc{margin:2px 0 8px;font-size:14px}
+.felt{padding:14px 16px;border-width:5px;border-radius:18px}
+.trhead{font-size:13px;color:#d9efe2;font-weight:700;margin-bottom:8px}
+.trhead .hgame{font-size:11px}
+.antetag{color:#ffd7b8}
+.seats{margin-bottom:8px;gap:5px}
+.seat{font-size:12px;padding:4px 10px;color:#c2d6cb}
+.seat.folded{opacity:.55}
+.scdesc{margin:2px 0 8px;font-size:15px;color:#eaf6ef}
 .hand-cards{margin:4px 0 2px}
-.actions{margin-top:10px;gap:8px}
-.act{padding:10px 16px;font-size:15px;min-width:100px}
-.fbrow{display:flex;gap:8px;align-items:stretch;margin-top:10px}
-.fbrow .feedback{flex:1;margin:0;min-height:0;padding:8px 10px;font-size:13px;display:flex;align-items:center;justify-content:center;text-align:center}
-.scoreline{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;align-items:center;margin-top:8px;padding:7px 10px;background:var(--panel);border:1px solid var(--border);border-radius:10px;font-size:13px;color:var(--muted)}
-.scoreline b{color:var(--text);font-size:14px}
+.hand-name{color:#cfe6d9;font-size:14px}
+.actions{margin-top:12px;gap:10px}
+.act{min-width:120px;min-height:54px;padding:0 20px;font-size:18px;border-radius:12px;letter-spacing:.01em}
+.act:hover:not(:disabled){filter:brightness(1.1)}
+.act.picked{outline:3px solid #fff;outline-offset:2px;opacity:1}
+.act kbd{font-size:11px}
+.fbrow{display:flex;gap:8px;align-items:stretch;margin-top:12px}
+.fbrow .feedback{flex:1;margin:0;min-height:44px;padding:8px 10px;font-size:13.5px;display:flex;align-items:center;justify-content:center;text-align:center}
+.feedback.idle{color:#c2d6cb}
+#tr-next{min-width:96px}
+.scoreline{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;align-items:center;margin-top:10px;padding:8px 10px;background:var(--panel);border:1px solid var(--border);border-radius:10px;font-size:13px;color:var(--muted)}
+.scoreline b{color:var(--text);font-size:15px}
 #tr-grid:empty{display:none}
 .grid13.mini{max-width:100%}
+#tr-chart-fold{margin-top:10px}
+#tr-chart-fold .fold-body{display:flex;flex-direction:column;align-items:center}
+#tr-grid{width:min(100%,calc(100dvh - 590px));min-width:180px}
+#tr-grid .cell{font-size:clamp(8px,1vw,11px)}
+.recent span{font-size:12px}
+
 /* equity */
-.eq-layout{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:12px}
-.player{padding:7px 8px;margin-bottom:6px}
-.prow{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0}
-.prow .pname{min-width:54px;font-size:13px}
-.seg.mini button{padding:3px 8px;font-size:11.5px}
-.prow .rinput{flex:1;min-width:0;padding:5px 8px;font-size:12.5px}
+.eq-layout{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:var(--gap)}
+.player{padding:8px 10px;margin-bottom:8px}
+.prow{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;min-width:0}
+.prow .pname{min-width:58px;font-size:13.5px}
+.seg.mini{display:inline-flex}
+.seg.mini button{min-height:28px;padding:0 9px;font-size:12px;flex:0 0 auto}
+.prow .rinput{flex:1;min-width:0;padding:6px 9px;font-size:13px}
 .prow .slot{font-size:13px}
-.prow .rmeta{margin:0;font-size:11.5px;white-space:nowrap}
-.prow .x{margin-left:0}
+.prow .rmeta{margin:0;font-size:12px;white-space:nowrap}
+.prow .x{margin-left:0;min-width:28px;min-height:28px}
 .prow .cardsbox{flex:1;display:flex;align-items:center;gap:4px;min-width:0}
 .ptools{margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)}
-.iconbtn{border:1px solid var(--border);background:var(--bg2);border-radius:7px;padding:4px 8px;font-size:12px;color:var(--muted);white-space:nowrap}
-.iconbtn:hover{color:var(--text);border-color:#3a465c}
+.iconbtn{border:1px solid var(--border);background:var(--bg2);border-radius:7px;min-height:28px;padding:0 9px;font-size:12.5px;color:#c3cad7;white-space:nowrap}
+.iconbtn:hover{color:var(--text);border-color:#4a5873}
 .iconbtn.on{color:var(--text);border-color:var(--accent)}
-.boardrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border)}
-.boardrow .lbl,.calcrow .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;min-width:44px}
+.boardrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--border)}
+.boardrow .lbl,.calcrow .lbl{font-size:12px;color:var(--muted);font-weight:700;min-width:44px}
 .boardrow .slot{font-size:14px}
-.calcrow{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--border)}
+.calcrow{display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid var(--border)}
+.calcrow .btn{min-height:38px}
 .calcrow .progress{flex:1;margin:0}
-#eq-status{margin-top:4px}
-#results table.t td,#results table.t th{padding:5px 4px}
+#eq-status{margin-top:6px}
+.eqin details.fold{margin-top:8px;background:var(--panel2)}
+.panel h3{font-size:12px;margin-bottom:8px}
+#results table.t td,#results table.t th{padding:6px 4px}
 footer{display:none}
+
+/* ---------- tablet ---------- */
+@media (max-width:980px){
+  :root{--ctrl:290px}
+  .grid13.main{width:min(100%,calc(100dvh - 232px))}
+}
 @media (max-width:900px){
-  .rlayout{grid-template-columns:1fr;gap:8px}
-  .grid13.main{width:min(100%,calc(100vh - 330px));width:min(100%,calc(100dvh - 330px))}
+  .rlayout{grid-template-columns:minmax(0,1fr);gap:8px}
+  .eq-layout{grid-template-columns:minmax(0,1fr);gap:8px}
+  .eqin,.player,.prow{min-width:0;max-width:100%}
+  .stage{order:2}.ctrl{display:contents}
+  .setup{order:0}.sitpanel{order:1}.stage{order:2}.side{order:3}
+  .grid13.main{width:min(100%,calc(100dvh - 410px))}
 }
+
+/* ---------- phone ---------- */
 @media (max-width:640px){
-  :root{--hdr:44px}
-  header.top{flex-wrap:nowrap;padding:0 10px;height:var(--hdr)}
-  .logo .lname,.tabs .lg{display:none}
-  .tabs{order:0;flex:1;flex-basis:auto}
+  :root{--hdr:46px;--gap:8px}
+  header.top{flex-wrap:nowrap;padding:0 10px;height:var(--hdr);gap:10px}
+  .logo .lname,.top .note{display:none}
+  .tabs{flex:1}.tabs button{flex:1;padding:0 6px;min-height:36px}
   main{padding:8px 8px 10px}
-  .toolbar{gap:6px;margin-bottom:8px}
-  .toolbar select{max-width:none;flex:1;min-width:0}
-  .toolbar .pill.warn{font-size:11px;padding:2px 8px}
-  .panel{padding:8px}
-  .grid13.main{width:100%}
-  .gridfoot{gap:2px 10px;margin-top:6px}
-  .legend{font-size:11px;gap:8px}
+  .panel{padding:8px 10px}
+  .setup{padding:6px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .setup .seg.game{flex:1 1 auto}
+  .seg.game button{min-height:36px;font-size:14px}
+  .setup-sum{display:flex;align-items:center;gap:6px;min-height:42px;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-weight:700;font-size:13.5px;white-space:nowrap}
+  .setup:not(.collapsed) .setup-sum{border-color:var(--accent)}
+  .setup-sum .chev{margin-left:auto;color:var(--muted);transition:transform .15s}
+  .setup:not(.collapsed) .setup-sum .chev{transform:rotate(180deg)}
+  .setup-body{flex:1 1 100%;padding:0 4px 4px}
+  .setup-body .field:first-child{margin-top:2px}
+  .setup.collapsed .setup-body{display:none}
+  .field{margin-top:8px}
+  .sitpanel .field:first-of-type{margin-top:6px}
+  .flabel{margin-bottom:4px}
+  .sitpanel .field{display:flex;align-items:center;gap:8px}
+  .sitpanel .flabel{flex:0 0 40px;margin:0;font-size:11px;line-height:1.15}
+  .seats-btns{gap:3px;flex:1;display:flex;flex-wrap:nowrap;min-width:0}
+  .seats-btns button{min-width:0;flex:1 1 0;min-height:38px;padding:0;font-size:12.5px;letter-spacing:-.02em;border-radius:7px}
+  .hgame,.hsep.h1{display:none}
+  .hp-l{display:none}
+  .edlbl{display:none}
+  .seg button{min-height:36px}
+  .gridpanel{padding:8px}
+  .chead{margin-bottom:6px;gap:6px}
+  #headline{font-size:15px}
+  .hgame{font-size:10.5px;padding:1px 6px}
+  .subline{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cact{gap:6px}
+  .chip{padding:0 9px;min-height:36px}
+  .chip .lgtxt{display:none}
+  #edit-toggle{min-height:36px;padding:0 10px}
+  .grid13.main{width:min(100%,calc(100dvh - 410px))}
+  .grid13{gap:1px}.grid13 .cell{border-radius:2px;font-size:clamp(8px,2.5vw,11.5px)}
+  .legend{font-size:12px;gap:4px 10px;margin-top:6px}
+  .legend .lg-mix{display:none}
+  .lg-tot{padding-left:8px}
+  .info{margin-top:6px;padding:6px 8px;font-size:12.5px}
+  details.fold > summary{min-height:38px}
   .felt{padding:10px 8px}
-  .pcard.big{font-size:28px}
-  .scdesc{font-size:13px;margin-bottom:6px}
-  .act{padding:10px 6px;font-size:14px}
+  .pcard.big{font-size:27px}
+  .scdesc{font-size:13.5px;margin-bottom:6px}
+  .seats{margin-bottom:6px}.trhead{margin-bottom:6px}
+  .actions{margin-top:10px;gap:8px}
+  .fbrow{margin-top:10px}
+  #tr-grid{width:100%;min-width:0}
+  #tr-grid .cell{font-size:clamp(7px,2.3vw,10px)}
+  .act{min-width:0;flex:1;min-height:52px;padding:0 6px;font-size:16px}
   .act kbd,.kbdhint{display:none}
+  .fbrow .feedback{font-size:12.5px}
+  .player{padding:6px 8px;margin-bottom:4px}
   .player .prow{flex-wrap:wrap}
-  .prow .rinput{order:5;flex-basis:100%}
-  .prow .rmeta{order:6}
-  .prow .x{margin-left:auto}
-  .calcrow .btn{padding:7px 10px}
-}
-@media (pointer:coarse){.kbdhint{display:none}}
-.pname .sh{display:none}
-@media (max-width:900px){.eq-layout{grid-template-columns:1fr;gap:8px}}
-@media (max-width:640px){
   .pname .lg{display:none}.pname .sh{display:inline}
-  .prow{gap:5px}
+  .prow{gap:6px}
   .prow .pname{min-width:30px}
-  .player .prow{flex-wrap:wrap}
-  .prow .rinput{order:5;flex:1 1 calc(100% - 100px);font-size:13px}
+  .prow .rinput{order:5;flex:1 1 calc(100% - 100px);font-size:13px;min-width:0;width:0}
   .prow .rmeta{order:6;flex:0 0 auto}
   .prow .x{margin-left:auto}
   .prow .slot{font-size:12px}
   .prow .cardsbox{flex:1 1 auto}
-  .player{padding:6px 7px;margin-bottom:5px}
-  #add-player + .small{font-size:11px}
-  .boardrow{gap:6px;padding:6px 0;flex-wrap:nowrap}
+  .boardrow{gap:6px;padding:8px 0;flex-wrap:nowrap}
   .boardrow .lbl{min-width:0}
   .boardrow .slot{font-size:11.5px}
   .boardrow #board-slots > span{width:3px!important}
-  .boardrow .btn{padding:4px 7px;font-size:11.5px}
-  .calcrow{padding-top:6px}
+  .boardrow .btn{padding:0 8px}
+  .calcrow{padding-top:8px}
   .eqin details.fold{margin-top:6px}
-  details.fold > summary{padding:7px 10px}
+  .eqin > h3:first-child{display:none}
   #results-panel h3{margin-bottom:4px}
   #results table.t td,#results table.t th{padding:3px 3px;font-size:12px}
-  #results .pcard{font-size:12px}
-  .eqbar{min-width:80px}
-  .res-note{font-size:11px;margin-top:4px}
-}
-@media (max-width:900px){.eq-layout{grid-template-columns:minmax(0,1fr)}.eqin,.player,.prow{min-width:0;max-width:100%}}
-@media (max-width:640px){.prow .rinput{min-width:0;width:0}}
-@media (max-width:640px){
+  #results .pcard{font-size:10.5px}
   #results td[style*="min-width"]{min-width:74px!important}
   #results .eqbar{min-width:70px}
   #results .handdesc{max-width:62px}
-  #results .pcard{font-size:10.5px}
+  .res-note{font-size:11.5px;margin-top:4px}
+  .pop{position:fixed;left:12px;right:12px;top:auto;width:auto;margin-top:6px}
 }
-
-/* =================== TABLE CONFIG + SITUATION BUTTONS =================== */
-.cfg{display:inline-flex;align-items:center;gap:6px}
-.lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
-.seg.tight button{padding:5px 0;width:27px;text-align:center}
-.stackcfg input[type=range]{width:150px;accent-color:var(--accent)}
-.stackcfg b{min-width:48px;font-variant-numeric:tabular-nums;font-size:13px}
-.sitbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:-2px 0 10px}
-.sitgrp{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
-.seg.sit button{padding:4px 9px;font-size:12.5px}
-.seg button.active{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55)}
-.seg.sit.vill button.active{background:var(--raise);color:#fff}
-.tag{display:inline-block;font-size:10.5px;padding:0 6px;border-radius:999px;border:1px solid #3a465c;color:var(--muted);margin-left:2px;cursor:help;vertical-align:1px}
-.tag.ed{color:#ffd27a;border-color:#6b5420}
-.tag.hw{color:#9fd8b6;border-color:#2c5a40}
-.modelnote{display:inline-block;margin-top:6px;color:var(--muted);font-size:11.5px;line-height:1.45}
-.trcfg{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.3);color:#cfe;margin-right:4px;vertical-align:1px}
-.grid13.main{width:min(100%,calc(100vh - 252px));width:min(100%,calc(100dvh - 252px))}
-@media (max-width:900px){
-  .grid13.main{width:min(100%,calc(100vh - 380px));width:min(100%,calc(100dvh - 380px))}
+@media (pointer:coarse){.kbdhint{display:none}}
+.pname .sh{display:none}
+@media (max-width:640px){.pname .sh{display:inline}}
+/* trainer: felt + chart side by side on two-column layouts */
+@media (min-width:901px){
+  #train-view:not([hidden]){display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-areas:"felt chart" "kpis chart";gap:10px;align-items:start;align-content:start}
+  #train-view > .felt{grid-area:felt}
+  #train-view > #tr-kpis{grid-area:kpis;margin:0}
+  #train-view > #tr-chart-fold{grid-area:chart;margin:0}
+  #tr-grid .cell{min-height:0;min-width:0}
 }
-@media (max-width:640px){
-  .toolbar .cfg{order:3}
-  .toolbar .stackcfg{order:4;flex:1;min-width:0}
-  .stackcfg input[type=range]{flex:1;width:auto;min-width:60px}
-  .toolbar .pill.warn{order:5}
-  .seg.tight button{width:auto;flex:1;padding:6px 0}
-  .toolbar .cfg:not(.stackcfg){flex:1 1 100%}
-  .toolbar .cfg .seg.tight{flex:1;display:flex}
-  .sitbar{gap:5px 8px;margin-bottom:8px}
-  .seg.sit button{padding:5px 7px;font-size:12px}
-  .grid13.main{width:min(100%,calc(100dvh - 400px))}
-  .gridfoot .summary{text-align:center}
+@media (min-width:901px){
+  #tr-seats{flex-wrap:nowrap;gap:4px}
+  #tr-seats .seat{padding:4px 7px;font-size:11.5px;white-space:nowrap}
+  #tr-seats .seat.folded{padding:4px 5px}
+  .prow .slot{font-size:16px}
+  .boardrow .slot{font-size:17px}
 }
-@media (max-width:640px){
-  .toolbar .seg button,.sitbar .seg button{padding-top:4px;padding-bottom:4px}
-  .toolbar{row-gap:5px}
-  .sitbar{row-gap:5px}
-  .summary .smhide{display:none}
-}
-@media (max-width:640px){ .grid13.main{width:min(100%,calc(100vh - 492px));width:min(100%,calc(100dvh - 492px))} }
-@media (max-width:640px){
-  details.fold > summary{padding:5px 10px}
-  .toolbar{margin-bottom:6px}
-  .grid13.main{width:min(100%,calc(100vh - 480px));width:min(100%,calc(100dvh - 480px))}
-}
-@media (max-width:640px){ .side{gap:6px} .grid13.main{width:min(100%,calc(100vh - 496px));width:min(100%,calc(100dvh - 496px))} }
 
 </style>
 </head>
 <body>
 <header class="top">
   <div class="logo"><span class="mark">&#9824;</span><span class="lname">Hold'em Lab</span></div>
-  <nav class="tabs" id="tabs">
-    <button data-tab="ranges" class="active"><span class="lg">Preflop </span>Ranges</button>
-    <button data-tab="equity">Equity<span class="lg"> Calculator</span></button>
+  <nav class="tabs" id="tabs" aria-label="Sections">
+    <button data-tab="charts" class="active">Charts</button>
+    <button data-tab="trainer">Trainer</button>
+    <button data-tab="equity">Equity</button>
   </nav>
   <div class="spacer"></div>
-  <div class="note">NLHE cash 6-max NLHE &middot; 100bb cash &middot; data stays in this browsermiddot; 26-max NLHE &middot; 100bb cash &middot; data stays in this browserndash;9 players 6-max NLHE &middot; 100bb cash &middot; data stays in this browsermiddot; 106-max NLHE &middot; 100bb cash &middot; data stays in this browserndash;200bb 6-max NLHE &middot; 100bb cash &middot; data stays in this browsermiddot; data stays in this browser</div>
+  <div class="note">No-limit Hold'em &middot; Cash &amp; Tournament &middot; data stays in this browser</div>
 </header>
 <main>
-  <!-- ============ RANGES TAB ============ -->
+  <!-- ============ CHARTS + TRAINER ============ -->
   <section class="tab active" id="tab-ranges">
-    <div class="toolbar">
-      <div class="seg" id="rmode">
-        <button data-m="chart">Chart</button>
-        <button data-m="train">Trainer</button>
-      </div>
-      <div class="cfg"><span class="lbl">Players</span><div class="seg tight" id="cfg-n" role="group" aria-label="Number of players"></div></div>
-      <label class="cfg stackcfg"><span class="lbl">Stack</span><input type="range" id="cfg-stack" min="0" max="12" step="1" aria-label="Hero stack in big blinds"><b id="cfg-stack-v">100bb</b></label>
-      <span class="pill edited chart-only" id="edited-pill" hidden>Edited</span>
-      <button class="btn small chart-only" id="edit-toggle">&#9998; Edit</button>
-      <span class="pill warn" title="Approximate charts, NOT solver output. 6-max 100bb charts are hand-written; every other table size / stack is model-derived from them. Edit them to match your own strategy.">&#9888; Approximate starter ranges &mdash; editable</span>
-    </div>
-    <div class="sitbar chart-only" id="sitbar"></div>
-    <div class="sitbar train-only" id="trsitbar"></div>
-
-    <div id="chart-view" class="rlayout">
-      <div class="panel gridpanel">
-        <div id="grid" class="grid13 main"></div>
-        <div class="gridfoot"><div class="legend" id="legend"></div><div class="summary" id="summary"></div></div>
-        <div class="info" id="cell-info"><span class="dim">Hover or tap a cell to see its frequencies.</span></div>
-      </div>
-      <div class="side">
-        <details class="fold" data-fold="r-stats"><summary>Range stats <span class="sumval" id="stats-sum"></span></summary>
-          <div class="fold-body"><div class="small muted" id="sc-desc" style="margin-bottom:6px"></div><div id="stats"></div></div>
-        </details>
-        <details class="fold" data-fold="r-edit" id="edit-fold"><summary>Edit tools &amp; brush <span class="sumval" id="edit-sum">off</span></summary>
-          <div class="fold-body">
-            <p class="small dim" id="edit-hint" style="margin:0 0 8px">Press <b>&#9998; Edit</b> (top bar) to paint cells.</p>
-            <div id="edit-tools">
-              <div class="brushes" id="brushes"></div>
-              <div class="row" style="margin-top:8px">
-                <label class="small muted">Freq</label>
-                <select id="brush-freq">
-                  <option value="1">100%</option><option value="0.75">75%</option><option value="0.5">50%</option><option value="0.25">25%</option>
-                </select>
-                <label class="small muted">rest &rarr;</label>
-                <select id="brush-rest"></select>
-              </div>
-              <p class="small dim" style="margin:8px 0 0">Click or drag across cells to paint. Mixed cells show as split colours. Edits save automatically.</p>
-            </div>
+    <div class="rlayout">
+      <aside class="ctrl">
+        <div class="panel setup" id="setup">
+          <div class="seg game" id="cfg-g" role="group" aria-label="Game type">
+            <button data-g="cash">Cash</button><button data-g="mtt">Tournament</button>
           </div>
-        </details>
-        <details class="fold" data-fold="r-manage"><summary>Reset &middot; Import &middot; Export</summary>
-          <div class="fold-body">
-            <div class="row">
-              <button class="btn small" id="reset-sc">Reset this chart</button>
-              <button class="btn small danger" id="reset-all">Reset all charts</button>
+          <button class="setup-sum" id="setup-sum" aria-expanded="false" aria-controls="setup-body" title="Players and stack"><span id="setup-sum-txt"></span><span class="chev">&#9662;</span></button>
+          <div class="setup-body" id="setup-body">
+            <div class="field">
+              <div class="flabel">Players</div>
+              <div class="seg nums" id="cfg-n" role="group" aria-label="Number of players"></div>
             </div>
-            <div class="row" style="margin-top:8px">
-              <button class="btn small" id="export-btn">&#8681; Export JSON</button>
-              <button class="btn small" id="import-btn">&#8679; Import JSON</button>
+            <div class="field stackfield">
+              <div class="flabel">Hero stack <output id="cfg-stack-v" for="cfg-stack">100 bb</output></div>
+              <input type="range" id="cfg-stack" class="bbslider" min="0" max="10" step="1" aria-label="Hero stack in big blinds">
+              <div class="ticks" id="cfg-ticks" aria-hidden="true"></div>
             </div>
-            <p class="small dim" style="margin:8px 0 0">Charts are approximate starter ranges for 6-max 100bb cash (not solver output). Edits are stored only in this browser.</p>
-          </div>
-        </details>
-      </div>
-    </div>
-
-    <div id="train-view" class="rlayout" hidden>
-      <div class="trmain">
-        <div class="felt">
-          <div class="seats" id="tr-seats"></div>
-          <div class="scdesc" id="tr-desc"></div>
-          <div class="hand-cards" id="tr-cards"></div>
-          <div class="hand-name" id="tr-handname"></div>
-          <div class="actions" id="tr-actions"></div>
-          <div class="fbrow">
-            <div class="feedback idle" id="tr-feedback"></div>
-            <button class="btn primary" id="tr-next">Next &rarr;</button>
+            <div class="gnote" id="game-note"></div>
           </div>
         </div>
-        <div class="scoreline" id="tr-kpis"></div>
-      </div>
-      <div class="side">
-        <details class="fold" data-fold="t-chart" id="tr-chart-fold"><summary>Chart for this hand <span class="sumval" id="tr-chart-title"></span></summary>
-          <div class="fold-body"><div class="small dim" id="tr-chart-empty">Answer to reveal the chart with the dealt hand highlighted.</div><div id="tr-grid" class="grid13 mini"></div></div>
-        </details>
-        <details class="fold" data-fold="t-acc"><summary>Accuracy by scenario</summary>
-          <div class="fold-body"><table class="t" id="tr-table"></table>
-          <div class="row" style="margin-top:8px"><button class="btn small danger" id="tr-reset">Reset stats</button></div>
-          <p class="small dim" style="margin:8px 0 0">Mixed-frequency hands accept any action played at least 25% of the time. Grading uses your current (possibly edited) charts.</p></div>
-        </details>
-        <details class="fold" data-fold="t-recent"><summary>Recent hands</summary>
-          <div class="fold-body"><div class="recent" id="tr-recent"></div></div>
-        </details>
-        <details class="fold" data-fold="t-settings"><summary>Dealing settings <span class="sumval" id="tr-set-sum"></span></summary>
-          <div class="fold-body">
-            <select id="tr-weight" aria-label="Hand selection" style="width:100%">
-              <option value="uniform">Uniform (realistic deal)</option>
-              <option value="border">Focus on borderline hands</option>
-              <option value="only">Borderline hands only</option>
-            </select>
-            <label class="small muted row" style="gap:6px;margin-top:8px"><input type="checkbox" id="tr-showchart"> Auto-expand chart after answering</label>
+        <div class="panel sitpanel chart-only" id="sitbar"></div>
+        <div class="panel sitpanel train-only" id="trsitbar"></div>
+        <div class="side chart-only">
+          <details class="fold" data-fold="r-stats"><summary>Range details <span class="sumval" id="stats-sum"></span></summary>
+            <div class="fold-body"><div id="stats"></div></div>
+          </details>
+          <details class="fold" data-fold="r-edit" id="edit-fold"><summary>Edit &amp; data <span class="sumval" id="edit-sum"></span></summary>
+            <div class="fold-body">
+              <p class="small muted" style="margin:0 0 8px">Press <b>&#9998; Edit</b> above the chart, then click or drag across cells to paint them. Edits save in this browser.</p>
+              <div class="row">
+                <button class="btn small" id="reset-sc">Reset this chart</button>
+                <button class="btn small danger" id="reset-all">Reset all</button>
+              </div>
+              <div class="row" style="margin-top:8px">
+                <button class="btn small" id="export-btn">&#8681; Export JSON</button>
+                <button class="btn small" id="import-btn">&#8679; Import JSON</button>
+              </div>
+            </div>
+          </details>
+        </div>
+        <div class="side train-only">
+          <details class="fold" data-fold="t-acc"><summary>Accuracy &amp; recent hands</summary>
+            <div class="fold-body"><div class="recent" id="tr-recent"></div><table class="t" id="tr-table" style="margin-top:8px"></table>
+            <div class="row" style="margin-top:8px"><button class="btn small danger" id="tr-reset">Reset stats</button></div>
+            <p class="small muted" style="margin:8px 0 0">Mixed hands accept any action played at least 25% of the time. Grading uses your current (possibly edited) charts.</p></div>
+          </details>
+          <details class="fold" data-fold="t-settings"><summary>Dealing <span class="sumval" id="tr-set-sum"></span></summary>
+            <div class="fold-body">
+              <select id="tr-weight" aria-label="Hand selection" style="width:100%">
+                <option value="uniform">Uniform (realistic deal)</option>
+                <option value="border">Focus on borderline hands</option>
+                <option value="only">Borderline hands only</option>
+              </select>
+              <label class="small muted row" style="gap:6px;margin-top:8px"><input type="checkbox" id="tr-showchart"> Auto-expand chart after answering</label>
+            </div>
+          </details>
+        </div>
+      </aside>
+
+      <div class="stage">
+        <div id="chart-view" class="panel gridpanel">
+          <div class="chead">
+            <div class="ctitle"><h1 id="headline"></h1><div class="subline" id="subline"></div></div>
+            <div class="cact">
+              <span class="pill edited" id="edited-pill" hidden>Edited</span>
+              <span class="popwrap"><button class="chip" id="info-btn" aria-expanded="false" aria-controls="info-pop">&#9432;<span class="lgtxt"> Approximate</span></button>
+                <div class="pop" id="info-pop" role="dialog" hidden></div></span>
+              <button class="btn" id="edit-toggle">&#9998; Edit</button>
+            </div>
           </div>
-        </details>
+          <div class="editbar" id="edit-tools" hidden>
+            <span class="ebadge">&#9998; Editing</span>
+            <div class="brushes" id="brushes"></div>
+            <label class="small">Freq <select id="brush-freq"><option value="1">100%</option><option value="0.75">75%</option><option value="0.5">50%</option><option value="0.25">25%</option></select></label>
+            <label class="small">rest <select id="brush-rest"></select></label>
+            <button class="btn small primary" id="edit-done">Done</button>
+          </div>
+          <div id="grid" class="grid13 main"></div>
+          <div class="legend" id="legend"></div>
+          <div class="info" id="cell-info"><span class="muted">Tap a hand to see its frequencies.</span></div>
+        </div>
+
+        <div id="train-view" hidden>
+          <div class="felt">
+            <div class="trhead" id="tr-head"></div>
+            <div class="seats" id="tr-seats"></div>
+            <div class="scdesc" id="tr-desc"></div>
+            <div class="hand-cards" id="tr-cards"></div>
+            <div class="hand-name" id="tr-handname"></div>
+            <div class="actions" id="tr-actions"></div>
+            <div class="fbrow">
+              <div class="feedback idle" id="tr-feedback"></div>
+              <button class="btn primary" id="tr-next">Next &rarr;</button>
+            </div>
+          </div>
+          <div class="scoreline" id="tr-kpis"></div>
+          <details class="fold" data-fold="t-chart" id="tr-chart-fold"><summary>Chart for this hand <span class="sumval" id="tr-chart-title"></span></summary>
+            <div class="fold-body"><div class="small muted" id="tr-chart-empty">Answer to reveal the chart with your hand highlighted.</div><div id="tr-grid" class="grid13 mini"></div></div>
+          </details>
+        </div>
       </div>
     </div>
   </section>
@@ -499,6 +606,7 @@ footer{display:none}
   <section class="tab" id="tab-equity">
     <div class="eq-layout">
       <div class="panel eqin">
+        <h3>Hands</h3>
         <div id="players"></div>
         <div class="row" style="margin-bottom:8px">
           <button class="btn small" id="add-player">+ Player</button>
@@ -1068,6 +1176,7 @@ footer{display:none}
     raise: { label: 'Raise', color: '#f2683c', key: 'r' },
     '3bet': { label: '3-Bet', color: '#a06bff', key: '3' },
     call: { label: 'Call', color: '#2fbf71', key: 'c' },
+    limp: { label: 'Limp', color: '#22b8cf', key: 'l' },
     fold: { label: 'Fold', color: '#2b3445', key: 'f' }
   };
   /* Build chart {classKey: {action: freq}} from layers. Needs HoldemCore.parseRange. */
@@ -1094,24 +1203,37 @@ footer{display:none}
 
 </script>
 <script id="model-src">
-/* Model-derived preflop charts for any table size (2-9 players) and hero stack (10-200bb).
-   NOT solver output. A transparent, deterministic model built from the hand-written 6-max 100bb
-   starter charts in ranges.js:
+/* Model-derived preflop charts for two game types, any table size (2-9 players) and hero stack depth.
+   NOT solver output. A transparent, deterministic model built from the hand-written 6-max 100bb cash
+   starter charts in ranges.js.
+   Game types
+     cash : no ante, stacks 50bb .. 500bb+.  6-max 100bb = the twelve hand-written charts, unchanged.
+     mtt  : tournament with a big-blind ante of 1bb (pot before action 2.5bb), chip-EV, no ICM,
+            stacks 5bb .. 100bb. Opens are smaller (2-2.3bb) and wider, the BB defends much wider,
+            re-raises are all-in jams up to 30bb and opens are jam-or-fold at 12bb and below.
+   Model
    1. Hand ordering: "play rank" = how many of the five 6-max RFI charts open the hand (ties broken by
-      raw equity vs a random hand); re-raise "value rank" = how often the seven facing-open charts 3-bet it. At short stacks the order blends toward raw equity (high cards gain,
-      suited connectors / small pairs lose); at 125bb+ small pairs and suited connectors move up.
-   2. Size of each range comes from an anchor table: open % by players left to act behind (or SB / heads-up),
-      interpolated on log(stack). Facing an open, 3-bet % and call % are functions of the opener's open %,
-      hero's seat type (BB / SB / in position) and stack depth (fewer calls and more jams when short).
-   3. The ordered hands fill the target, with a 50% "mixed" band at the edge.
-   At 6-max 100bb the twelve hand-written charts are used as they are. */
+      raw equity vs a random hand); re-raise "value rank" = how often the seven facing-open charts 3-bet
+      it. Short stacks blend toward raw equity (high cards gain, suited connectors / small pairs lose);
+      deep cash stacks move small pairs, suited connectors and suited aces up and offsuit hands out of
+      the 3-bet range.
+   2. Range sizes come from anchor tables: open % by players left to act (or SB / heads-up), interpolated
+      on log(stack). Facing an open, 3-bet % and call % are functions of the opener's open %, hero's seat
+      (BB / SB / in position), game type and stack depth.
+   3. The ordered hands fill each target, with a 50% "mixed" band at the edge. */
 (function (root) {
   'use strict';
   var H = (typeof module !== 'undefined' && module.exports) ? require('./core.js') : root.HoldemCore;
   var R = (typeof module !== 'undefined' && module.exports) ? require('./ranges.js') : root.HoldemRanges;
 
+  var GAMES = ['cash', 'mtt'];
+  var GAME_LABEL = { cash: 'Cash', mtt: 'Tournament' };
   var PLAYERS = [2, 3, 4, 5, 6, 7, 8, 9];
-  var STACKS = [10, 15, 20, 25, 30, 40, 50, 60, 80, 100, 125, 150, 200];
+  var STACKS = {
+    cash: [50, 60, 80, 100, 125, 150, 200, 250, 300, 400, 500],
+    mtt: [5, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100]
+  };
+  var DEFAULT_STACK = { cash: 100, mtt: 25 };
   var SEATS = {
     9: ['UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
     8: ['UTG', 'UTG+1', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
@@ -1122,36 +1244,60 @@ footer{display:none}
     3: ['BTN', 'SB', 'BB'],
     2: ['BTN', 'BB']
   };
-  var JAM_BELOW = 15;      // stacks below this: open = jam-or-fold
-  var REJAM_BELOW = 30;    // stacks below this: re-raises facing an open are all-in jams
+  var JAM_BELOW = { cash: 15, mtt: 13 };   // stacks below this: open = jam-or-fold
+  var REJAM_BELOW = { cash: 30, mtt: 31 }; // stacks below this: re-raises facing an open are all-in jams
+  var ANTE = { cash: 0, mtt: 1 };
 
+  function normG(g) { return g === 'mtt' ? 'mtt' : 'cash'; }
+  function normN(n) { n = Math.round(Number(n) || 6); return Math.max(2, Math.min(9, n)); }
   function seatLabel(n, seat) { return n === 2 && seat === 'BTN' ? 'BTN/SB' : seat; }
-  function snapStack(s) {
-    s = Number(s) || 100; var best = STACKS[0];
-    STACKS.forEach(function (b) { if (Math.abs(b - s) < Math.abs(best - s)) best = b; });
+  function snapStack(g, s) {
+    var list = STACKS[normG(g)];
+    s = Number(s); if (!isFinite(s) || s <= 0) s = DEFAULT_STACK[normG(g)];
+    var best = list[0];
+    list.forEach(function (b) { if (Math.abs(Math.log(b / s)) < Math.abs(Math.log(best / s))) best = b; });
     return best;
   }
-  function normN(n) { n = Math.round(Number(n) || 6); return Math.max(2, Math.min(9, n)); }
+  function stackLabel(g, s) { return (normG(g) === 'cash' && s >= 500 ? '500+' : String(s)) + 'bb'; }
+  function openSize(g, n, s, seat) {
+    if (s < JAM_BELOW[g]) return null;
+    if (g === 'cash') return seat === 'SB' && n > 2 ? 3 : 2.5;
+    if (seat === 'SB' && n > 2) return 3;
+    return s <= 20 ? 2 : s <= 40 ? 2.2 : 2.3;
+  }
 
-  /* ---------- anchors ---------- */
-  var COLS = [10, 20, 40, 100, 200];
-  var OPEN = { // open % of all 1326 combos
-    b8: [11, 11.5, 12, 12.8, 13.2],    // 9-max UTG
-    b7: [12, 12.5, 13.2, 14.2, 14.6],
-    b6: [13, 13.6, 14.4, 15.6, 16],
-    b5: [14.5, 15, 15.8, 17.0, 17.6],  // 6-max UTG (17.0 = hand-written chart)
-    b4: [17, 17.5, 19, 20.8, 21.5],    // HJ
-    b3: [23, 24, 26.5, 29.6, 30.5],    // CO
-    b2: [36, 40, 44, 48.3, 50],        // BTN
-    sb: [55, 45, 40, 38, 37],          // SB vs BB (raise-or-fold; jam-or-fold at 10bb)
-    hu: [60, 75, 80, 82, 84]           // heads-up BTN/SB
+  /* ---------- open-size anchors (% of all 1326 combos) ---------- */
+  var COLS = { cash: [10, 20, 40, 100, 200, 500], mtt: [5, 10, 20, 40, 100] };
+  var OPEN = {
+    cash: {
+      b8: [11, 11.5, 12, 12.8, 13.2, 13.8],    // 9-max UTG
+      b7: [12, 12.5, 13.2, 14.2, 14.6, 15.2],
+      b6: [13, 13.6, 14.4, 15.6, 16, 16.6],
+      b5: [14.5, 15, 15.8, 17.0, 17.6, 18.2],  // 6-max UTG (17.0 = hand-written chart)
+      b4: [17, 17.5, 19, 20.8, 21.5, 22.3],    // HJ
+      b3: [23, 24, 26.5, 29.6, 30.5, 31.5],    // CO
+      b2: [36, 40, 44, 48.3, 50, 51.5],        // BTN
+      sb: [55, 45, 40, 38, 37, 36.5],          // SB vs BB (raise-or-fold)
+      hu: [60, 75, 80, 82, 84, 85]             // heads-up BTN/SB
+    },
+    mtt: { // big-blind ante 1bb: more dead money -> wider everywhere, most of all late
+      b8: [22, 14, 15.5, 17, 17.5],
+      b7: [24, 15.5, 17, 18.5, 19],
+      b6: [26, 17, 18.5, 20, 20.5],
+      b5: [28, 19, 21, 22.5, 23],
+      b4: [32, 22.5, 25, 27, 27.5],
+      b3: [40, 30, 34, 37, 37.5],
+      b2: [55, 44, 52, 57, 58],
+      sb: [65, 55, 62, 62, 60],                // raise + limp (jam-or-fold at 12bb and below)
+      hu: [80, 75, 88, 90, 90]
+    }
   };
-  function interp(row, s) {
+  function interp(cols, row, s) {
     var x = Math.log(s);
-    if (s <= COLS[0]) return row[0];
-    if (s >= COLS[COLS.length - 1]) return row[row.length - 1];
-    for (var i = 0; i < COLS.length - 1; i++) {
-      var a = Math.log(COLS[i]), b = Math.log(COLS[i + 1]);
+    if (s <= cols[0]) return row[0];
+    if (s >= cols[cols.length - 1]) return row[row.length - 1];
+    for (var i = 0; i < cols.length - 1; i++) {
+      var a = Math.log(cols[i]), b = Math.log(cols[i + 1]);
       if (x <= b) return row[i] + (row[i + 1] - row[i]) * (x - a) / (b - a);
     }
     return row[row.length - 1];
@@ -1163,7 +1309,10 @@ footer{display:none}
     if (seat === 'SB') return 'sb';
     return 'b' + (n - 1 - i);
   }
-  function openPct(n, seat, s) { var k = seatKind(n, seat); return OPEN[k] ? interp(OPEN[k], s) : 0; }
+  function openPct(g, n, seat, s) {
+    g = normG(g); n = normN(n); var k = seatKind(n, seat);
+    return OPEN[g][k] ? interp(COLS[g], OPEN[g][k], s) : 0;
+  }
 
   /* ---------- hand ordering ---------- */
   var BASE = {}; R.SCENARIOS.forEach(function (sc) { BASE[sc.id] = R.buildChart(sc, H); });
@@ -1175,8 +1324,6 @@ footer{display:none}
   });
   var PLAY_ORDER = H.CLASSES.slice().sort(function (a, b) { return (playScore[b] - playScore[a]) || (EQIDX[a] - EQIDX[b]); });
   var PLAYIDX = {}; PLAY_ORDER.forEach(function (k, i) { PLAYIDX[k] = i; });
-  // value re-raise order: how often the seven hand-written facing-open charts 3-bet the hand
-  // (wheel-ace bluffs A5s-A2s excluded), ties broken by raw equity
   var v3 = {};
   H.CLASSES.forEach(function (k) {
     var t = 0;
@@ -1186,39 +1333,47 @@ footer{display:none}
   var V3_ORDER = H.CLASSES.slice().sort(function (a, b) { return (v3[b] - v3[a]) || (EQIDX[a] - EQIDX[b]); });
   var V3IDX = {}; V3_ORDER.forEach(function (k, i) { V3IDX[k] = i; });
   var RV = 'AKQJT98765432';
-  function isSpec(k) { // small/medium pairs, suited connectors and one-gappers below the broadways
+  function isSpec(k) { // small/medium pairs, suited connectors/one-gappers below the broadways, suited wheel/middle aces
     if (k.length === 2) return RV.indexOf(k[0]) >= RV.indexOf('9');
     if (k[2] !== 's') return false;
+    if (k[0] === 'A') return RV.indexOf(k[1]) >= RV.indexOf('9');
     var hi = RV.indexOf(k[0]), lo = RV.indexOf(k[1]);
     return hi >= RV.indexOf('J') && lo - hi <= 2;
   }
+  var isOffsuit = function (k) { return k.length === 3 && k[2] === 'o'; };
   function eqWeight(s) { // weight on raw equity rank (vs playability) by stack depth
     var pts = [[10, 1], [15, 0.75], [20, 0.6], [25, 0.45], [30, 0.35], [40, 0.2], [50, 0.1], [60, 0]];
+    if (s <= 10) return 1;
     if (s >= 60) return 0;
     for (var i = 0; i < pts.length - 1; i++) if (s <= pts[i + 1][0]) {
       var a = pts[i], b = pts[i + 1]; return a[1] + (b[1] - a[1]) * (s - a[0]) / (b[0] - a[0]);
     }
     return 0;
   }
-  function deepBonus(s) { return s <= 100 ? 0 : s <= 125 ? 4 : s <= 150 ? 8 : 14; }
+  function step(t, s, dflt) { for (var i = 0; i < t.length; i++) if (s <= t[i][0]) return t[i][1]; return dflt; }
+  function deepBonus(s) { return step([[100, 0], [125, 4], [150, 8], [200, 14], [250, 18], [300, 22], [400, 27]], s, 32); }
   var orderCache = {};
   function orderFor(s, value) {
     var ck = s + '|' + (value ? 'v' : 'p');
     if (orderCache[ck]) return orderCache[ck];
-    var a = eqWeight(s), d = value ? 0 : deepBonus(s), base = value ? V3IDX : PLAYIDX;
+    var a = eqWeight(s), d = deepBonus(s), base = value ? V3IDX : PLAYIDX;
     var val = {};
-    H.CLASSES.forEach(function (k) { val[k] = (1 - a) * base[k] + a * EQIDX[k] - (isSpec(k) ? d : 0) + EQIDX[k] * 1e-4; });
+    H.CLASSES.forEach(function (k) {
+      var v = (1 - a) * base[k] + a * EQIDX[k] + EQIDX[k] * 1e-4;
+      if (value) { if (isOffsuit(k)) v += 0.5 * d; }   // deep: fewer offsuit re-raises
+      else if (isSpec(k)) v -= d;                        // deep: more speculative hands
+      val[k] = v;
+    });
     return (orderCache[ck] = H.CLASSES.slice().sort(function (x, y) { return val[x] - val[y]; }));
   }
 
-  /* ---------- scenarios ---------- */
+  /* ---------- keys & scenarios ---------- */
   var LEGACY = {
     rfi_utg: 'rfi:UTG', rfi_hj: 'rfi:HJ', rfi_co: 'rfi:CO', rfi_btn: 'rfi:BTN', rfi_sb: 'rfi:SB',
     bb_vs_utg: 'vs:BB:UTG', bb_vs_co: 'vs:BB:CO', bb_vs_btn: 'vs:BB:BTN', sb_vs_btn: 'vs:SB:BTN',
     btn_vs_co: 'vs:BTN:CO', co_vs_hj: 'vs:CO:HJ', bb_vs_sb: 'vs:BB:SB'
   };
   var ANCHOR = {}; Object.keys(LEGACY).forEach(function (old) { ANCHOR[LEGACY[old]] = old; });
-
   function scenarioIds(n) {
     n = normN(n); var seats = SEATS[n], out = [];
     seats.forEach(function (h) { if (h !== 'BB') out.push('rfi:' + h); });
@@ -1232,47 +1387,70 @@ footer{display:none}
     return null;
   }
   function validId(n, id) { return scenarioIds(n).indexOf(id) >= 0; }
-  function makeKey(n, s, id) { return normN(n) + '|' + snapStack(s) + '|' + id; }
+  function makeKey(g, n, s, id) { g = normG(g); return g + '|' + normN(n) + '|' + snapStack(g, s) + '|' + id; }
+  // "cash|6|100|rfi:BTN" (v3), "6|100|rfi:BTN" (v2 = cash; stacks no longer offered return null), "rfi_btn" (v1)
   function parseKey(key) {
-    if (LEGACY[key]) return { n: 6, s: 100, id: LEGACY[key] };
-    var p = String(key).split('|');
-    if (p.length !== 3) return null;
+    key = String(key);
+    if (LEGACY[key]) return { g: 'cash', n: 6, s: 100, id: LEGACY[key], legacy: 1 };
+    var p = key.split('|'), g = 'cash', legacy = 0;
+    if (p.length === 4) { g = p.shift(); if (GAMES.indexOf(g) < 0) return null; }
+    else if (p.length === 3) legacy = 2;
+    else return null;
     var n = +p[0], s = +p[1];
-    if (PLAYERS.indexOf(n) < 0 || STACKS.indexOf(s) < 0 || !validId(n, p[2])) return null;
-    return { n: n, s: s, id: p[2] };
+    if (PLAYERS.indexOf(n) < 0 || STACKS[g].indexOf(s) < 0 || !validId(n, p[2])) return null;
+    return { g: g, n: n, s: s, id: p[2], legacy: legacy };
   }
-  function actionsFor(n, s, id) {
+  function actionsFor(g, n, s, id) {
     var p = parseId(id);
-    if (p.type === 'rfi') return s < JAM_BELOW ? ['jam', 'fold'] : ['raise', 'fold'];
-    if (s < JAM_BELOW) return p.hero === 'BB' ? ['jam', 'call', 'fold'] : ['jam', 'fold'];
-    if (s < REJAM_BELOW) return ['jam', 'call', 'fold'];
+    if (p.type === 'rfi') {
+      if (s < JAM_BELOW[g]) return ['jam', 'fold'];
+      if (g === 'mtt' && p.hero === 'SB' && n > 2) return ['raise', 'limp', 'fold'];
+      return ['raise', 'fold'];
+    }
+    if (s < JAM_BELOW[g]) return ['call', 'fold']; // the opener jams: call it off or fold
+    if (s < REJAM_BELOW[g]) return ['jam', 'call', 'fold'];
     return ['3bet', 'call', 'fold'];
   }
-  function scenario(n, s, id) {
-    n = normN(n); s = snapStack(s);
+  function fmtBB(x) { return (Math.round(x * 10) / 10) + 'bb'; }
+  function scenario(g, n, s, id) {
+    g = normG(g); n = normN(n); s = snapStack(g, s);
     var p = parseId(id); if (!p || !validId(n, id)) return null;
-    var key = makeKey(n, s, id), anchored = n === 6 && s === 100 && !!ANCHOR[id];
+    var key = makeKey(g, n, s, id), anchored = g === 'cash' && n === 6 && s === 100 && !!ANCHOR[id];
     var hl = seatLabel(n, p.hero), vl = p.villain ? seatLabel(n, p.villain) : null;
-    var size = s < JAM_BELOW ? '2bb' : '2.5bb', table = n === 2 ? 'Heads-up' : n + '-max';
-    var desc;
-    if (p.type === 'rfi') desc = 'Folded to you in the ' + hl + '. ' + (s < JAM_BELOW ? 'Jam (all-in) or fold?' : 'Open (' + (p.hero === 'SB' && n > 2 ? '3bb' : size) + ') or fold?');
-    else desc = vl + ' opens ' + size + ', ' + (n > 2 ? 'action folds to you in the ' : 'you are in the ') + hl + '.';
+    var table = n === 2 ? 'Heads-up' : n + '-max', players = n === 2 ? 'Heads-up' : n + ' players';
+    var jam = s < JAM_BELOW[g], desc, sz = openSize(g, n, s, p.hero);
+    var pot0 = 1.5 + ANTE[g];
+    if (p.type === 'rfi') {
+      if (jam) desc = 'Folded to you in the ' + hl + '. Jam (all-in ' + s + 'bb) or fold?';
+      else if (g === 'mtt' && p.hero === 'SB' && n > 2) desc = 'Folded to you in the SB. Raise to ' + fmtBB(sz) + ', limp (complete 1bb) or fold?';
+      else desc = 'Folded to you in the ' + hl + '. Open to ' + fmtBB(sz) + ' or fold?';
+      if (g === 'mtt') desc += ' Pot ' + fmtBB(pot0) + ' incl. the 1bb BB ante.';
+    } else {
+      if (jam) desc = vl + ' jams all-in (' + s + 'bb)' + (n > 2 ? ', folds to you in the ' : '; you are in the ') + hl + '. Call or fold?';
+      else {
+        var vs = openSize(g, n, s, p.villain);
+        desc = vl + ' opens to ' + fmtBB(vs) + (n > 2 ? ', folds to you in the ' : '; you are in the ') + hl + '.';
+        desc += ' Pot ' + fmtBB(pot0 + vs) + (g === 'mtt' ? ' incl. BB ante.' : '.');
+      }
+    }
     return {
-      id: key, sid: id, n: n, stack: s, type: p.type, hero: p.hero, villain: p.villain || null,
-      heroLabel: hl, villainLabel: vl, rfi: p.type === 'rfi',
-      group: p.type === 'rfi' ? 'RFI (open)' : 'Facing an open',
-      name: p.type === 'rfi' ? hl + ' open' : hl + ' vs ' + vl + ' open',
-      short: table + ' ' + s + 'bb',
-      desc: desc, actions: actionsFor(n, s, id), model: !anchored, anchor: anchored ? ANCHOR[id] : null
+      id: key, sid: id, g: g, game: GAME_LABEL[g], n: n, stack: s, stackLabel: stackLabel(g, s),
+      type: p.type, hero: p.hero, villain: p.villain || null, heroLabel: hl, villainLabel: vl, rfi: p.type === 'rfi',
+      group: p.type === 'rfi' ? 'Open (first in)' : 'Facing an open',
+      name: p.type === 'rfi' ? hl + (jam ? ' jam/fold' : ' open') : hl + ' vs ' + vl + (jam ? ' jam' : ' open'),
+      table: table, players: players,
+      short: GAME_LABEL[g] + ' · ' + table + ' · ' + stackLabel(g, s),
+      headline: GAME_LABEL[g] + ' · ' + players + ' · ' + stackLabel(g, s),
+      desc: desc, openSize: sz, actions: actionsFor(g, n, s, id), model: !anchored, anchor: anchored ? ANCHOR[id] : null
     };
   }
 
   /* ---------- chart generation ---------- */
   function emptyChart() { var c = {}; H.CLASSES.forEach(function (k) { c[k] = { fold: 1 }; }); return c; }
   // Fill `order` with action `a` until ~target combos, 50% band of width w at the edge.
-  // skip(k) -> true to skip a class; partial cells keep whatever else they had.
   function fill(chart, order, a, target, w, skip, mixWith) {
     var cum = 0, lo = target - w / 2, hi = target + w / 2;
+    if (target <= 0) return;
     for (var i = 0; i < order.length; i++) {
       var k = order[i]; if (skip && skip(k)) continue;
       var n = H.classCount(k), mid = cum + n / 2;
@@ -1282,54 +1460,71 @@ footer{display:none}
       cum += n;
     }
   }
-  function callMult(s, bb) {
-    var t = bb ? [[10, 0.35], [15, 0.6], [20, 0.7], [25, 0.8], [30, 0.85], [40, 0.9], [50, 0.95], [80, 1], [100, 1], [125, 1.05], [150, 1.1], [200, 1.15]]
-              : [[10, 0], [15, 0.4], [20, 0.5], [25, 0.6], [30, 0.7], [40, 0.8], [50, 0.9], [60, 0.95], [80, 1], [100, 1], [125, 1.05], [150, 1.1], [200, 1.15]];
-    for (var i = 0; i < t.length; i++) if (s <= t[i][0]) return t[i][1];
-    return t[t.length - 1][1];
-  }
-  function raiseMult(s) {
-    var t = [[10, 3.5], [15, 2.6], [20, 2], [25, 1.6], [30, 1.3], [40, 1.1], [100, 1], [125, 0.95], [150, 0.92], [200, 0.9]];
-    for (var i = 0; i < t.length; i++) if (s <= t[i][0]) return t[i][1];
-    return 0.9;
-  }
-  function vsTargets(n, s, hero, villain) { // returns % of 1326 for re-raise and call
-    var vo = openPct(n, villain, s), kind = hero === 'BB' ? 'bb' : hero === 'SB' ? 'sb' : 'ip';
+  var CALLM = {
+    cash: { bb: [[10, 0.35], [15, 0.6], [20, 0.7], [25, 0.8], [30, 0.85], [40, 0.9], [50, 0.95], [100, 1], [125, 1.05], [150, 1.1], [200, 1.15], [250, 1.18], [300, 1.2], [400, 1.24]], bbTop: 1.28,
+            other: [[10, 0], [15, 0.4], [20, 0.5], [25, 0.6], [30, 0.7], [40, 0.8], [50, 0.9], [60, 0.95], [100, 1], [125, 1.05], [150, 1.1], [200, 1.15], [250, 1.18], [300, 1.2], [400, 1.24]], otherTop: 1.28 },
+    mtt: { bb: [[5, 0.55], [8, 0.62], [10, 0.7], [12, 0.75], [15, 0.82], [20, 0.88], [25, 0.93], [30, 0.97], [40, 1]], bbTop: 1.03,
+           other: [[12, 0], [15, 0.35], [20, 0.5], [25, 0.6], [30, 0.7], [40, 0.85], [60, 0.95]], otherTop: 1 }
+  };
+  var RAISEM = {
+    cash: [[10, 3.5], [15, 2.6], [20, 2], [25, 1.6], [30, 1.3], [40, 1.1], [100, 1], [125, 0.95], [150, 0.92], [200, 0.9], [250, 0.88], [300, 0.86], [400, 0.83]], cashTop: 0.8,
+    mtt: [[5, 4], [8, 3.5], [10, 3.2], [12, 2.9], [15, 2.5], [20, 2.1], [25, 1.8], [30, 1.55], [40, 1.2], [60, 1.05]], mttTop: 1
+  };
+  function vsTargets(g, n, s, hero, villain) { // % of 1326 for re-raise and call
+    g = normG(g); n = normN(n);
+    var vo = openPct(g, n, villain, s), kind = hero === 'BB' ? 'bb' : hero === 'SB' ? 'sb' : 'ip';
     var r3, call, cap;
-    if (kind === 'bb') {
-      r3 = 0.17 * vo;
-      call = vo * (0.9 + 0.006 * vo) * (villain === 'SB' || n === 2 ? 1.3 : 1);
-      cap = 70;
-    } else if (kind === 'sb') { r3 = 0.28 * vo; call = 0.02 * vo; cap = 30; }
-    else { r3 = 2 + 0.1 * vo; call = vo * (0.3 + 0.007 * vo); cap = 35; }
-    r3 *= raiseMult(s); call *= callMult(s, kind === 'bb');
-    if (kind !== 'bb' && s < JAM_BELOW) call = 0;
+    if (s < JAM_BELOW[g]) { // facing a jam: calling range only (tighter than the jam range; BB gets the best price)
+      call = vo * (kind === 'bb' ? (g === 'mtt' ? 0.8 : 0.62) : 0.45) * (kind === 'bb' && (villain === 'SB' || n === 2) ? 1.2 : 1);
+      return { vo: vo, r3: 0, call: Math.min(call, 60), kind: kind };
+    }
+    if (g === 'cash') {
+      if (kind === 'bb') { r3 = 0.17 * vo; call = vo * (0.9 + 0.006 * vo) * (villain === 'SB' || n === 2 ? 1.3 : 1); cap = 70; }
+      else if (kind === 'sb') { r3 = 0.28 * vo; call = 0.02 * vo; cap = 30; }
+      else { r3 = 2 + 0.1 * vo; call = vo * (0.3 + 0.007 * vo); cap = 35; }
+    } else { // BB ante: BB already has 1bb + 1bb ante in, pot odds are much better
+      if (kind === 'bb') { r3 = 0.15 * vo; call = vo * (1.35 + 0.006 * vo) * (villain === 'SB' || n === 2 ? 1.25 : 1); cap = 78; }
+      else if (kind === 'sb') { r3 = 0.3 * vo; call = 0.05 * vo; cap = 35; }
+      else { r3 = 2 + 0.1 * vo; call = vo * (0.3 + 0.006 * vo); cap = 35; }
+    }
+    r3 *= step(RAISEM[g], s, RAISEM[g + 'Top']);
+    var cm = CALLM[g];
+    call *= kind === 'bb' ? step(cm.bb, s, cm.bbTop) : step(cm.other, s, cm.otherTop);
+    if (kind !== 'bb' && s < JAM_BELOW[g]) call = 0;
     r3 = Math.min(r3, cap * 0.6, (kind === 'ip' ? 0.45 : 0.65) * vo);
     if (r3 + call > cap) call = Math.max(0, cap - r3);
     return { vo: vo, r3: r3, call: call, kind: kind };
   }
   var cache = {};
-  function generate(n, s, id) {
-    var sc = scenario(n, s, id); if (!sc) return null;
+  function generate(g, n, s, id) {
+    var sc = scenario(g, n, s, id); if (!sc) return null;
     if (cache[sc.id]) return cache[sc.id];
+    g = sc.g; s = sc.stack;
     var chart;
     if (sc.anchor) chart = JSON.parse(JSON.stringify(BASE[sc.anchor]));
     else if (sc.rfi) {
       chart = emptyChart();
-      var T = openPct(sc.n, sc.hero, sc.stack) / 100 * 1326;
-      var w = sc.stack < JAM_BELOW ? Math.min(0.1 * T, 30) : Math.min(0.25 * T, 70);
-      fill(chart, orderFor(sc.stack), sc.actions[0], T, w);
+      var T = openPct(g, sc.n, sc.hero, s) / 100 * 1326, jam = s < JAM_BELOW[g];
+      var w = jam ? Math.min(0.1 * T, 30) : Math.min(0.25 * T, 70);
+      if (sc.actions.indexOf('limp') >= 0) {
+        // tournament SB: raise the top ~40% of the range, complete (limp) the rest
+        var Rr = 0.4 * T, order = orderFor(s);
+        fill(chart, order, 'raise', Rr, Math.min(0.3 * Rr, 40), null, 'limp');
+        var done = 0; H.CLASSES.forEach(function (k) { done += ((chart[k].raise || 0) + (chart[k].limp || 0)) * H.classCount(k); });
+        fill(chart, order, 'limp', T - done, Math.min(0.2 * T, 70), function (k) { return (chart[k].fold || 0) < 1; });
+      } else fill(chart, orderFor(s), sc.actions[0], T, w);
     } else {
       chart = emptyChart();
-      var t = vsTargets(sc.n, sc.stack, sc.hero, sc.villain);
-      var ra = sc.actions[0], canCall = sc.actions.indexOf('call') >= 0;
+      var t = vsTargets(g, sc.n, s, sc.hero, sc.villain);
+      var ra = sc.actions[0] === 'call' ? null : sc.actions[0], canCall = sc.actions.indexOf('call') >= 0;
       var R3 = t.r3 / 100 * 1326, C = t.call / 100 * 1326;
+      if (!ra) { fill(chart, orderFor(s, true), 'call', C, Math.min(0.2 * C, 40)); return (cache[sc.id] = chart); }
       var bluff = (ra === '3bet' && R3 >= 24) ? 4 : 0; // A5s + A4s at 50%
-      fill(chart, orderFor(sc.stack, true), ra, R3 - bluff, Math.min(0.35 * (R3 - bluff), 40), null, canCall && C > 0 ? 'call' : null);
+      fill(chart, orderFor(s, true), ra, R3 - bluff, Math.min(0.35 * (R3 - bluff), 40), null, canCall && C > 0 ? 'call' : null);
       if (canCall && C > 0) {
         var already = 0; H.CLASSES.forEach(function (k) { already += (chart[k].call || 0) * H.classCount(k); });
         var isBluff = function (k) { return bluff && (k === 'A5s' || k === 'A4s'); };
-        fill(chart, orderFor(sc.stack), 'call', Math.max(0, C - already), Math.min(0.25 * C, 80),
+        fill(chart, orderFor(s), 'call', Math.max(0, C - already), Math.min(0.25 * C, 80),
           function (k) { return (chart[k].fold || 0) < 1 || isBluff(k); });
       }
       if (bluff) ['A5s', 'A4s'].forEach(function (k) {
@@ -1343,12 +1538,14 @@ footer{display:none}
     var t = {}; H.CLASSES.forEach(function (k) { var n = H.classCount(k); for (var a in chart[k]) t[a] = (t[a] || 0) + chart[k][a] * n; });
     return t;
   }
+  function playPct(chart) { var t = stats(chart); return 100 * (1326 - (t.fold || 0)) / 1326; }
 
   var API = {
-    PLAYERS: PLAYERS, STACKS: STACKS, SEATS: SEATS, JAM_BELOW: JAM_BELOW, REJAM_BELOW: REJAM_BELOW, LEGACY: LEGACY, OPEN: OPEN,
-    seatLabel: seatLabel, snapStack: snapStack, scenarioIds: scenarioIds, parseId: parseId, validId: validId,
+    GAMES: GAMES, GAME_LABEL: GAME_LABEL, PLAYERS: PLAYERS, STACKS: STACKS, DEFAULT_STACK: DEFAULT_STACK, SEATS: SEATS,
+    JAM_BELOW: JAM_BELOW, REJAM_BELOW: REJAM_BELOW, ANTE: ANTE, LEGACY: LEGACY, OPEN: OPEN,
+    seatLabel: seatLabel, snapStack: snapStack, stackLabel: stackLabel, scenarioIds: scenarioIds, parseId: parseId, validId: validId,
     makeKey: makeKey, parseKey: parseKey, scenario: scenario, generate: generate, openPct: openPct, vsTargets: vsTargets,
-    stats: stats, orderFor: orderFor
+    stats: stats, playPct: playPct, orderFor: orderFor
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.HoldemModel = API;
@@ -1412,29 +1609,38 @@ self.onmessage = function (e) {
     folds[d.dataset.fold] = d.open; save(LS_FOLDS, folds);
   }, true);
   const foldAttr = id => (folds[id] ? ' open' : '');
-  const ui = Object.assign({ tab: 'ranges', rmode: 'chart', type: 'rfi', hero: 'BTN', vill: 'BTN', trType: 'all', trHero: 'any', brush: 'raise', freq: 1, rest: 'fold', trSc: 'all', trWeight: 'border', trAutoChart: false }, load(LS.ui, {}));
+  const ui = Object.assign({ tab: 'ranges', rmode: 'chart', g: 'cash', type: 'rfi', hero: 'BTN', vill: 'BTN', trType: 'all', trHero: 'any', brush: 'raise', freq: 1, rest: 'fold', trWeight: 'border', trAutoChart: false, setupOpen: false }, load(LS.ui, {}));
   const saveUI = () => save(LS.ui, ui);
 
+  // top-level sections: Charts | Trainer | Equity (Charts and Trainer share the ranges view)
+  const tabName = () => ui.tab === 'equity' ? 'equity' : ui.rmode === 'train' ? 'trainer' : 'charts';
   function setTab(t) {
-    ui.tab = t; saveUI();
-    $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
-    $$('.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + t));
-    if (t === 'equity' && setTab.ready) renderEquityInputs();
+    if (t === 'charts' || t === 'trainer') { ui.tab = 'ranges'; ui.rmode = t === 'trainer' ? 'train' : 'chart'; }
+    else if (t === 'ranges') ui.tab = 'ranges';
+    else ui.tab = 'equity';
+    saveUI();
+    const name = tabName();
+    $$('#tabs button').forEach(b => { b.classList.toggle('active', b.dataset.tab === name); b.setAttribute('aria-current', b.dataset.tab === name ? 'page' : 'false'); });
+    $$('.tab').forEach(s => s.classList.toggle('active', s.id === (ui.tab === 'equity' ? 'tab-equity' : 'tab-ranges')));
+    if (!setTab.ready) return;
+    if (ui.tab === 'equity') renderEquityInputs(); else setRMode(ui.rmode);
   }
   $$('#tabs button').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
 
   /* ================= PREFLOP CHARTS ================= */
   const M = window.HoldemModel;
-  const scOf = key => { const p = M.parseKey(key); return p ? M.scenario(p.n, p.s, p.id) : null; };
-  const defaultOf = key => { const p = M.parseKey(key); return M.generate(p.n, p.s, p.id); };
-  const ORDER = ['jam', 'raise', '3bet', 'call', 'fold'];
-  // migrate old single-scenario UI state (6-max 100bb ids) to table config
+  const scOf = key => { const p = M.parseKey(key); return p ? M.scenario(p.g, p.n, p.s, p.id) : null; };
+  const normKey = key => { const p = M.parseKey(key); return p ? M.makeKey(p.g, p.n, p.s, p.id) : null; };
+  const defaultOf = key => { const p = M.parseKey(key); return M.generate(p.g, p.n, p.s, p.id); };
+  const ORDER = ['jam', 'raise', '3bet', 'limp', 'call', 'fold'];
+  // migrate older UI state: single 6-max scenario id (v1) or one shared stack (v2)
   if (ui.n == null) {
     const p = ui.sc && M.parseKey(ui.sc);
     ui.n = 6; ui.stack = 100;
     if (p) { const q = M.parseId(p.id); ui.type = q.type; ui.hero = q.hero; ui.vill = q.villain; }
   }
-  delete ui.sc;
+  if (!ui.stacks || typeof ui.stacks !== 'object') ui.stacks = { cash: ui.stack >= 50 ? M.snapStack('cash', ui.stack) : 100, mtt: 25 };
+  delete ui.sc; delete ui.stack; delete ui.trSc;
   let overrides = sanitizeCharts(load(LS.charts, {})) || {};
   saveChartsRaw();
 
@@ -1446,14 +1652,15 @@ self.onmessage = function (e) {
     if (tot < 0.999) out.fold = Math.round(((out.fold || 0) + 1 - tot) * 1000) / 1000;
     return out;
   }
-  // accepts new keys "players|stack|scenario" and legacy 6-max 100bb ids ("rfi_btn" ...)
+  // accepts "game|players|stack|spot" (v3), "players|stack|spot" (v2, cash; stacks below 50bb are skipped)
+  // and the original 6-max 100bb ids ("rfi_btn" ...). Unknown keys are ignored.
   function sanitizeCharts(obj) {
     if (!obj || typeof obj !== 'object') return null;
     const out = {};
     for (const key of Object.keys(obj)) {
       const p = M.parseKey(key);
       if (!p || !obj[key] || typeof obj[key] !== 'object') continue;
-      const nk = M.makeKey(p.n, p.s, p.id), sc = M.scenario(p.n, p.s, p.id);
+      const nk = M.makeKey(p.g, p.n, p.s, p.id), sc = M.scenario(p.g, p.n, p.s, p.id);
       const ch = {};
       for (const k of H.CLASSES) ch[k] = normCell(obj[key][k] || { fold: 1 }, sc.actions);
       out[nk] = ch;
@@ -1490,8 +1697,9 @@ self.onmessage = function (e) {
     }
     container.appendChild(frag);
   }
+  const ACOL = a => a === 'fold' ? '#b4bccb' : A[a].color;
   function mixText(cell) {
-    return mixEntries(cell).sort((a, b) => b[1] - a[1]).map(([a, f]) => `<span style="color:${a === 'fold' ? '#aab3c3' : A[a].color};font-weight:700">${A[a].label} ${Math.round(f * 100)}%</span>`).join(' &middot; ');
+    return mixEntries(cell).sort((a, b) => b[1] - a[1]).map(([a, f]) => `<span style="color:${ACOL(a)};font-weight:700">${A[a].label} ${Math.round(f * 100)}%</span>`).join(' &middot; ');
   }
   function chartStats(chart) {
     const t = {};
@@ -1499,9 +1707,12 @@ self.onmessage = function (e) {
     return t;
   }
 
-  /* ---- table config (players / stack) + situation buttons ---- */
+  /* ---- setup (game / players / stack) + situation buttons ---- */
+  const stackOf = () => ui.stacks[ui.g];
   function fixSel() {
-    ui.n = M.PLAYERS.includes(+ui.n) ? +ui.n : 6; ui.stack = M.snapStack(ui.stack);
+    ui.g = M.GAMES.includes(ui.g) ? ui.g : 'cash';
+    for (const g of M.GAMES) ui.stacks[g] = M.snapStack(g, ui.stacks[g] != null ? ui.stacks[g] : M.DEFAULT_STACK[g]);
+    ui.n = M.PLAYERS.includes(+ui.n) ? +ui.n : 6;
     const seats = M.SEATS[ui.n];
     if (ui.type !== 'vs') ui.type = 'rfi';
     if (ui.type === 'rfi') { if (!seats.includes(ui.hero) || ui.hero === 'BB') ui.hero = 'BTN'; }
@@ -1514,33 +1725,55 @@ self.onmessage = function (e) {
     if (ui.trHero !== 'any' && !seats.includes(ui.trHero)) ui.trHero = 'any';
   }
   const curId = () => ui.type === 'rfi' ? 'rfi:' + ui.hero : `vs:${ui.hero}:${ui.vill}`;
-  const curKey = () => { fixSel(); return M.makeKey(ui.n, ui.stack, curId()); };
+  const curKey = () => { fixSel(); return M.makeKey(ui.g, ui.n, stackOf(), curId()); };
   const segBtns = (items, active, attr) => items.map(([v, l, t]) => `<button data-${attr}="${esc(v)}" class="${v === active ? 'active' : ''}"${t ? ` title="${esc(t)}"` : ''} aria-pressed="${v === active}">${l}</button>`).join('');
+  const TICKS = { cash: [50, 100, 200, 300, 500], mtt: [5, 10, 15, 25, 40, 60, 100] };
+  const stackTxt = (g, s) => (g === 'cash' && s >= 500 ? '500+' : s) + ' bb';
+  function setupSummary() {
+    const s = stackOf();
+    return `${M.GAME_LABEL[ui.g]} · ${ui.n === 2 ? 'Heads-up' : ui.n + ' players'} · ${stackTxt(ui.g, s)}`;
+  }
+  function paintSlider() {
+    const list = M.STACKS[ui.g], i = list.indexOf(stackOf()), el = $('#cfg-stack');
+    el.max = String(list.length - 1); el.value = String(i);
+    el.style.setProperty('--p', (100 * i / (list.length - 1)).toFixed(2) + '%');
+    $('#cfg-stack-v').textContent = stackTxt(ui.g, stackOf());
+    el.setAttribute('aria-valuetext', stackTxt(ui.g, stackOf()).replace('bb', 'big blinds'));
+    $('#setup-sum-txt').textContent = `${ui.n === 2 ? 'HU' : ui.n + ' players'} · ${stackTxt(ui.g, stackOf())}`;
+  }
   function renderCfg() {
     fixSel();
+    $$('#cfg-g button').forEach(b => { const on = b.dataset.g === ui.g; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on); });
     $('#cfg-n').innerHTML = segBtns(M.PLAYERS.map(n => [String(n), String(n), n === 2 ? 'Heads-up' : n + '-handed']), String(ui.n), 'n');
-    $('#cfg-stack').value = String(M.STACKS.indexOf(ui.stack));
-    $('#cfg-stack-v').textContent = ui.stack + 'bb';
-    $('#cfg-stack').setAttribute('aria-valuetext', ui.stack + ' big blinds');
+    const list = M.STACKS[ui.g];
+    $('#cfg-ticks').innerHTML = list.map((s, i) => `<span class="tk${TICKS[ui.g].includes(s) ? ' major' : ''}" data-s="${s}" style="left:${(100 * i / (list.length - 1)).toFixed(3)}%"><i></i>${TICKS[ui.g].includes(s) ? `<b>${ui.g === 'cash' && s >= 500 ? '500+' : s}</b>` : ''}</span>`).join('');
+    paintSlider();
+    $('#game-note').innerHTML = ui.g === 'mtt' ? '<b>Tournament:</b> 1bb big-blind ante, chip-EV (no ICM). Re-raises are all-in below 31bb; opens are jam-or-fold at 12bb and below.' : '<b>Cash:</b> no ante, 2.5bb opens (3bb from the SB). Deeper stacks add suited connectors, small pairs and suited aces.';
+    $('#setup').classList.toggle('collapsed', !ui.setupOpen);
+    $('#tab-ranges').classList.toggle('g-mtt', ui.g === 'mtt');
+    $('#setup-sum').setAttribute('aria-expanded', String(!!ui.setupOpen));
     const seats = M.SEATS[ui.n], L = s => esc(M.seatLabel(ui.n, s));
     // chart situation
-    let h = `<div class="seg sit" role="group" aria-label="Situation">${segBtns([['rfi', 'Open', 'Raise first in (folded to hero)'], ['vs', 'vs Open', 'Facing a single open raise']], ui.type, 'type')}</div>`;
+    let h = `<div class="seg sit full" role="group" aria-label="Situation">${segBtns([['rfi', 'Open', 'First in: everyone before you folded'], ['vs', 'vs Open', 'Facing a single open raise']], ui.type, 'type')}</div>`;
     const heroSeats = ui.type === 'rfi' ? seats.filter(s => s !== 'BB') : seats.slice(1);
-    h += `<span class="sitgrp"><span class="lbl">Hero</span><div class="seg sit" role="group" aria-label="Hero position">${segBtns(heroSeats.map(s => [s, L(s)]), ui.hero, 'hero')}</div></span>`;
+    h += `<div class="field"><div class="flabel">Your seat</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns(heroSeats.map(s => [s, L(s)]), ui.hero, 'hero')}</div></div>`;
     if (ui.type === 'vs') {
       const vs = seats.slice(0, seats.indexOf(ui.hero));
-      h += `<span class="sitgrp"><span class="lbl">Opener</span><div class="seg sit vill" role="group" aria-label="Opener position">${segBtns(vs.map(s => [s, L(s)]), ui.vill, 'vill')}</div></span>`;
+      h += `<div class="field"><div class="flabel">Opener</div><div class="seats-btns vill" role="group" aria-label="Opener position">${segBtns(vs.map(s => [s, L(s)]), ui.vill, 'vill')}</div></div>`;
     }
     $('#sitbar').innerHTML = h;
     // trainer situation
-    let t = `<div class="seg sit" role="group" aria-label="Drill type">${segBtns([['all', 'Mixed'], ['rfi', 'Open'], ['vs', 'vs Open']], ui.trType, 'trtype')}</div>`;
-    t += `<span class="sitgrp"><span class="lbl">Hero</span><div class="seg sit" role="group" aria-label="Hero position">${segBtns([['any', 'Any']].concat(seats.map(s => [s, L(s)])), ui.trHero, 'trhero')}</div></span>`;
+    let t = `<div class="seg sit full" role="group" aria-label="Drill type">${segBtns([['all', 'Mixed'], ['rfi', 'Open'], ['vs', 'vs Open']], ui.trType, 'trtype')}</div>`;
+    t += `<div class="field"><div class="flabel">Your seat</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns([['any', 'Any']].concat(seats.map(s => [s, L(s)])), ui.trHero, 'trhero')}</div></div>`;
     $('#trsitbar').innerHTML = t;
   }
   function cfgChanged() { saveUI(); renderCfg(); if (ui.rmode === 'train') deal(); else renderChartView(); }
+  $('#setup-sum').addEventListener('click', () => { ui.setupOpen = !ui.setupOpen; saveUI(); renderCfg(); fitGrid(); });
+  $('#cfg-g').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b || b.dataset.g === ui.g) return; ui.g = b.dataset.g; cfgChanged(); });
   $('#cfg-n').addEventListener('click', e => { const b = e.target.closest('[data-n]'); if (!b) return; ui.n = +b.dataset.n; cfgChanged(); });
-  $('#cfg-stack').addEventListener('input', e => { ui.stack = M.STACKS[+e.target.value] || 100; $('#cfg-stack-v').textContent = ui.stack + 'bb'; if (ui.rmode !== 'train') { saveUI(); renderChartView(); } });
+  $('#cfg-stack').addEventListener('input', e => { const l = M.STACKS[ui.g]; ui.stacks[ui.g] = l[+e.target.value] || M.DEFAULT_STACK[ui.g]; paintSlider(); if (ui.rmode !== 'train') { saveUI(); renderChartView(); } });
   $('#cfg-stack').addEventListener('change', () => cfgChanged());
+  $('#cfg-ticks').addEventListener('click', e => { const tk = e.target.closest('.tk'); if (!tk) return; ui.stacks[ui.g] = M.snapStack(ui.g, +tk.dataset.s); cfgChanged(); });
   $('#sitbar').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.type) ui.type = b.dataset.type; else if (b.dataset.hero) ui.hero = b.dataset.hero; else if (b.dataset.vill) ui.vill = b.dataset.vill; else return;
@@ -1551,6 +1784,13 @@ self.onmessage = function (e) {
     if (b.dataset.trtype) ui.trType = b.dataset.trtype; else if (b.dataset.trhero) ui.trHero = b.dataset.trhero; else return;
     saveUI(); renderCfg(); deal();
   });
+  // "Approximate" info popover
+  const INFO = '<b>Approximate ranges, not solver output.</b><p>Cash 6-max 100bb charts are hand-written starters. Every other table size, stack and the tournament charts are model-derived from them: hands keep their relative order and range sizes scale with players left to act and stack depth.</p><p><b>Tournament</b> assumes a 1bb big-blind ante, chip-EV and no ICM: smaller opens (2&ndash;2.3bb), wider opens and BB defence, SB limps, all-in re-raises below 31bb and jam-or-fold at 12bb and below.</p><p><b>Cash</b> deep stacks add suited connectors, small pairs and suited aces and 3-bet fewer offsuit hands.</p><p>Edit any chart to match your own strategy.</p>';
+  $('#info-pop').innerHTML = INFO;
+  const setPop = on => { $('#info-pop').hidden = !on; $('#info-btn').setAttribute('aria-expanded', String(on)); };
+  $('#info-btn').addEventListener('click', e => { e.stopPropagation(); setPop($('#info-pop').hidden); });
+  document.addEventListener('click', e => { if (!e.target.closest('.popwrap')) setPop(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setPop(false); });
 
   let editing = false, selKey = null;
   function applySel() {
@@ -1565,46 +1805,78 @@ self.onmessage = function (e) {
     const key = curKey(), s = scOf(key);
     const chart = chartOf(key);
     $('#edited-pill').hidden = !overrides[key];
-    $('#sc-desc').innerHTML = esc(s.desc) + ` ${esc(s.short)} effective.` + (s.model
-      ? ' <br><span class="modelnote">&#9432; <b>Model-derived chart.</b> Built from the hand-written 6-max 100bb starter charts: hands keep their relative order, and the range size is scaled by players left to act and stack depth. Short stacks lean toward raw hand strength (jam-or-fold below 15bb, re-raises become jams below 30bb). Deep stacks add small pairs and suited connectors. This is not solver output.</span>'
-      : ' <br><span class="modelnote">&#9432; Hand-written 6-max 100bb starter chart (approximate, not solver output).</span>');
+    $('#headline').innerHTML = `<span class="hgame ${s.g}">${esc(s.game)}</span> <span class="hsep h1">&middot;</span> <span class="hp-l">${esc(s.players)}</span><span class="hp-s">${esc(s.table)}</span> <span class="hsep">&middot;</span> ${esc(s.stackLabel)} <span class="hsep">&middot;</span> <span class="hspot">${esc(s.name)}</span>`;
+    $('#subline').textContent = s.desc;
     const g = $('#grid');
     renderGrid(g, chart);
     g.classList.toggle('editing', editing);
+    $('#chart-view').classList.toggle('editing', editing);
     applySel();
     if (selKey && !editing) showInfo(selKey);
-    $('#legend').innerHTML = s.actions.map(a => `<span><i class="sw" style="background:${A[a].color}"></i>${A[a].label}</span>`).join('') + `<span><i class="sw" style="background:linear-gradient(90deg,${A[s.actions[0]].color} 50%,${A.fold.color} 50%)"></i>Mixed</span>`;
     renderStats();
     // brushes
     if (!s.actions.includes(ui.brush)) ui.brush = s.actions[0];
     if (!s.actions.includes(ui.rest) || ui.rest === ui.brush) ui.rest = 'fold';
-    $('#brushes').innerHTML = s.actions.map(a => `<button class="brush ${a === 'fold' ? 'fold' : ''} ${a === ui.brush ? 'active' : ''}" data-a="${a}" style="background:${A[a].color}">${A[a].label}</button>`).join('');
+    $('#brushes').innerHTML = s.actions.map(a => `<button class="brush ${a === 'fold' ? 'fold' : ''} ${a === ui.brush ? 'active' : ''}" data-a="${a}" style="background:${A[a].color}" aria-pressed="${a === ui.brush}">${A[a].label}</button>`).join('');
     $('#brush-rest').innerHTML = s.actions.filter(a => a !== ui.brush).map(a => `<option value="${a}">${A[a].label}</option>`).join('');
     $('#brush-rest').value = ui.rest;
     $('#brush-freq').value = String(ui.freq);
     $('#edit-tools').hidden = !editing;
-    $('#edit-hint').hidden = editing;
-    $('#edit-sum').textContent = editing ? `on · ${A[ui.brush].label} ${Math.round(ui.freq * 100)}%` : 'off';
-    $('#edit-toggle').innerHTML = editing ? '&#10003; Done' : '&#9998; Edit';
+    $('#edit-sum').textContent = editing ? 'editing' : (Object.keys(overrides).length ? Object.keys(overrides).length + ' edited' : '');
+    $('#edit-toggle').innerHTML = editing ? '&#10003;<span class="edlbl"> Done</span>' : '&#9998;<span class="edlbl"> Edit</span>';
+    $('#edit-toggle').title = editing ? 'Finish editing' : 'Edit this chart';
     $('#edit-toggle').classList.toggle('primary', editing);
+    $('#edit-toggle').setAttribute('aria-pressed', String(editing));
+    fitGrid();
   }
   function renderStats() {
     const key = curKey(), s = scOf(key), chart = chartOf(key), t = chartStats(chart);
+    const play = 1326 - (t.fold || 0);
+    const cells = H.CLASSES.filter(k => (chart[k].fold || 0) < 0.999).length;
     let html = '';
     for (const a of s.actions) {
       const v = t[a] || 0;
-      html += `<div class="stat"><i class="sw" style="background:${A[a].color}"></i><span>${A[a].label}</span><span><b>${pct(v / 1326)}</b> <span class="dim small">${fmtN(v, 1)} combos</span></span><div class="bar"><i style="width:${(v / 1326 * 100).toFixed(2)}%;background:${A[a].color}"></i></div></div>`;
+      html += `<div class="stat"><i class="sw" style="background:${A[a].color}"></i><span>${A[a].label}</span><span><b>${pct(v / 1326)}</b> <span class="muted small">${fmtN(v, 1)} combos</span></span><div class="bar"><i style="width:${(v / 1326 * 100).toFixed(2)}%;background:${A[a].color}"></i></div></div>`;
     }
-    const play = 1326 - (t.fold || 0);
-    const cells = H.CLASSES.filter(k => (chart[k].fold || 0) < 0.999).length;
-    html += `<div class="small muted" style="margin-top:10px">${s.rfi ? 'Opening' : 'Continuing (VPIP)'}: <b style="color:var(--text)">${pct(play / 1326)}</b> &middot; ${fmtN(play, 1)} / 1326 combos &middot; ${cells} of 169 hand classes</div>`;
+    html += `<div class="small muted" style="margin-top:8px">${s.rfi ? 'Playing' : 'Continuing'}: <b style="color:var(--text)">${pct(play / 1326)}</b> &middot; ${fmtN(play, 1)} / 1326 combos &middot; ${cells} of 169 hands</div>`;
     $('#stats').innerHTML = html;
-    const parts = s.actions.filter(a => a !== 'fold').map(a => `${A[a].label} ${pct((t[a] || 0) / 1326)}`);
-    const tag = overrides[key] ? '<span class="tag ed" title="You edited this chart">edited</span>' : s.model ? '<span class="tag" title="Model-derived from the 6-max 100bb starter charts (scaled by seats behind and stack depth). Expand Range stats for details.">model &#9432;</span>' : '<span class="tag hw" title="Hand-written 6-max 100bb starter chart">starter</span>';
-    $('#summary').innerHTML = `<b>${esc(s.name)}</b> <span class="dim">${esc(s.short)}</span> &middot; ${s.rfi ? 'Open' : 'Continue'} <b>${pct(play / 1326)}</b>${!s.rfi && parts.length > 1 ? ' <span class="dim smhide">(' + parts.join(' · ') + ')</span>' : ''} ${tag}`;
-    $('#stats-sum').textContent = `${cells} classes`;
+    $('#stats-sum').textContent = `${s.rfi ? 'play' : 'continue'} ${pct(play / 1326)}`;
+    // compact legend: action + % of all hands, then the total
+    $('#legend').innerHTML = s.actions.filter(a => a !== 'fold').map(a => `<span class="lg-i"><i class="sw" style="background:${A[a].color}"></i>${A[a].label} <b>${pct((t[a] || 0) / 1326)}</b></span>`).join('')
+      + `<span class="lg-i"><i class="sw sw-fold"></i>Fold <b>${pct((t.fold || 0) / 1326)}</b></span>`
+      + `<span class="lg-i lg-mix" title="Split cells are mixed: the hand plays each action part of the time"><i class="sw" style="background:linear-gradient(90deg,${A[s.actions[0]].color} 50%,${A.fold.color} 50%)"></i>Mixed</span>`
+      + `<span class="lg-tot" id="summary">${s.rfi ? 'Play' : 'Continue'} <b>${pct(play / 1326)}</b></span>`;
   }
-  $('#edit-toggle').addEventListener('click', () => { editing = !editing; if (editing) $('#edit-fold').open = true; renderChartView(); });
+  // size the chart grid to the space left on screen (falls back to the CSS calc() if this cannot run)
+  function fitGrid() {
+    const g = $('#grid'), panel = $('#chart-view');
+    if (!g || panel.hidden || ui.tab === 'equity') return;
+    const main = $('main'), pb = parseFloat(getComputedStyle(main).paddingBottom) || 0;
+    const oneCol = getComputedStyle($('.rlayout')).gridTemplateColumns.trim().split(/\s+/).length < 2;
+    const gr = g.getBoundingClientRect();
+    const below = oneCol ? main.getBoundingClientRect().bottom - pb - gr.bottom : panel.getBoundingClientRect().bottom - gr.bottom;
+    const avail = window.innerHeight - (gr.top + window.scrollY) - below - pb - 4;
+    const pw = g.parentElement.clientWidth - (parseFloat(getComputedStyle(g.parentElement).paddingLeft) || 0) * 2;
+    g.style.width = Math.floor(Math.max(oneCol ? 250 : 320, Math.min(pw, avail))) + 'px';
+  }
+  // trainer chart: on two-column layouts size the grid to the height left under the felt
+  function fitTrGrid() {
+    const g = $('#tr-grid'), f = $('#tr-chart-fold');
+    if (!g || !f || !f.open || !g.firstChild || $('#train-view').hidden) return;
+    const oneCol = getComputedStyle($('.rlayout')).gridTemplateColumns.trim().split(/\s+/).length < 2;
+    if (oneCol) { g.style.width = ''; return; }
+    const main = $('main'), pb = parseFloat(getComputedStyle(main).paddingBottom) || 0;
+    const fb = f.querySelector('.fold-body') || g.parentElement, padB = parseFloat(getComputedStyle(fb).paddingBottom) || 0;
+    const gr = g.getBoundingClientRect();
+    const avail = window.innerHeight - (gr.top + window.scrollY) - padB - 2 - pb - 4;
+    const pw = g.parentElement.clientWidth;
+    g.style.width = Math.floor(Math.max(180, Math.min(pw, 560, avail))) + 'px';
+  }
+  $('#tr-chart-fold').addEventListener('toggle', () => fitTrGrid());
+  window.addEventListener('resize', () => { clearTimeout(fitGrid._t); fitGrid._t = setTimeout(() => { fitGrid(); fitTrGrid(); }, 60); });
+  const setEditing = on => { editing = on; renderChartView(); };
+  $('#edit-toggle').addEventListener('click', () => setEditing(!editing));
+  $('#edit-done').addEventListener('click', () => setEditing(false));
   $('#brushes').addEventListener('click', e => { const b = e.target.closest('.brush'); if (!b) return; ui.brush = b.dataset.a; saveUI(); renderChartView(); });
   $('#brush-freq').addEventListener('change', e => { ui.freq = parseFloat(e.target.value); saveUI(); });
   $('#brush-rest').addEventListener('change', e => { ui.rest = e.target.value; saveUI(); });
@@ -1612,9 +1884,10 @@ self.onmessage = function (e) {
   // hover info + painting
   let painting = false, dirty = false;
   const grid = $('#grid');
+  const INFO0 = '<span class="muted">Tap a hand to see its frequencies.</span>';
   function showInfo(k) {
     const cell = chartOf(curKey())[k];
-    $('#cell-info').innerHTML = `${selKey === k && !editing ? '<span class="pill" style="color:#ffe14d;border-color:#6b5d17;background:#2a250c;margin-right:6px;padding:1px 7px">Selected</span>' : ''}<b style="font-size:14px">${k}</b> <span class="dim">(${H.classCount(k)})</span> &middot; ${mixText(cell)}`;
+    $('#cell-info').innerHTML = `${selKey === k && !editing ? '<span class="selpill">Selected</span>' : ''}<b class="ik">${k}</b> <span class="muted">${H.classCount(k)} combos</span> <span class="isep">&middot;</span> ${mixText(cell)}`;
   }
   function paintKey(k, el) {
     const ch = ensureEditable(curKey());
@@ -1629,7 +1902,7 @@ self.onmessage = function (e) {
   function cellAt(x, y) { const el = document.elementFromPoint(x, y); return el && el.closest && el.closest('#grid .cell'); }
   grid.addEventListener('pointerdown', e => {
     const c = e.target.closest('.cell'); if (!c) return;
-    if (!editing) { selKey = selKey === c.dataset.key && e.pointerType === 'mouse' ? null : c.dataset.key; applySel(); if (selKey) showInfo(selKey); else $('#cell-info').innerHTML = '<span class="dim">Hover or tap a cell to see its frequencies.</span>'; return; }
+    if (!editing) { selKey = selKey === c.dataset.key && e.pointerType === 'mouse' ? null : c.dataset.key; applySel(); if (selKey) showInfo(selKey); else $('#cell-info').innerHTML = INFO0; return; }
     e.preventDefault(); painting = true; paintKey(c.dataset.key, c);
   });
   grid.addEventListener('pointermove', e => {
@@ -1644,47 +1917,47 @@ self.onmessage = function (e) {
   $('#reset-sc').addEventListener('click', () => {
     const key = curKey(), s = scOf(key);
     if (!overrides[key]) { toast('This chart is already at its default.'); return; }
-    if (!confirm(`Reset "${s.name} (${s.short})" to the default starter range?`)) return;
+    if (!confirm(`Reset "${s.name} (${s.short})" to the default range?`)) return;
     delete overrides[key]; saveCharts(); renderChartView(); toast('Chart reset to default');
   });
   $('#reset-all').addEventListener('click', () => {
-    if (!confirm('Reset ALL charts (every table size and stack) to the default starter ranges? Your edits will be lost.')) return;
+    if (!confirm('Reset ALL charts (cash and tournament, every table size and stack) to the defaults? Your edits will be lost.')) return;
     overrides = {}; saveCharts(); renderChartView(); toast('All charts reset');
   });
   function exportJSON() {
     const charts = {};
-    const keys = new Set(M.scenarioIds(ui.n).map(id => M.makeKey(ui.n, ui.stack, id)).concat(Object.keys(overrides)));
+    const keys = new Set(M.scenarioIds(ui.n).map(id => M.makeKey(ui.g, ui.n, stackOf(), id)).concat(Object.keys(overrides)));
     for (const key of keys) {
       const ch = chartOf(key), out = {};
       for (const k of H.CLASSES) { const c = ch[k]; if (!((c.fold || 0) >= 0.999)) out[k] = c; }
       charts[key] = out;
     }
-    return JSON.stringify({ app: 'holdem-lab', version: 2, exported: new Date().toISOString(),
-      note: 'Keys are "players|stackBB|scenario" (scenario = rfi:SEAT or vs:HERO:OPENER). Includes every chart for the current table (' + ui.n + ' players, ' + ui.stack + 'bb) plus all your edited charts. Cells omitted = 100% fold. Values are frequencies 0..1. Version-1 files (6-max 100bb ids like "rfi_btn") can still be imported.',
+    return JSON.stringify({ app: 'holdem-lab', version: 3, exported: new Date().toISOString(), game: ui.g, players: ui.n, stack: stackOf(),
+      note: 'Keys are "game|players|stackBB|spot": game = cash or mtt (tournament, 1bb BB ante); spot = rfi:SEAT or vs:HERO:OPENER. Includes every chart for the current table (' + setupSummary() + ') plus all your edited charts. Cells omitted = 100% fold. Values are frequencies 0..1. Version 1 ("rfi_btn") and version 2 ("6|100|rfi:BTN", read as cash) files can still be imported.',
       edited: Object.keys(overrides), charts }, null, 1);
   }
   $('#export-btn').addEventListener('click', () => {
     const json = exportJSON(), n = Object.keys(JSON.parse(json).charts).length;
-    const m = openModal(`<h2>Export ranges</h2><p class="small muted">${n} charts: every chart for the current table (${ui.n} players, ${ui.stack}bb) plus all of your edited charts. Download the file or copy the JSON.</p><textarea class="json" readonly></textarea><div class="modal-foot"><button class="btn" id="m-copy">Copy</button><button class="btn primary" id="m-dl">Download .json</button><button class="btn" id="m-close">Close</button></div>`);
+    const m = openModal(`<h2>Export ranges</h2><p class="small muted">${n} charts: every chart for the current table (${esc(setupSummary())}) plus all of your edited charts. Download the file or copy the JSON.</p><textarea class="json" readonly></textarea><div class="modal-foot"><button class="btn" id="m-copy">Copy</button><button class="btn primary" id="m-dl">Download .json</button><button class="btn" id="m-close">Close</button></div>`);
     $('textarea', m).value = json;
     $('#m-copy').onclick = () => { const ta = $('textarea', m); ta.select(); (navigator.clipboard ? navigator.clipboard.writeText(json) : Promise.reject()).then(() => toast('Copied'), () => { document.execCommand('copy'); toast('Copied'); }); };
     $('#m-dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' })); a.download = 'holdem-ranges.json'; document.body.appendChild(a); a.click(); a.remove(); };
     $('#m-close').onclick = closeModal;
   });
   $('#import-btn').addEventListener('click', () => {
-    const m = openModal(`<h2>Import ranges</h2><p class="small muted">Paste JSON exported from this app, or choose a file. Only charts present in the file are replaced. Old (version 1) files are read as 6-max 100bb.</p><input type="file" accept=".json,application/json" id="m-file"><textarea class="json" placeholder='{"charts": {"6|100|rfi:BTN": {"AA": {"raise": 1}, ...}}}' style="margin-top:10px"></textarea><div class="modal-foot"><span class="small" id="m-err" style="color:var(--bad);margin-right:auto"></span><button class="btn" id="m-close">Cancel</button><button class="btn primary" id="m-apply">Import</button></div>`);
+    const m = openModal(`<h2>Import ranges</h2><p class="small muted">Paste JSON exported from this app, or choose a file. Only charts in the file are replaced. Older files are read as cash (version 1 = 6-max 100bb); cash charts below 50bb from version 2 are skipped.</p><input type="file" accept=".json,application/json" id="m-file"><textarea class="json" placeholder='{"charts": {"mtt|9|25|rfi:BTN": {"AA": {"raise": 1}, ...}}}' style="margin-top:10px"></textarea><div class="modal-foot"><span class="small" id="m-err" style="color:var(--bad);margin-right:auto"></span><button class="btn" id="m-close">Cancel</button><button class="btn primary" id="m-apply">Import</button></div>`);
     $('#m-file').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { $('textarea', m).value = t; }); };
     $('#m-close').onclick = closeModal;
     $('#m-apply').onclick = () => {
       try {
         const obj = JSON.parse($('textarea', m).value);
         const src = obj.charts || obj;
-        const edited = Array.isArray(obj.edited) ? new Set(obj.edited.map(k => { const p = M.parseKey(k); return p ? M.makeKey(p.n, p.s, p.id) : k; })) : null;
+        const edited = Array.isArray(obj.edited) ? new Set(obj.edited.map(k => normKey(k) || k)) : null;
         const clean = sanitizeCharts(src) || {};
-        // version-2 files list which charts were edited; unedited defaults are not stored as overrides
+        // files list which charts were edited; unedited defaults are not stored as overrides
         for (const k of Object.keys(clean)) if (!edited || !edited.has(k)) { if (JSON.stringify(clean[k]) === JSON.stringify(sanitizeCharts({ [k]: defaultOf(k) })[k])) delete clean[k]; }
         const n = Object.keys(clean).length, total = Object.keys(src).filter(k => M.parseKey(k)).length;
-        if (!total) throw new Error('No known chart keys found (expected e.g. "6|100|rfi:BTN" or "rfi_btn").');
+        if (!total) throw new Error('No known chart keys found (expected e.g. "cash|6|100|rfi:BTN", "mtt|9|25|rfi:BTN" or "rfi_btn").');
         Object.assign(overrides, clean); saveCharts(); closeModal(); renderChartView(); toast(`Imported ${total} chart${total > 1 ? 's' : ''} (${n} differ from defaults)`);
       } catch (err) { $('#m-err').textContent = err.message; }
     };
@@ -1699,7 +1972,7 @@ self.onmessage = function (e) {
     const ofType = ids.filter(id => ui.trType === 'all' || id.startsWith(ui.trType + ':'));
     let pool = ofType.filter(id => ui.trHero === 'any' || M.parseId(id).hero === ui.trHero);
     if (!pool.length) pool = ofType.length ? ofType : ids;
-    return pool.map(id => M.makeKey(ui.n, ui.stack, id));
+    return pool.map(id => M.makeKey(ui.g, ui.n, stackOf(), id));
   }
   function isBorderline(chart, k) {
     const cell = chart[k];
@@ -1724,26 +1997,28 @@ self.onmessage = function (e) {
     cur = { id, k: pick.k, cards, answered: false, border: pick.b };
     renderTrainer();
   }
-  const KEYHINT = { fold: 'F', call: 'C', raise: 'R', '3bet': '3', jam: 'J' };
+  const KEYHINT = { fold: 'F', call: 'C', raise: 'R', '3bet': '3', jam: 'J', limp: 'L' };
+  const btnText = a => a === 'fold' ? '#e6eaf2' : '#fff';
   function renderTrainer() {
     if (!cur || !scOf(cur.id)) { deal(); return; }
     const s = scOf(cur.id), seats = M.SEATS[s.n];
     const heroIdx = seats.indexOf(s.hero), vIdx = s.villain ? seats.indexOf(s.villain) : -1;
+    $('#tr-head').innerHTML = `<span class="hgame ${s.g}">${esc(s.game)}</span> ${esc(s.players)} &middot; ${esc(s.stackLabel)}${s.g === 'mtt' ? ' &middot; <span class="antetag">BB ante</span>' : ''}`;
     $('#tr-seats').innerHTML = seats.map((p, i) => {
       let cls = 'seat';
       if (i === heroIdx) cls += ' hero'; else if (i === vIdx) cls += ' villain';
       else if (i < heroIdx) cls += ' folded';
       const nm = M.seatLabel(s.n, p);
-      const lbl = i === heroIdx ? nm + ' (you)' : i === vIdx ? nm + ' raises' : nm;
+      const lbl = i === heroIdx ? nm + ' (you)' : i === vIdx ? nm + (s.stack < M.JAM_BELOW[s.g] ? ' jams' : ' raises') : nm;
       return `<span class="${cls}">${esc(lbl)}</span>`;
     }).join('');
-    $('#tr-desc').innerHTML = `<span class="trcfg">${esc(s.short)}</span> ${esc(s.desc)}`;
+    $('#tr-desc').textContent = s.desc;
     $('#tr-cards').innerHTML = cur.cards.map(c => cardHTML(c, 'big')).join('');
     $('#tr-handname').textContent = cur.k;
-    $('#tr-actions').innerHTML = s.actions.slice().reverse().map(a => `<button class="act" data-a="${a}" style="background:${A[a].color}${a === 'fold' ? ';color:#cfd5e0;background:#3a4558' : ''}" ${cur.answered ? 'disabled' : ''}>${A[a].label}<kbd>${KEYHINT[a]}</kbd></button>`).join('');
+    $('#tr-actions').innerHTML = s.actions.slice().reverse().map(a => `<button class="act act-${a}" data-a="${a}" style="background:${a === 'fold' ? '#3d4a60' : A[a].color};color:${btnText(a)}" ${cur.answered ? 'disabled' : ''}>${A[a].label}<kbd>${KEYHINT[a]}</kbd></button>`).join('');
     if (!cur.answered) {
       $('#tr-feedback').className = 'feedback idle';
-      $('#tr-feedback').innerHTML = 'Pick an action.<span class="kbdhint">&nbsp;Keys: ' + s.actions.slice().reverse().map(a => `<b>${KEYHINT[a]}</b> ${A[a].label.toLowerCase()}`).join(' &middot; ') + ' &middot; <b>Space</b> next</span>';
+      $('#tr-feedback').innerHTML = 'What do you do?<span class="kbdhint">&nbsp;Keys: ' + s.actions.slice().reverse().map(a => `<b>${KEYHINT[a]}</b> ${A[a].label.toLowerCase()}`).join(' &middot; ') + ' &middot; <b>Space</b> next</span>';
       $('#tr-grid').innerHTML = ''; $('#tr-grid').classList.remove('has-sel');
       $('#tr-chart-empty').hidden = false; $('#tr-chart-title').textContent = '';
     }
@@ -1765,23 +2040,24 @@ self.onmessage = function (e) {
     const fb = $('#tr-feedback');
     fb.className = 'feedback ' + (correct ? 'good' : 'bad');
     fb.innerHTML = `<span>${correct ? '&#10003; Correct' : '&#10007; Not quite'} &mdash; you: <b>${A[a].label}</b> &middot; chart <b>${cur.k}</b>: ${mixText(cell)}${mixed ? ' <span class="small">(mixed)</span>' : ''}</span>`;
-    $$('#tr-actions .act').forEach(b => { b.disabled = true; if (b.dataset.a === a) b.style.outline = '3px solid #fff'; });
+    $$('#tr-actions .act').forEach(b => { b.disabled = true; if (b.dataset.a === a) b.classList.add('picked'); });
     $('#tr-chart-empty').hidden = true;
-    $('#tr-chart-title').textContent = s.name + ' · ' + s.short + (overrides[cur.id] ? ' (edited)' : s.model ? ' (model)' : '');
+    $('#tr-chart-title').textContent = s.name + (overrides[cur.id] ? ' (edited)' : '');
     renderGrid($('#tr-grid'), chartOf(cur.id), { highlight: cur.k });
     $('#tr-grid').classList.add('has-sel');
     if (ui.trAutoChart) $('#tr-chart-fold').open = true;
+    fitTrGrid();
     renderTrainerStats();
   }
   const scName = key => { const s = scOf(key); return s ? s.name + ' · ' + s.short : key; };
   function renderTrainerStats() {
     const acc = stats.total ? stats.correct / stats.total : 0;
     $('#tr-kpis').innerHTML = `<span>Accuracy <b>${stats.total ? pct(acc, 0) : '—'}</b></span><span>Correct <b>${stats.correct}/${stats.total}</b></span><span>Streak <b>${stats.streak}</b></span><span>Best <b>${stats.best}</b></span>`;
-    const wl = { uniform: 'Uniform', border: 'Borderline focus', only: 'Borderline only' };
+    const wl = { uniform: 'uniform', border: 'borderline focus', only: 'borderline only' };
     $('#tr-set-sum').textContent = wl[ui.trWeight] || '';
-    $('#tr-recent').innerHTML = stats.recent.length ? stats.recent.map(r => `<span class="${r.ok ? 'y' : 'n'}" title="${esc(scName(r.id))}">${esc(r.k)}</span>`).join('') : '<span class="dim small">No hands yet.</span>';
-    const rows = Object.keys(stats.per).filter(k => scOf(k)).sort((a, b) => stats.per[b].n - stats.per[a].n).map(k => { const p = stats.per[k], a = p.c / p.n; return `<tr><td>${esc(scName(k))}</td><td class="num">${p.c}/${p.n}</td><td style="width:30%"><div class="bar" style="height:8px"><i style="width:${a * 100}%;background:${a >= 0.8 ? 'var(--good)' : a >= 0.6 ? 'var(--warn)' : 'var(--bad)'}"></i></div></td><td class="num">${pct(a, 0)}</td></tr>`; }).join('');
-    $('#tr-table').innerHTML = rows ? `<tr><th>Scenario</th><th class="num">Score</th><th></th><th class="num">Acc</th></tr>${rows}` : '<tr><td class="dim small">Answer some hands to see per-scenario accuracy.</td></tr>';
+    $('#tr-recent').innerHTML = stats.recent.length ? stats.recent.map(r => `<span class="${r.ok ? 'y' : 'n'}" title="${esc(scName(r.id))}">${esc(r.k)}</span>`).join('') : '<span class="muted small">No hands yet.</span>';
+    const rows = Object.keys(stats.per).filter(k => scOf(k)).sort((a, b) => stats.per[b].n - stats.per[a].n).map(k => { const p = stats.per[k], a = p.c / p.n; return `<tr><td>${esc(scName(k))}</td><td class="num">${p.c}/${p.n}</td><td style="width:26%"><div class="bar" style="height:8px"><i style="width:${a * 100}%;background:${a >= 0.8 ? 'var(--good)' : a >= 0.6 ? 'var(--warn)' : 'var(--bad)'}"></i></div></td><td class="num">${pct(a, 0)}</td></tr>`; }).join('');
+    $('#tr-table').innerHTML = rows ? `<tr><th>Spot</th><th class="num">Score</th><th></th><th class="num">Acc</th></tr>${rows}` : '<tr><td class="muted small">Answer some hands to see accuracy per spot.</td></tr>';
   }
   $('#tr-weight').value = ui.trWeight;
   $('#tr-showchart').checked = !!ui.trAutoChart;
@@ -1798,15 +2074,15 @@ self.onmessage = function (e) {
     if (!cur || cur.answered) return;
     const s = scOf(cur.id);
     let a = null;
-    if (key === 'f') a = 'fold'; else if (key === 'c') a = 'call'; else if (key === '3') a = s.actions.includes('3bet') ? '3bet' : 'jam';
+    if (key === 'f') a = 'fold'; else if (key === 'c') a = 'call'; else if (key === 'l') a = 'limp';
+    else if (key === '3') a = s.actions.includes('3bet') ? '3bet' : 'jam';
     else if (key === 'j' || key === 'a') a = 'jam';
-    else if (key === 'r') a = s.actions[0];
+    else if (key === 'r') a = s.actions[0] === 'call' ? null : s.actions[0];
     if (a && s.actions.includes(a)) { e.preventDefault(); answer(a); }
   });
 
   function setRMode(m) {
     ui.rmode = m; saveUI();
-    $$('#rmode button').forEach(b => b.classList.toggle('active', b.dataset.m === m));
     $('#chart-view').hidden = m !== 'chart';
     $('#tab-ranges').classList.toggle('mode-train', m === 'train');
     $('#train-view').hidden = m !== 'train';
@@ -1814,7 +2090,6 @@ self.onmessage = function (e) {
     if (m === 'train') { if (cur && !trainerPool().includes(cur.id)) cur = null; renderTrainer(); }
     else renderChartView();
   }
-  $$('#rmode button').forEach(b => b.addEventListener('click', () => setRMode(b.dataset.m)));
 
   /* ================= EQUITY ================= */
   const PCOLORS = ['#4f8cff', '#f2683c', '#2fbf71', '#a06bff', '#f5b041', '#e84f9b'];
@@ -1893,9 +2168,9 @@ self.onmessage = function (e) {
   }
   function chartOptions() {
     fixSel();
-    let html = `<option value="">Load from chart (${ui.n === 2 ? 'HU' : ui.n + '-max'} ${ui.stack}bb)…</option>`, grp = null;
+    let html = `<option value="">Load from chart (${esc(setupSummary())})…</option>`, grp = null;
     M.scenarioIds(ui.n).forEach(id => {
-      const key = M.makeKey(ui.n, ui.stack, id), s = scOf(key);
+      const key = M.makeKey(ui.g, ui.n, stackOf(), id), s = scOf(key);
       if (s.group !== grp) { if (grp) html += '</optgroup>'; html += `<optgroup label="${esc(s.group)}">`; grp = s.group; }
       s.actions.filter(a => a !== 'fold').forEach(a => { html += `<option value="${esc(key)}#${a}">${esc(s.name)}: ${A[a].label}${overrides[key] ? ' ✎' : ''}</option>`; });
     });
@@ -2123,10 +2398,10 @@ self.onmessage = function (e) {
   }
 
   /* ---------------- init ---------------- */
+  if (folds['t-chart'] == null && window.innerWidth > 900) folds['t-chart'] = true; // wide screens: show the answer chart under the table
   $$('details[data-fold]').forEach(d => { d.open = !!folds[d.dataset.fold]; });
   setTab.ready = true;
-  setTab(ui.tab);
-  setRMode(ui.rmode);
+  setTab(ui.tab === 'equity' ? 'equity' : ui.rmode === 'train' ? 'trainer' : 'charts');
   renderEquityInputs();
   window.__holdemApp = { calc, deal, answer, get cur() { return cur; } }; // for tests
 })();
