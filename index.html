@@ -606,6 +606,73 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 @media (max-width:640px) and (max-height:760px){ #results .ci,#results .cinote{display:none} }
 @media (max-width:640px) and (max-height:760px){ main{padding-bottom:2px} #results table.t td,#results table.t th{padding-top:2px;padding-bottom:2px} }
 
+/* ===== v6: locked matrix size, fixed seat buttons, smooth slider ===== */
+/* fixed-height lines around the grid, so the grid size can be computed once */
+.chead{height:46px;overflow:hidden;align-items:center}
+#headline{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.subline{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.editbar{box-sizing:border-box;height:46px;margin:0 0 6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;white-space:nowrap}
+.editbar::-webkit-scrollbar{display:none}
+.editbar > *,.editbar .brushes{flex:0 0 auto}
+.editbar .brushes{display:flex;flex-wrap:nowrap}
+#chart-view.editing .chead{display:none}
+.legend{flex-wrap:nowrap;overflow:hidden;white-space:nowrap;height:20px;line-height:20px;max-width:100%}
+.info,#cell-info{box-sizing:border-box;height:30px;line-height:18px;padding-top:5px;padding-bottom:5px}
+#cell-info *{line-height:18px}
+/* seat buttons: one size for every player count (columns fixed to the 9-max count) */
+.seats-btns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:36px;gap:6px;min-height:78px;align-content:start}
+#trsitbar .seats-btns{min-height:120px}
+.seats-btns button{min-height:0;height:100%;padding:0 2px;white-space:nowrap;overflow:hidden}
+.seats-btns button.long{font-size:12px;letter-spacing:-.02em}
+.seats-btns.ghost{display:grid}
+.ghosttxt{grid-column:1/-1;align-self:center;font-size:12px;color:#6c7890;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:900px){
+  .seats-btns{grid-template-columns:repeat(8,minmax(0,1fr));min-height:0;flex:1}
+  #trsitbar .seats-btns{grid-template-columns:repeat(10,minmax(0,1fr));min-height:0}
+}
+@media (max-width:640px){
+  .chead{height:32px}
+  .editbar{height:32px;margin-bottom:4px;padding:2px 4px}
+  .editbar .brush,.editbar .btn{min-height:26px;height:26px}
+  .editbar select{padding:2px 4px}
+  .legend{height:16px;line-height:16px}
+  .info,#cell-info{height:22px;line-height:16px;padding-top:2px;padding-bottom:2px}
+  #cell-info *{line-height:16px}
+  #cell-info .ik{font-size:13px}
+  .seats-btns{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-auto-rows:28px;gap:2px;flex:1 1 auto;min-width:0}
+  #trsitbar .seats-btns{grid-template-columns:repeat(10,minmax(0,1fr))}
+  .seats-btns button{flex:none;height:28px;min-height:28px;padding:0;font-size:11px;letter-spacing:-.03em}
+  .seats-btns button.long{font-size:9.5px;letter-spacing:-.04em}
+  #trsitbar .seats-btns button{font-size:10.5px}
+  #trsitbar .seats-btns button.long{font-size:8.5px}
+  .ghosttxt{font-size:11px}
+}
+@media (max-width:360px){ .seats-btns button{font-size:10px} .seats-btns button.long{font-size:8.5px} }
+/* smooth slider: wrapper owns the pointer (bigger hit area, no page scroll while dragging) */
+.stack-wrap{position:relative;touch-action:none;-webkit-user-select:none;user-select:none;cursor:pointer;padding:4px 0;-webkit-tap-highlight-color:transparent}
+.stack-wrap .bbslider{pointer-events:none;height:30px;margin:0}
+.bbslider::-webkit-slider-thumb{width:28px;height:28px;margin-top:-10px;transition:transform .12s ease,box-shadow .12s ease}
+.bbslider::-moz-range-thumb{width:20px;height:20px}
+.stack-wrap.dragging .bbslider::-webkit-slider-thumb{transform:scale(1.12);box-shadow:0 0 0 6px rgba(79,140,255,.25),0 2px 8px rgba(0,0,0,.5)}
+#tab-ranges.g-mtt .stack-wrap.dragging .bbslider::-webkit-slider-thumb{box-shadow:0 0 0 6px rgba(249,115,22,.25),0 2px 8px rgba(0,0,0,.5)}
+.ticks{margin:0 14px}
+#cfg-stack-v{display:inline-block;min-width:4.2em}
+@media (max-width:640px){ .stack-wrap{padding:2px 0} .stack-wrap .bbslider{margin:0} }
+@media (max-width:640px){
+  /* claw back the height the always-reserved opener row costs */
+  .rlayout{gap:4px}
+  .sitpanel{padding:2px 4px}
+  #chart-view.gridpanel{padding-top:2px}
+  .chead{height:30px;margin-bottom:3px}
+  .editbar{height:30px;margin-bottom:3px}
+}
+@media (max-width:640px){
+  /* trainer: Any + up to 9 seats -> fixed 5x2 grid (same height for every player count) */
+  #trsitbar .seats-btns{grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:28px 28px;min-height:58px}
+  #trsitbar .seats-btns button{font-size:11px}
+  #trsitbar .seats-btns button.long{font-size:10.5px}
+}
+
 </style>
 </head>
 <body>
@@ -637,7 +704,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
             </div>
             <div class="field stackfield">
               <div class="flabel">Hero stack <output id="cfg-stack-v" for="cfg-stack">100 bb</output></div>
-              <input type="range" id="cfg-stack" class="bbslider" min="0" max="10" step="1" aria-label="Hero stack in big blinds">
+              <div class="stack-wrap" id="stack-wrap">
+                <input type="range" id="cfg-stack" class="bbslider" min="0" max="1000" step="1" aria-label="Hero stack in big blinds">
+              </div>
               <div class="ticks" id="cfg-ticks" aria-hidden="true"></div>
             </div>
             <div class="gnote" id="game-note"></div>
@@ -695,10 +764,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
           </div>
           <div class="editbar" id="edit-tools" hidden>
             <span class="ebadge">&#9998; Editing</span>
+            <button class="btn small primary" id="edit-done">&#10003; Done</button>
             <div class="brushes" id="brushes"></div>
             <label class="small">Freq <select id="brush-freq"><option value="1">100%</option><option value="0.75">75%</option><option value="0.5">50%</option><option value="0.25">25%</option></select></label>
             <label class="small">rest <select id="brush-rest"></select></label>
-            <button class="btn small primary" id="edit-done">Done</button>
           </div>
           <div id="grid" class="grid13 main"></div>
           <div class="legend" id="legend"></div>
@@ -1819,6 +1888,13 @@ self.onmessage = function (e) {
   const watchGrid = el => { sizeGridFont(el); if (gridRO && !el._ro) { gridRO.observe(el); el._ro = 1; } };
   function renderGrid(container, chart, opts) {
     opts = opts || {};
+    if (container.childElementCount === 169) {
+      // repaint in place: no DOM churn, no layout change (fast enough for live slider drags)
+      const cs = container.children;
+      for (let i = 0; i < 169; i++) { const d = cs[i]; paintCell(d, chart[d.dataset.key]); d.classList.toggle('hl', opts.highlight === d.dataset.key); }
+      watchGrid(container);
+      return;
+    }
     container.innerHTML = '';
     const frag = document.createDocumentFragment();
     for (const k of H.CLASSES) {
@@ -1861,7 +1937,7 @@ self.onmessage = function (e) {
   const curId = () => ui.type === 'rfi' ? 'rfi:' + ui.hero : `vs:${ui.hero}:${ui.vill}`;
   const curKey = () => { fixSel(); return M.makeKey(ui.g, ui.n, stackOf(), curId()); };
   const PHONE = window.matchMedia('(max-width:640px)');
-  const onPhoneChange = () => { renderCfg(); fitGrid(); };
+  const onPhoneChange = () => { renderCfg(); fitGrid(true); };
   if (PHONE.addEventListener) PHONE.addEventListener('change', () => onPhoneChange()); else if (PHONE.addListener) PHONE.addListener(() => onPhoneChange());
   const segBtns = (items, active, attr) => items.map(([v, l, t]) => `<button data-${attr}="${esc(v)}" class="${v === active ? 'active' : ''}"${t ? ` title="${esc(t)}"` : ''} aria-pressed="${v === active}">${l}</button>`).join('');
   const TICKS = { cash: [50, 100, 200, 300, 500], mtt: [5, 10, 15, 25, 40, 60, 100] };
@@ -1870,10 +1946,21 @@ self.onmessage = function (e) {
     const s = stackOf();
     return `${M.GAME_LABEL[ui.g]} · ${ui.n === 2 ? 'Heads-up' : ui.n + ' players'} · ${stackTxt(ui.g, s)}`;
   }
+  // slider: fine-grained 0..RES positions, buckets evenly spaced; snaps to a bucket on release
+  const RES = 1000;
+  let sliderDrag = null;
+  const sPos = (g, i) => i * RES / (M.STACKS[g].length - 1);
+  const sIdx = (g, v) => Math.max(0, Math.min(M.STACKS[g].length - 1, Math.round(v / RES * (M.STACKS[g].length - 1))));
+  const sliderVis = v => { const el = $('#cfg-stack'); el.value = String(v); el.style.setProperty('--p', (100 * v / RES).toFixed(2) + '%'); };
+  function stackLabels() {
+    $('#cfg-stack-v').textContent = stackTxt(ui.g, stackOf());
+    $('#cfg-stack').setAttribute('aria-valuetext', stackTxt(ui.g, stackOf()).replace('bb', 'big blinds'));
+    $('#setup-sum-txt').textContent = `${ui.n === 2 ? 'HU' : ui.n + 'p'} · ${stackTxt(ui.g, stackOf()).replace(' ', '')}`;
+  }
   function paintSlider() {
     const list = M.STACKS[ui.g], i = list.indexOf(stackOf()), el = $('#cfg-stack');
-    el.max = String(list.length - 1); el.value = String(i);
-    el.style.setProperty('--p', (100 * i / (list.length - 1)).toFixed(2) + '%');
+    el.max = String(RES); el.step = '1';
+    if (!sliderDrag) sliderVis(sPos(ui.g, i));
     $('#cfg-stack-v').textContent = stackTxt(ui.g, stackOf());
     el.setAttribute('aria-valuetext', stackTxt(ui.g, stackOf()).replace('bb', 'big blinds'));
     $('#setup-sum-txt').textContent = `${ui.n === 2 ? 'HU' : ui.n + 'p'} · ${stackTxt(ui.g, stackOf()).replace(' ', '')}`;
@@ -1899,6 +1986,7 @@ self.onmessage = function (e) {
     let h = mob ? '' : typeSeg;
     const heroSeats = ui.type === 'rfi' ? seats.filter(s => s !== 'BB') : seats.slice(1);
     h += `<div class="field"><div class="flabel">${mob ? 'You' : 'Your seat'}</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns(heroSeats.map(s => [s, L(s)]), ui.hero, 'hero')}</div></div>`;
+    if (ui.type !== 'vs') h += `<div class="field vrow"><div class="flabel">Opener</div><div class="seats-btns vill ghost" aria-hidden="true"><span class="ghosttxt">&mdash; none, folded to you</span></div></div>`;
     if (ui.type === 'vs') {
       const vs = seats.slice(0, seats.indexOf(ui.hero));
       h += `<div class="field"><div class="flabel">Opener</div><div class="seats-btns vill" role="group" aria-label="Opener position">${segBtns(vs.map(s => [s, L(s)]), ui.vill, 'vill')}</div></div>`;
@@ -1908,13 +1996,52 @@ self.onmessage = function (e) {
     let t = mob ? '' : trSeg;
     t += `<div class="field"><div class="flabel">${mob ? 'You' : 'Your seat'}</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns([['any', 'Any']].concat(seats.map(s => [s, L(s)])), ui.trHero, 'trhero')}</div></div>`;
     $('#trsitbar').innerHTML = t;
+    $$('#sitbar .seats-btns button, #trsitbar .seats-btns button').forEach(b => b.classList.toggle('long', b.textContent.length > 5));
   }
   function cfgChanged() { saveUI(); renderCfg(); if (ui.rmode === 'train') deal(); else renderChartView(); }
-  $('#setup-sum').addEventListener('click', () => { ui.setupOpen = !ui.setupOpen; saveUI(); renderCfg(); fitGrid(); });
+  $('#setup-sum').addEventListener('click', () => { ui.setupOpen = !ui.setupOpen; saveUI(); renderCfg(); });
   $('#cfg-g').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b || b.dataset.g === ui.g) return; ui.g = b.dataset.g; cfgChanged(); });
   $('#cfg-n').addEventListener('click', e => { const b = e.target.closest('[data-n]'); if (!b) return; ui.n = +b.dataset.n; cfgChanged(); });
-  $('#cfg-stack').addEventListener('input', e => { const l = M.STACKS[ui.g]; ui.stacks[ui.g] = l[+e.target.value] || M.DEFAULT_STACK[ui.g]; paintSlider(); if (ui.rmode !== 'train') { saveUI(); renderChartView(); } });
-  $('#cfg-stack').addEventListener('change', () => cfgChanged());
+  // live preview: label + fill follow every move; the chart repaints at most once per frame and only when the bucket changes
+  let sliderRaf = 0, sliderAnim = 0;
+  function sliderTo(v) {
+    v = Math.max(0, Math.min(RES, v));
+    sliderVis(v);
+    const s = M.STACKS[ui.g][sIdx(ui.g, v)];
+    if (s === stackOf()) return;
+    ui.stacks[ui.g] = s; stackLabels();
+    if (ui.rmode !== 'train' && !sliderRaf) sliderRaf = requestAnimationFrame(() => { sliderRaf = 0; renderChartView(); });
+  }
+  function sliderRelease() {
+    const el = $('#cfg-stack'), from = +el.value, to = sPos(ui.g, M.STACKS[ui.g].indexOf(stackOf())), t0 = performance.now();
+    cancelAnimationFrame(sliderAnim);
+    const done = () => { sliderVis(to); saveUI(); if (ui.rmode === 'train') { renderCfg(); deal(); } else { if (sliderRaf) { cancelAnimationFrame(sliderRaf); sliderRaf = 0; } renderCfg(); renderChartView(); } };
+    if (Math.abs(to - from) < 1 || matchMedia('(prefers-reduced-motion: reduce)').matches) return done();
+    const step = now => { const k = Math.min(1, (now - t0) / 120), e = 1 - Math.pow(1 - k, 3); sliderVis(from + (to - from) * e); if (k < 1) sliderAnim = requestAnimationFrame(step); else done(); };
+    sliderAnim = requestAnimationFrame(step);
+  }
+  const stackEl = $('#cfg-stack'), stackWrap = $('#stack-wrap');
+  const vFromX = x => { const r = stackEl.getBoundingClientRect(), th = 28; return (x - r.left - th / 2) / Math.max(1, r.width - th) * RES; };
+  stackWrap.addEventListener('pointerdown', e => {
+    if (e.button > 0) return;
+    e.preventDefault(); cancelAnimationFrame(sliderAnim);
+    sliderDrag = e.pointerId; try { stackWrap.setPointerCapture(e.pointerId); } catch (_) {}
+    stackWrap.classList.add('dragging'); stackEl.focus({ preventScroll: true });
+    sliderTo(vFromX(e.clientX));
+  });
+  stackWrap.addEventListener('pointermove', e => { if (sliderDrag !== e.pointerId) return; e.preventDefault(); sliderTo(vFromX(e.clientX)); });
+  const endDrag = e => { if (sliderDrag === null || (e && e.pointerId !== sliderDrag)) return; sliderDrag = null; stackWrap.classList.remove('dragging'); sliderRelease(); };
+  stackWrap.addEventListener('pointerup', endDrag); stackWrap.addEventListener('pointercancel', endDrag); stackWrap.addEventListener('lostpointercapture', endDrag);
+  // native input events (keyboard, assistive tech, scripted changes)
+  stackEl.addEventListener('input', e => { if (sliderDrag === null) sliderTo(+e.target.value); });
+  stackEl.addEventListener('change', () => { if (sliderDrag === null) { sliderTo(+stackEl.value); sliderVis(sPos(ui.g, M.STACKS[ui.g].indexOf(stackOf()))); cfgChanged(); } });
+  stackEl.addEventListener('keydown', e => {
+    const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1, PageUp: 2, PageDown: -2 }[e.key], list = M.STACKS[ui.g];
+    let i = list.indexOf(stackOf());
+    if (d) i += d; else if (e.key === 'Home') i = 0; else if (e.key === 'End') i = list.length - 1; else return;
+    e.preventDefault(); i = Math.max(0, Math.min(list.length - 1, i));
+    if (list[i] !== stackOf()) { ui.stacks[ui.g] = list[i]; cfgChanged(); }
+  });
   $('#cfg-ticks').addEventListener('click', e => { const tk = e.target.closest('.tk'); if (!tk) return; ui.stacks[ui.g] = M.snapStack(ui.g, +tk.dataset.s); cfgChanged(); });
   $('#sit-slot').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
@@ -1994,17 +2121,36 @@ self.onmessage = function (e) {
       + `<span class="lg-i lg-mix" title="Split cells are mixed: the hand plays each action part of the time"><i class="sw" style="background:linear-gradient(90deg,${A[s.actions[0]].color} 50%,${A.fold.color} 50%)"></i>Mixed</span>`
       + `<span class="lg-tot" id="summary">${s.rfi ? 'Play' : 'Continue'} <b>${pct(play / 1326)}</b></span>`;
   }
-  // size the chart grid to the space left on screen (falls back to the CSS calc() if this cannot run)
-  function fitGrid() {
+  // Chart grid size is LOCKED: worked out once from the viewport, for the worst-case layout (the seat and
+  // opener rows always take their full fixed height, header/legend/info lines are fixed height, edit bar
+  // replaces the header). Changing players, stack, game, Open/vs Open, hero or opener never resizes it.
+  // It is only recomputed on a real resize: a width change or a large height change (orientation), so the
+  // iOS toolbar showing/hiding does not make it jump.
+  let gridPx = 0, gridVW = 0, gridVH = 0;
+  function fitGrid(force) {
     const g = $('#grid'), panel = $('#chart-view');
-    if (!g || panel.hidden || ui.tab === 'equity') return;
+    if (!g) return;
+    if (gridPx && !force) { g.style.width = gridPx + 'px'; return; }
+    if (panel.hidden || ui.tab === 'equity' || !panel.offsetWidth) { gridPx = 0; return; }
     const main = $('main'), pb = parseFloat(getComputedStyle(main).paddingBottom) || 0;
     const oneCol = getComputedStyle($('.rlayout')).gridTemplateColumns.trim().split(/\s+/).length < 2;
     const gr = g.getBoundingClientRect();
-    const below = oneCol ? main.getBoundingClientRect().bottom - pb - gr.bottom : panel.getBoundingClientRect().bottom - gr.bottom;
-    const avail = window.innerHeight - (gr.top + window.scrollY) - below - pb - 4;
+    let top = gr.top + window.scrollY, below;
+    // an expanded mobile setup sheet only pushes the chart down; measure as if it were collapsed
+    const sb = $('#setup-body');
+    if (oneCol && ui.setupOpen && sb && sb.offsetHeight) top -= sb.getBoundingClientRect().height;
+    if (oneCol) {
+      // below the grid: legend + info line, then one row of collapsed folds
+      const info = $('#cell-info').getBoundingClientRect(), pnl = panel.getBoundingClientRect();
+      const pnlPad = pnl.bottom - info.bottom;
+      const sum = $('.side details > summary'), gap = parseFloat(getComputedStyle($('.rlayout')).rowGap) || 0;
+      below = (info.bottom - gr.bottom) + pnlPad + (sum ? sum.getBoundingClientRect().height + 2 + gap : 0);
+    } else below = panel.getBoundingClientRect().bottom - gr.bottom;
+    const avail = window.innerHeight - top - below - pb - 4;
     const pw = g.parentElement.clientWidth - (parseFloat(getComputedStyle(g.parentElement).paddingLeft) || 0) * 2;
-    g.style.width = Math.floor(Math.max(oneCol ? 250 : 320, Math.min(pw, avail))) + 'px';
+    gridPx = Math.floor(Math.max(oneCol ? 250 : 320, Math.min(pw, avail)));
+    gridVW = window.innerWidth; gridVH = window.innerHeight;
+    g.style.width = gridPx + 'px';
   }
   // trainer chart: on two-column layouts size the grid to the height left under the felt
   function fitTrGrid() {
@@ -2020,7 +2166,15 @@ self.onmessage = function (e) {
     g.style.width = Math.floor(Math.max(180, Math.min(pw, 560, avail))) + 'px';
   }
   $('#tr-chart-fold').addEventListener('toggle', () => fitTrGrid());
-  window.addEventListener('resize', () => { clearTimeout(fitGrid._t); fitGrid._t = setTimeout(() => { fitGrid(); fitTrGrid(); }, 60); });
+  window.addEventListener('resize', () => {
+    clearTimeout(fitGrid._t);
+    fitGrid._t = setTimeout(() => {
+      const real = !gridPx || window.innerWidth !== gridVW || Math.abs(window.innerHeight - gridVH) > 120;
+      if (real) fitGrid(true);
+      fitTrGrid();
+    }, 150);
+  });
+  window.addEventListener('orientationchange', () => setTimeout(() => fitGrid(true), 300));
   const setEditing = on => { editing = on; renderChartView(); };
   $('#edit-toggle').addEventListener('click', () => setEditing(!editing));
   $('#edit-done').addEventListener('click', () => setEditing(false));
