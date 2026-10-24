@@ -335,6 +335,53 @@ footer{display:none}
   #results .pcard{font-size:10.5px}
 }
 
+/* =================== TABLE CONFIG + SITUATION BUTTONS =================== */
+.cfg{display:inline-flex;align-items:center;gap:6px}
+.lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
+.seg.tight button{padding:5px 0;width:27px;text-align:center}
+.stackcfg input[type=range]{width:150px;accent-color:var(--accent)}
+.stackcfg b{min-width:48px;font-variant-numeric:tabular-nums;font-size:13px}
+.sitbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:-2px 0 10px}
+.sitgrp{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.seg.sit button{padding:4px 9px;font-size:12.5px}
+.seg button.active{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55)}
+.seg.sit.vill button.active{background:var(--raise);color:#fff}
+.tag{display:inline-block;font-size:10.5px;padding:0 6px;border-radius:999px;border:1px solid #3a465c;color:var(--muted);margin-left:2px;cursor:help;vertical-align:1px}
+.tag.ed{color:#ffd27a;border-color:#6b5420}
+.tag.hw{color:#9fd8b6;border-color:#2c5a40}
+.modelnote{display:inline-block;margin-top:6px;color:var(--muted);font-size:11.5px;line-height:1.45}
+.trcfg{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.3);color:#cfe;margin-right:4px;vertical-align:1px}
+.grid13.main{width:min(100%,calc(100vh - 252px));width:min(100%,calc(100dvh - 252px))}
+@media (max-width:900px){
+  .grid13.main{width:min(100%,calc(100vh - 380px));width:min(100%,calc(100dvh - 380px))}
+}
+@media (max-width:640px){
+  .toolbar .cfg{order:3}
+  .toolbar .stackcfg{order:4;flex:1;min-width:0}
+  .stackcfg input[type=range]{flex:1;width:auto;min-width:60px}
+  .toolbar .pill.warn{order:5}
+  .seg.tight button{width:auto;flex:1;padding:6px 0}
+  .toolbar .cfg:not(.stackcfg){flex:1 1 100%}
+  .toolbar .cfg .seg.tight{flex:1;display:flex}
+  .sitbar{gap:5px 8px;margin-bottom:8px}
+  .seg.sit button{padding:5px 7px;font-size:12px}
+  .grid13.main{width:min(100%,calc(100dvh - 400px))}
+  .gridfoot .summary{text-align:center}
+}
+@media (max-width:640px){
+  .toolbar .seg button,.sitbar .seg button{padding-top:4px;padding-bottom:4px}
+  .toolbar{row-gap:5px}
+  .sitbar{row-gap:5px}
+  .summary .smhide{display:none}
+}
+@media (max-width:640px){ .grid13.main{width:min(100%,calc(100vh - 492px));width:min(100%,calc(100dvh - 492px))} }
+@media (max-width:640px){
+  details.fold > summary{padding:5px 10px}
+  .toolbar{margin-bottom:6px}
+  .grid13.main{width:min(100%,calc(100vh - 480px));width:min(100%,calc(100dvh - 480px))}
+}
+@media (max-width:640px){ .side{gap:6px} .grid13.main{width:min(100%,calc(100vh - 496px));width:min(100%,calc(100dvh - 496px))} }
+
 </style>
 </head>
 <body>
@@ -345,7 +392,7 @@ footer{display:none}
     <button data-tab="equity">Equity<span class="lg"> Calculator</span></button>
   </nav>
   <div class="spacer"></div>
-  <div class="note">6-max NLHE &middot; 100bb cash &middot; data stays in this browser</div>
+  <div class="note">NLHE cash 6-max NLHE &middot; 100bb cash &middot; data stays in this browsermiddot; 26-max NLHE &middot; 100bb cash &middot; data stays in this browserndash;9 players 6-max NLHE &middot; 100bb cash &middot; data stays in this browsermiddot; 106-max NLHE &middot; 100bb cash &middot; data stays in this browserndash;200bb 6-max NLHE &middot; 100bb cash &middot; data stays in this browsermiddot; data stays in this browser</div>
 </header>
 <main>
   <!-- ============ RANGES TAB ============ -->
@@ -355,12 +402,14 @@ footer{display:none}
         <button data-m="chart">Chart</button>
         <button data-m="train">Trainer</button>
       </div>
-      <select id="sc-select" class="chart-only" aria-label="Scenario"></select>
-      <select id="tr-sc" class="train-only" aria-label="Trainer scenario"></select>
+      <div class="cfg"><span class="lbl">Players</span><div class="seg tight" id="cfg-n" role="group" aria-label="Number of players"></div></div>
+      <label class="cfg stackcfg"><span class="lbl">Stack</span><input type="range" id="cfg-stack" min="0" max="12" step="1" aria-label="Hero stack in big blinds"><b id="cfg-stack-v">100bb</b></label>
       <span class="pill edited chart-only" id="edited-pill" hidden>Edited</span>
       <button class="btn small chart-only" id="edit-toggle">&#9998; Edit</button>
-      <span class="pill warn" title="Widely-used approximate charts, NOT solver output. Edit them to match your own strategy.">&#9888; Approximate starter ranges &mdash; editable</span>
+      <span class="pill warn" title="Approximate charts, NOT solver output. 6-max 100bb charts are hand-written; every other table size / stack is model-derived from them. Edit them to match your own strategy.">&#9888; Approximate starter ranges &mdash; editable</span>
     </div>
+    <div class="sitbar chart-only" id="sitbar"></div>
+    <div class="sitbar train-only" id="trsitbar"></div>
 
     <div id="chart-view" class="rlayout">
       <div class="panel gridpanel">
@@ -1015,6 +1064,7 @@ footer{display:none}
                [{ call: 0.5 }, 'K2o-K3o, Q4o-Q5o, J5o-J6o, T6o, 96o, 85o, 75o, 64o, 54o']] }
   ];
   var ACTIONS = {
+    jam: { label: 'All-in', color: '#ff3d6e', key: 'j' },
     raise: { label: 'Raise', color: '#f2683c', key: 'r' },
     '3bet': { label: '3-Bet', color: '#a06bff', key: '3' },
     call: { label: 'Call', color: '#2fbf71', key: 'c' },
@@ -1040,6 +1090,268 @@ footer{display:none}
   var API = { SCENARIOS: SCENARIOS, ACTIONS: ACTIONS, buildChart: buildChart };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.HoldemRanges = API;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script id="model-src">
+/* Model-derived preflop charts for any table size (2-9 players) and hero stack (10-200bb).
+   NOT solver output. A transparent, deterministic model built from the hand-written 6-max 100bb
+   starter charts in ranges.js:
+   1. Hand ordering: "play rank" = how many of the five 6-max RFI charts open the hand (ties broken by
+      raw equity vs a random hand); re-raise "value rank" = how often the seven facing-open charts 3-bet it. At short stacks the order blends toward raw equity (high cards gain,
+      suited connectors / small pairs lose); at 125bb+ small pairs and suited connectors move up.
+   2. Size of each range comes from an anchor table: open % by players left to act behind (or SB / heads-up),
+      interpolated on log(stack). Facing an open, 3-bet % and call % are functions of the opener's open %,
+      hero's seat type (BB / SB / in position) and stack depth (fewer calls and more jams when short).
+   3. The ordered hands fill the target, with a 50% "mixed" band at the edge.
+   At 6-max 100bb the twelve hand-written charts are used as they are. */
+(function (root) {
+  'use strict';
+  var H = (typeof module !== 'undefined' && module.exports) ? require('./core.js') : root.HoldemCore;
+  var R = (typeof module !== 'undefined' && module.exports) ? require('./ranges.js') : root.HoldemRanges;
+
+  var PLAYERS = [2, 3, 4, 5, 6, 7, 8, 9];
+  var STACKS = [10, 15, 20, 25, 30, 40, 50, 60, 80, 100, 125, 150, 200];
+  var SEATS = {
+    9: ['UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+    8: ['UTG', 'UTG+1', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+    7: ['UTG', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+    6: ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'],
+    5: ['HJ', 'CO', 'BTN', 'SB', 'BB'],
+    4: ['CO', 'BTN', 'SB', 'BB'],
+    3: ['BTN', 'SB', 'BB'],
+    2: ['BTN', 'BB']
+  };
+  var JAM_BELOW = 15;      // stacks below this: open = jam-or-fold
+  var REJAM_BELOW = 30;    // stacks below this: re-raises facing an open are all-in jams
+
+  function seatLabel(n, seat) { return n === 2 && seat === 'BTN' ? 'BTN/SB' : seat; }
+  function snapStack(s) {
+    s = Number(s) || 100; var best = STACKS[0];
+    STACKS.forEach(function (b) { if (Math.abs(b - s) < Math.abs(best - s)) best = b; });
+    return best;
+  }
+  function normN(n) { n = Math.round(Number(n) || 6); return Math.max(2, Math.min(9, n)); }
+
+  /* ---------- anchors ---------- */
+  var COLS = [10, 20, 40, 100, 200];
+  var OPEN = { // open % of all 1326 combos
+    b8: [11, 11.5, 12, 12.8, 13.2],    // 9-max UTG
+    b7: [12, 12.5, 13.2, 14.2, 14.6],
+    b6: [13, 13.6, 14.4, 15.6, 16],
+    b5: [14.5, 15, 15.8, 17.0, 17.6],  // 6-max UTG (17.0 = hand-written chart)
+    b4: [17, 17.5, 19, 20.8, 21.5],    // HJ
+    b3: [23, 24, 26.5, 29.6, 30.5],    // CO
+    b2: [36, 40, 44, 48.3, 50],        // BTN
+    sb: [55, 45, 40, 38, 37],          // SB vs BB (raise-or-fold; jam-or-fold at 10bb)
+    hu: [60, 75, 80, 82, 84]           // heads-up BTN/SB
+  };
+  function interp(row, s) {
+    var x = Math.log(s);
+    if (s <= COLS[0]) return row[0];
+    if (s >= COLS[COLS.length - 1]) return row[row.length - 1];
+    for (var i = 0; i < COLS.length - 1; i++) {
+      var a = Math.log(COLS[i]), b = Math.log(COLS[i + 1]);
+      if (x <= b) return row[i] + (row[i + 1] - row[i]) * (x - a) / (b - a);
+    }
+    return row[row.length - 1];
+  }
+  function seatKind(n, seat) {
+    var seats = SEATS[n], i = seats.indexOf(seat);
+    if (seat === 'BB') return 'bb';
+    if (n === 2) return 'hu';
+    if (seat === 'SB') return 'sb';
+    return 'b' + (n - 1 - i);
+  }
+  function openPct(n, seat, s) { var k = seatKind(n, seat); return OPEN[k] ? interp(OPEN[k], s) : 0; }
+
+  /* ---------- hand ordering ---------- */
+  var BASE = {}; R.SCENARIOS.forEach(function (sc) { BASE[sc.id] = R.buildChart(sc, H); });
+  var EQIDX = {}; H.HAND_ORDER.forEach(function (k, i) { EQIDX[k] = i; });
+  var playScore = {};
+  H.CLASSES.forEach(function (k) {
+    var t = 0; ['rfi_utg', 'rfi_hj', 'rfi_co', 'rfi_btn', 'rfi_sb'].forEach(function (id) { t += BASE[id][k].raise || 0; });
+    playScore[k] = t;
+  });
+  var PLAY_ORDER = H.CLASSES.slice().sort(function (a, b) { return (playScore[b] - playScore[a]) || (EQIDX[a] - EQIDX[b]); });
+  var PLAYIDX = {}; PLAY_ORDER.forEach(function (k, i) { PLAYIDX[k] = i; });
+  // value re-raise order: how often the seven hand-written facing-open charts 3-bet the hand
+  // (wheel-ace bluffs A5s-A2s excluded), ties broken by raw equity
+  var v3 = {};
+  H.CLASSES.forEach(function (k) {
+    var t = 0;
+    if (!/^A[2-5]s$/.test(k)) R.SCENARIOS.forEach(function (sc) { if (sc.villain) t += BASE[sc.id][k]['3bet'] || 0; });
+    v3[k] = t;
+  });
+  var V3_ORDER = H.CLASSES.slice().sort(function (a, b) { return (v3[b] - v3[a]) || (EQIDX[a] - EQIDX[b]); });
+  var V3IDX = {}; V3_ORDER.forEach(function (k, i) { V3IDX[k] = i; });
+  var RV = 'AKQJT98765432';
+  function isSpec(k) { // small/medium pairs, suited connectors and one-gappers below the broadways
+    if (k.length === 2) return RV.indexOf(k[0]) >= RV.indexOf('9');
+    if (k[2] !== 's') return false;
+    var hi = RV.indexOf(k[0]), lo = RV.indexOf(k[1]);
+    return hi >= RV.indexOf('J') && lo - hi <= 2;
+  }
+  function eqWeight(s) { // weight on raw equity rank (vs playability) by stack depth
+    var pts = [[10, 1], [15, 0.75], [20, 0.6], [25, 0.45], [30, 0.35], [40, 0.2], [50, 0.1], [60, 0]];
+    if (s >= 60) return 0;
+    for (var i = 0; i < pts.length - 1; i++) if (s <= pts[i + 1][0]) {
+      var a = pts[i], b = pts[i + 1]; return a[1] + (b[1] - a[1]) * (s - a[0]) / (b[0] - a[0]);
+    }
+    return 0;
+  }
+  function deepBonus(s) { return s <= 100 ? 0 : s <= 125 ? 4 : s <= 150 ? 8 : 14; }
+  var orderCache = {};
+  function orderFor(s, value) {
+    var ck = s + '|' + (value ? 'v' : 'p');
+    if (orderCache[ck]) return orderCache[ck];
+    var a = eqWeight(s), d = value ? 0 : deepBonus(s), base = value ? V3IDX : PLAYIDX;
+    var val = {};
+    H.CLASSES.forEach(function (k) { val[k] = (1 - a) * base[k] + a * EQIDX[k] - (isSpec(k) ? d : 0) + EQIDX[k] * 1e-4; });
+    return (orderCache[ck] = H.CLASSES.slice().sort(function (x, y) { return val[x] - val[y]; }));
+  }
+
+  /* ---------- scenarios ---------- */
+  var LEGACY = {
+    rfi_utg: 'rfi:UTG', rfi_hj: 'rfi:HJ', rfi_co: 'rfi:CO', rfi_btn: 'rfi:BTN', rfi_sb: 'rfi:SB',
+    bb_vs_utg: 'vs:BB:UTG', bb_vs_co: 'vs:BB:CO', bb_vs_btn: 'vs:BB:BTN', sb_vs_btn: 'vs:SB:BTN',
+    btn_vs_co: 'vs:BTN:CO', co_vs_hj: 'vs:CO:HJ', bb_vs_sb: 'vs:BB:SB'
+  };
+  var ANCHOR = {}; Object.keys(LEGACY).forEach(function (old) { ANCHOR[LEGACY[old]] = old; });
+
+  function scenarioIds(n) {
+    n = normN(n); var seats = SEATS[n], out = [];
+    seats.forEach(function (h) { if (h !== 'BB') out.push('rfi:' + h); });
+    seats.forEach(function (h, hi) { for (var vi = 0; vi < hi; vi++) out.push('vs:' + h + ':' + seats[vi]); });
+    return out;
+  }
+  function parseId(id) {
+    var p = String(id).split(':');
+    if (p[0] === 'rfi' && p.length === 2) return { type: 'rfi', hero: p[1] };
+    if (p[0] === 'vs' && p.length === 3) return { type: 'vs', hero: p[1], villain: p[2] };
+    return null;
+  }
+  function validId(n, id) { return scenarioIds(n).indexOf(id) >= 0; }
+  function makeKey(n, s, id) { return normN(n) + '|' + snapStack(s) + '|' + id; }
+  function parseKey(key) {
+    if (LEGACY[key]) return { n: 6, s: 100, id: LEGACY[key] };
+    var p = String(key).split('|');
+    if (p.length !== 3) return null;
+    var n = +p[0], s = +p[1];
+    if (PLAYERS.indexOf(n) < 0 || STACKS.indexOf(s) < 0 || !validId(n, p[2])) return null;
+    return { n: n, s: s, id: p[2] };
+  }
+  function actionsFor(n, s, id) {
+    var p = parseId(id);
+    if (p.type === 'rfi') return s < JAM_BELOW ? ['jam', 'fold'] : ['raise', 'fold'];
+    if (s < JAM_BELOW) return p.hero === 'BB' ? ['jam', 'call', 'fold'] : ['jam', 'fold'];
+    if (s < REJAM_BELOW) return ['jam', 'call', 'fold'];
+    return ['3bet', 'call', 'fold'];
+  }
+  function scenario(n, s, id) {
+    n = normN(n); s = snapStack(s);
+    var p = parseId(id); if (!p || !validId(n, id)) return null;
+    var key = makeKey(n, s, id), anchored = n === 6 && s === 100 && !!ANCHOR[id];
+    var hl = seatLabel(n, p.hero), vl = p.villain ? seatLabel(n, p.villain) : null;
+    var size = s < JAM_BELOW ? '2bb' : '2.5bb', table = n === 2 ? 'Heads-up' : n + '-max';
+    var desc;
+    if (p.type === 'rfi') desc = 'Folded to you in the ' + hl + '. ' + (s < JAM_BELOW ? 'Jam (all-in) or fold?' : 'Open (' + (p.hero === 'SB' && n > 2 ? '3bb' : size) + ') or fold?');
+    else desc = vl + ' opens ' + size + ', ' + (n > 2 ? 'action folds to you in the ' : 'you are in the ') + hl + '.';
+    return {
+      id: key, sid: id, n: n, stack: s, type: p.type, hero: p.hero, villain: p.villain || null,
+      heroLabel: hl, villainLabel: vl, rfi: p.type === 'rfi',
+      group: p.type === 'rfi' ? 'RFI (open)' : 'Facing an open',
+      name: p.type === 'rfi' ? hl + ' open' : hl + ' vs ' + vl + ' open',
+      short: table + ' ' + s + 'bb',
+      desc: desc, actions: actionsFor(n, s, id), model: !anchored, anchor: anchored ? ANCHOR[id] : null
+    };
+  }
+
+  /* ---------- chart generation ---------- */
+  function emptyChart() { var c = {}; H.CLASSES.forEach(function (k) { c[k] = { fold: 1 }; }); return c; }
+  // Fill `order` with action `a` until ~target combos, 50% band of width w at the edge.
+  // skip(k) -> true to skip a class; partial cells keep whatever else they had.
+  function fill(chart, order, a, target, w, skip, mixWith) {
+    var cum = 0, lo = target - w / 2, hi = target + w / 2;
+    for (var i = 0; i < order.length; i++) {
+      var k = order[i]; if (skip && skip(k)) continue;
+      var n = H.classCount(k), mid = cum + n / 2;
+      if (mid < lo) { chart[k] = {}; chart[k][a] = 1; }
+      else if (mid < hi) { var c = {}; c[a] = 0.5; if (mixWith) c[mixWith] = 0.5; else c.fold = 0.5; chart[k] = c; }
+      else break;
+      cum += n;
+    }
+  }
+  function callMult(s, bb) {
+    var t = bb ? [[10, 0.35], [15, 0.6], [20, 0.7], [25, 0.8], [30, 0.85], [40, 0.9], [50, 0.95], [80, 1], [100, 1], [125, 1.05], [150, 1.1], [200, 1.15]]
+              : [[10, 0], [15, 0.4], [20, 0.5], [25, 0.6], [30, 0.7], [40, 0.8], [50, 0.9], [60, 0.95], [80, 1], [100, 1], [125, 1.05], [150, 1.1], [200, 1.15]];
+    for (var i = 0; i < t.length; i++) if (s <= t[i][0]) return t[i][1];
+    return t[t.length - 1][1];
+  }
+  function raiseMult(s) {
+    var t = [[10, 3.5], [15, 2.6], [20, 2], [25, 1.6], [30, 1.3], [40, 1.1], [100, 1], [125, 0.95], [150, 0.92], [200, 0.9]];
+    for (var i = 0; i < t.length; i++) if (s <= t[i][0]) return t[i][1];
+    return 0.9;
+  }
+  function vsTargets(n, s, hero, villain) { // returns % of 1326 for re-raise and call
+    var vo = openPct(n, villain, s), kind = hero === 'BB' ? 'bb' : hero === 'SB' ? 'sb' : 'ip';
+    var r3, call, cap;
+    if (kind === 'bb') {
+      r3 = 0.17 * vo;
+      call = vo * (0.9 + 0.006 * vo) * (villain === 'SB' || n === 2 ? 1.3 : 1);
+      cap = 70;
+    } else if (kind === 'sb') { r3 = 0.28 * vo; call = 0.02 * vo; cap = 30; }
+    else { r3 = 2 + 0.1 * vo; call = vo * (0.3 + 0.007 * vo); cap = 35; }
+    r3 *= raiseMult(s); call *= callMult(s, kind === 'bb');
+    if (kind !== 'bb' && s < JAM_BELOW) call = 0;
+    r3 = Math.min(r3, cap * 0.6, (kind === 'ip' ? 0.45 : 0.65) * vo);
+    if (r3 + call > cap) call = Math.max(0, cap - r3);
+    return { vo: vo, r3: r3, call: call, kind: kind };
+  }
+  var cache = {};
+  function generate(n, s, id) {
+    var sc = scenario(n, s, id); if (!sc) return null;
+    if (cache[sc.id]) return cache[sc.id];
+    var chart;
+    if (sc.anchor) chart = JSON.parse(JSON.stringify(BASE[sc.anchor]));
+    else if (sc.rfi) {
+      chart = emptyChart();
+      var T = openPct(sc.n, sc.hero, sc.stack) / 100 * 1326;
+      var w = sc.stack < JAM_BELOW ? Math.min(0.1 * T, 30) : Math.min(0.25 * T, 70);
+      fill(chart, orderFor(sc.stack), sc.actions[0], T, w);
+    } else {
+      chart = emptyChart();
+      var t = vsTargets(sc.n, sc.stack, sc.hero, sc.villain);
+      var ra = sc.actions[0], canCall = sc.actions.indexOf('call') >= 0;
+      var R3 = t.r3 / 100 * 1326, C = t.call / 100 * 1326;
+      var bluff = (ra === '3bet' && R3 >= 24) ? 4 : 0; // A5s + A4s at 50%
+      fill(chart, orderFor(sc.stack, true), ra, R3 - bluff, Math.min(0.35 * (R3 - bluff), 40), null, canCall && C > 0 ? 'call' : null);
+      if (canCall && C > 0) {
+        var already = 0; H.CLASSES.forEach(function (k) { already += (chart[k].call || 0) * H.classCount(k); });
+        var isBluff = function (k) { return bluff && (k === 'A5s' || k === 'A4s'); };
+        fill(chart, orderFor(sc.stack), 'call', Math.max(0, C - already), Math.min(0.25 * C, 80),
+          function (k) { return (chart[k].fold || 0) < 1 || isBluff(k); });
+      }
+      if (bluff) ['A5s', 'A4s'].forEach(function (k) {
+        if ((chart[k][ra] || 0) >= 1) return;
+        chart[k] = {}; chart[k][ra] = 0.5; if (canCall) chart[k].call = 0.5; else chart[k].fold = 0.5;
+      });
+    }
+    return (cache[sc.id] = chart);
+  }
+  function stats(chart) {
+    var t = {}; H.CLASSES.forEach(function (k) { var n = H.classCount(k); for (var a in chart[k]) t[a] = (t[a] || 0) + chart[k][a] * n; });
+    return t;
+  }
+
+  var API = {
+    PLAYERS: PLAYERS, STACKS: STACKS, SEATS: SEATS, JAM_BELOW: JAM_BELOW, REJAM_BELOW: REJAM_BELOW, LEGACY: LEGACY, OPEN: OPEN,
+    seatLabel: seatLabel, snapStack: snapStack, scenarioIds: scenarioIds, parseId: parseId, validId: validId,
+    makeKey: makeKey, parseKey: parseKey, scenario: scenario, generate: generate, openPct: openPct, vsTargets: vsTargets,
+    stats: stats, orderFor: orderFor
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  else root.HoldemModel = API;
 })(typeof self !== 'undefined' ? self : this);
 
 </script>
@@ -1100,21 +1412,31 @@ self.onmessage = function (e) {
     folds[d.dataset.fold] = d.open; save(LS_FOLDS, folds);
   }, true);
   const foldAttr = id => (folds[id] ? ' open' : '');
-  const ui = Object.assign({ tab: 'ranges', rmode: 'chart', sc: 'rfi_btn', brush: 'raise', freq: 1, rest: 'fold', trSc: 'all', trWeight: 'border', trAutoChart: false }, load(LS.ui, {}));
+  const ui = Object.assign({ tab: 'ranges', rmode: 'chart', type: 'rfi', hero: 'BTN', vill: 'BTN', trType: 'all', trHero: 'any', brush: 'raise', freq: 1, rest: 'fold', trSc: 'all', trWeight: 'border', trAutoChart: false }, load(LS.ui, {}));
   const saveUI = () => save(LS.ui, ui);
 
   function setTab(t) {
     ui.tab = t; saveUI();
     $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
     $$('.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + t));
+    if (t === 'equity' && setTab.ready) renderEquityInputs();
   }
   $$('#tabs button').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
 
   /* ================= PREFLOP CHARTS ================= */
-  const SC = {}; R.SCENARIOS.forEach(s => { SC[s.id] = s; });
-  const DEFAULTS = {}; R.SCENARIOS.forEach(s => { DEFAULTS[s.id] = R.buildChart(s, H); });
+  const M = window.HoldemModel;
+  const scOf = key => { const p = M.parseKey(key); return p ? M.scenario(p.n, p.s, p.id) : null; };
+  const defaultOf = key => { const p = M.parseKey(key); return M.generate(p.n, p.s, p.id); };
+  const ORDER = ['jam', 'raise', '3bet', 'call', 'fold'];
+  // migrate old single-scenario UI state (6-max 100bb ids) to table config
+  if (ui.n == null) {
+    const p = ui.sc && M.parseKey(ui.sc);
+    ui.n = 6; ui.stack = 100;
+    if (p) { const q = M.parseId(p.id); ui.type = q.type; ui.hero = q.hero; ui.vill = q.villain; }
+  }
+  delete ui.sc;
   let overrides = sanitizeCharts(load(LS.charts, {})) || {};
-  const ORDER = ['raise', '3bet', 'call', 'fold'];
+  saveChartsRaw();
 
   function normCell(cell, actions) {
     const out = {}; let tot = 0;
@@ -1124,20 +1446,24 @@ self.onmessage = function (e) {
     if (tot < 0.999) out.fold = Math.round(((out.fold || 0) + 1 - tot) * 1000) / 1000;
     return out;
   }
+  // accepts new keys "players|stack|scenario" and legacy 6-max 100bb ids ("rfi_btn" ...)
   function sanitizeCharts(obj) {
     if (!obj || typeof obj !== 'object') return null;
     const out = {};
-    for (const id of Object.keys(obj)) {
-      if (!SC[id] || typeof obj[id] !== 'object') continue;
+    for (const key of Object.keys(obj)) {
+      const p = M.parseKey(key);
+      if (!p || !obj[key] || typeof obj[key] !== 'object') continue;
+      const nk = M.makeKey(p.n, p.s, p.id), sc = M.scenario(p.n, p.s, p.id);
       const ch = {};
-      for (const k of H.CLASSES) ch[k] = normCell(obj[id][k] || { fold: 1 }, SC[id].actions);
-      out[id] = ch;
+      for (const k of H.CLASSES) ch[k] = normCell(obj[key][k] || { fold: 1 }, sc.actions);
+      out[nk] = ch;
     }
     return out;
   }
-  const chartOf = id => overrides[id] || DEFAULTS[id];
-  const saveCharts = () => save(LS.charts, overrides);
-  function ensureEditable(id) { if (!overrides[id]) overrides[id] = JSON.parse(JSON.stringify(DEFAULTS[id])); return overrides[id]; }
+  function saveChartsRaw() { try { localStorage.setItem(LS.charts, JSON.stringify(overrides)); } catch (e) { /* ignore */ } }
+  const chartOf = key => overrides[key] || defaultOf(key);
+  const saveCharts = () => saveChartsRaw();
+  function ensureEditable(key) { if (!overrides[key]) overrides[key] = JSON.parse(JSON.stringify(defaultOf(key))); return overrides[key]; }
   const mixEntries = cell => ORDER.filter(a => cell[a] > 0).map(a => [a, cell[a]]);
   function dominant(cell) { let best = 'fold', bv = -1; for (const a of ORDER) { const v = cell[a] || 0; if (v > bv + 1e-9) { bv = v; best = a; } } return best; }
   function cellBg(cell) {
@@ -1164,7 +1490,7 @@ self.onmessage = function (e) {
     }
     container.appendChild(frag);
   }
-  function mixText(cell, actions) {
+  function mixText(cell) {
     return mixEntries(cell).sort((a, b) => b[1] - a[1]).map(([a, f]) => `<span style="color:${a === 'fold' ? '#aab3c3' : A[a].color};font-weight:700">${A[a].label} ${Math.round(f * 100)}%</span>`).join(' &middot; ');
   }
   function chartStats(chart) {
@@ -1173,15 +1499,59 @@ self.onmessage = function (e) {
     return t;
   }
 
-  // scenario selects
-  function fillScenarioSelect(sel, extra) {
-    let html = extra || '', group = null;
-    R.SCENARIOS.forEach(s => {
-      if (s.group !== group) { if (group) html += '</optgroup>'; html += `<optgroup label="${esc(s.group)}">`; group = s.group; }
-      html += `<option value="${s.id}">${esc(s.name)}${overrides[s.id] ? ' ✎' : ''}</option>`;
-    });
-    sel.innerHTML = html + '</optgroup>';
+  /* ---- table config (players / stack) + situation buttons ---- */
+  function fixSel() {
+    ui.n = M.PLAYERS.includes(+ui.n) ? +ui.n : 6; ui.stack = M.snapStack(ui.stack);
+    const seats = M.SEATS[ui.n];
+    if (ui.type !== 'vs') ui.type = 'rfi';
+    if (ui.type === 'rfi') { if (!seats.includes(ui.hero) || ui.hero === 'BB') ui.hero = 'BTN'; }
+    else {
+      if (!seats.includes(ui.hero) || seats.indexOf(ui.hero) === 0) ui.hero = 'BB';
+      const hi = seats.indexOf(ui.hero);
+      if (!seats.includes(ui.vill) || seats.indexOf(ui.vill) >= hi) ui.vill = seats.indexOf('BTN') >= 0 && seats.indexOf('BTN') < hi ? 'BTN' : seats[hi - 1];
+    }
+    if (!['all', 'rfi', 'vs'].includes(ui.trType)) ui.trType = 'all';
+    if (ui.trHero !== 'any' && !seats.includes(ui.trHero)) ui.trHero = 'any';
   }
+  const curId = () => ui.type === 'rfi' ? 'rfi:' + ui.hero : `vs:${ui.hero}:${ui.vill}`;
+  const curKey = () => { fixSel(); return M.makeKey(ui.n, ui.stack, curId()); };
+  const segBtns = (items, active, attr) => items.map(([v, l, t]) => `<button data-${attr}="${esc(v)}" class="${v === active ? 'active' : ''}"${t ? ` title="${esc(t)}"` : ''} aria-pressed="${v === active}">${l}</button>`).join('');
+  function renderCfg() {
+    fixSel();
+    $('#cfg-n').innerHTML = segBtns(M.PLAYERS.map(n => [String(n), String(n), n === 2 ? 'Heads-up' : n + '-handed']), String(ui.n), 'n');
+    $('#cfg-stack').value = String(M.STACKS.indexOf(ui.stack));
+    $('#cfg-stack-v').textContent = ui.stack + 'bb';
+    $('#cfg-stack').setAttribute('aria-valuetext', ui.stack + ' big blinds');
+    const seats = M.SEATS[ui.n], L = s => esc(M.seatLabel(ui.n, s));
+    // chart situation
+    let h = `<div class="seg sit" role="group" aria-label="Situation">${segBtns([['rfi', 'Open', 'Raise first in (folded to hero)'], ['vs', 'vs Open', 'Facing a single open raise']], ui.type, 'type')}</div>`;
+    const heroSeats = ui.type === 'rfi' ? seats.filter(s => s !== 'BB') : seats.slice(1);
+    h += `<span class="sitgrp"><span class="lbl">Hero</span><div class="seg sit" role="group" aria-label="Hero position">${segBtns(heroSeats.map(s => [s, L(s)]), ui.hero, 'hero')}</div></span>`;
+    if (ui.type === 'vs') {
+      const vs = seats.slice(0, seats.indexOf(ui.hero));
+      h += `<span class="sitgrp"><span class="lbl">Opener</span><div class="seg sit vill" role="group" aria-label="Opener position">${segBtns(vs.map(s => [s, L(s)]), ui.vill, 'vill')}</div></span>`;
+    }
+    $('#sitbar').innerHTML = h;
+    // trainer situation
+    let t = `<div class="seg sit" role="group" aria-label="Drill type">${segBtns([['all', 'Mixed'], ['rfi', 'Open'], ['vs', 'vs Open']], ui.trType, 'trtype')}</div>`;
+    t += `<span class="sitgrp"><span class="lbl">Hero</span><div class="seg sit" role="group" aria-label="Hero position">${segBtns([['any', 'Any']].concat(seats.map(s => [s, L(s)])), ui.trHero, 'trhero')}</div></span>`;
+    $('#trsitbar').innerHTML = t;
+  }
+  function cfgChanged() { saveUI(); renderCfg(); if (ui.rmode === 'train') deal(); else renderChartView(); }
+  $('#cfg-n').addEventListener('click', e => { const b = e.target.closest('[data-n]'); if (!b) return; ui.n = +b.dataset.n; cfgChanged(); });
+  $('#cfg-stack').addEventListener('input', e => { ui.stack = M.STACKS[+e.target.value] || 100; $('#cfg-stack-v').textContent = ui.stack + 'bb'; if (ui.rmode !== 'train') { saveUI(); renderChartView(); } });
+  $('#cfg-stack').addEventListener('change', () => cfgChanged());
+  $('#sitbar').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.type) ui.type = b.dataset.type; else if (b.dataset.hero) ui.hero = b.dataset.hero; else if (b.dataset.vill) ui.vill = b.dataset.vill; else return;
+    cfgChanged();
+  });
+  $('#trsitbar').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.trtype) ui.trType = b.dataset.trtype; else if (b.dataset.trhero) ui.trHero = b.dataset.trhero; else return;
+    saveUI(); renderCfg(); deal();
+  });
+
   let editing = false, selKey = null;
   function applySel() {
     const g = $('#grid');
@@ -1192,12 +1562,12 @@ self.onmessage = function (e) {
     $('#cell-info').classList.toggle('selected', on);
   }
   function renderChartView() {
-    const s = SC[ui.sc] || R.SCENARIOS[3]; ui.sc = s.id;
-    fillScenarioSelect($('#sc-select')); $('#sc-select').value = s.id;
-    const chart = chartOf(s.id);
-    $('#edited-pill').hidden = !overrides[s.id];
-    $('#sc-desc').textContent = s.desc + ' 6-max, 100bb effective.';
-    $('#sc-select').title = s.desc;
+    const key = curKey(), s = scOf(key);
+    const chart = chartOf(key);
+    $('#edited-pill').hidden = !overrides[key];
+    $('#sc-desc').innerHTML = esc(s.desc) + ` ${esc(s.short)} effective.` + (s.model
+      ? ' <br><span class="modelnote">&#9432; <b>Model-derived chart.</b> Built from the hand-written 6-max 100bb starter charts: hands keep their relative order, and the range size is scaled by players left to act and stack depth. Short stacks lean toward raw hand strength (jam-or-fold below 15bb, re-raises become jams below 30bb). Deep stacks add small pairs and suited connectors. This is not solver output.</span>'
+      : ' <br><span class="modelnote">&#9432; Hand-written 6-max 100bb starter chart (approximate, not solver output).</span>');
     const g = $('#grid');
     renderGrid(g, chart);
     g.classList.toggle('editing', editing);
@@ -1219,7 +1589,7 @@ self.onmessage = function (e) {
     $('#edit-toggle').classList.toggle('primary', editing);
   }
   function renderStats() {
-    const s = SC[ui.sc], chart = chartOf(s.id), t = chartStats(chart);
+    const key = curKey(), s = scOf(key), chart = chartOf(key), t = chartStats(chart);
     let html = '';
     for (const a of s.actions) {
       const v = t[a] || 0;
@@ -1227,14 +1597,13 @@ self.onmessage = function (e) {
     }
     const play = 1326 - (t.fold || 0);
     const cells = H.CLASSES.filter(k => (chart[k].fold || 0) < 0.999).length;
-    html += `<div class="small muted" style="margin-top:10px">${s.group.startsWith('RFI') ? 'Opening' : 'Continuing (VPIP)'}: <b style="color:var(--text)">${pct(play / 1326)}</b> &middot; ${fmtN(play, 1)} / 1326 combos &middot; ${cells} of 169 hand classes</div>`;
+    html += `<div class="small muted" style="margin-top:10px">${s.rfi ? 'Opening' : 'Continuing (VPIP)'}: <b style="color:var(--text)">${pct(play / 1326)}</b> &middot; ${fmtN(play, 1)} / 1326 combos &middot; ${cells} of 169 hand classes</div>`;
     $('#stats').innerHTML = html;
-    const rfi = s.group.startsWith('RFI');
     const parts = s.actions.filter(a => a !== 'fold').map(a => `${A[a].label} ${pct((t[a] || 0) / 1326)}`);
-    $('#summary').innerHTML = `${rfi ? 'Open' : 'Continue'} <b>${pct(play / 1326)}</b> &middot; ${fmtN(play, 1)} combos${!rfi && parts.length > 1 ? ' <span class="dim">(' + parts.join(' · ') + ')</span>' : ''}`;
+    const tag = overrides[key] ? '<span class="tag ed" title="You edited this chart">edited</span>' : s.model ? '<span class="tag" title="Model-derived from the 6-max 100bb starter charts (scaled by seats behind and stack depth). Expand Range stats for details.">model &#9432;</span>' : '<span class="tag hw" title="Hand-written 6-max 100bb starter chart">starter</span>';
+    $('#summary').innerHTML = `<b>${esc(s.name)}</b> <span class="dim">${esc(s.short)}</span> &middot; ${s.rfi ? 'Open' : 'Continue'} <b>${pct(play / 1326)}</b>${!s.rfi && parts.length > 1 ? ' <span class="dim smhide">(' + parts.join(' · ') + ')</span>' : ''} ${tag}`;
     $('#stats-sum').textContent = `${cells} classes`;
   }
-  $('#sc-select').addEventListener('change', e => { ui.sc = e.target.value; saveUI(); renderChartView(); });
   $('#edit-toggle').addEventListener('click', () => { editing = !editing; if (editing) $('#edit-fold').open = true; renderChartView(); });
   $('#brushes').addEventListener('click', e => { const b = e.target.closest('.brush'); if (!b) return; ui.brush = b.dataset.a; saveUI(); renderChartView(); });
   $('#brush-freq').addEventListener('change', e => { ui.freq = parseFloat(e.target.value); saveUI(); });
@@ -1244,11 +1613,11 @@ self.onmessage = function (e) {
   let painting = false, dirty = false;
   const grid = $('#grid');
   function showInfo(k) {
-    const s = SC[ui.sc], cell = chartOf(s.id)[k];
-    $('#cell-info').innerHTML = `${selKey === k && !editing ? '<span class="pill" style="color:#ffe14d;border-color:#6b5d17;background:#2a250c;margin-right:6px;padding:1px 7px">Selected</span>' : ''}<b style="font-size:14px">${k}</b> <span class="dim">(${H.classCount(k)})</span> &middot; ${mixText(cell, s.actions)}`;
+    const cell = chartOf(curKey())[k];
+    $('#cell-info').innerHTML = `${selKey === k && !editing ? '<span class="pill" style="color:#ffe14d;border-color:#6b5d17;background:#2a250c;margin-right:6px;padding:1px 7px">Selected</span>' : ''}<b style="font-size:14px">${k}</b> <span class="dim">(${H.classCount(k)})</span> &middot; ${mixText(cell)}`;
   }
   function paintKey(k, el) {
-    const s = SC[ui.sc], ch = ensureEditable(s.id);
+    const ch = ensureEditable(curKey());
     const cell = {};
     if (ui.freq >= 1 || ui.rest === ui.brush) cell[ui.brush] = 1;
     else { cell[ui.brush] = ui.freq; cell[ui.rest] = Math.round((1 - ui.freq) * 1000) / 1000; }
@@ -1270,48 +1639,53 @@ self.onmessage = function (e) {
   });
   grid.addEventListener('pointerleave', () => { if (!painting && selKey && !editing) showInfo(selKey); });
   window.addEventListener('pointerup', () => {
-    if (painting) { painting = false; if (dirty) { dirty = false; saveCharts(); renderStats(); $('#edited-pill').hidden = false; fillScenarioSelect($('#sc-select')); $('#sc-select').value = ui.sc; } }
+    if (painting) { painting = false; if (dirty) { dirty = false; saveCharts(); renderStats(); $('#edited-pill').hidden = false; } }
   });
   $('#reset-sc').addEventListener('click', () => {
-    if (!overrides[ui.sc]) { toast('This chart is already at its default.'); return; }
-    if (!confirm('Reset "' + SC[ui.sc].name + '" to the default starter range?')) return;
-    delete overrides[ui.sc]; saveCharts(); renderChartView(); toast('Chart reset to default');
+    const key = curKey(), s = scOf(key);
+    if (!overrides[key]) { toast('This chart is already at its default.'); return; }
+    if (!confirm(`Reset "${s.name} (${s.short})" to the default starter range?`)) return;
+    delete overrides[key]; saveCharts(); renderChartView(); toast('Chart reset to default');
   });
   $('#reset-all').addEventListener('click', () => {
-    if (!confirm('Reset ALL charts to the default starter ranges? Your edits will be lost.')) return;
+    if (!confirm('Reset ALL charts (every table size and stack) to the default starter ranges? Your edits will be lost.')) return;
     overrides = {}; saveCharts(); renderChartView(); toast('All charts reset');
   });
   function exportJSON() {
     const charts = {};
-    R.SCENARIOS.forEach(s => {
-      const ch = chartOf(s.id), out = {};
+    const keys = new Set(M.scenarioIds(ui.n).map(id => M.makeKey(ui.n, ui.stack, id)).concat(Object.keys(overrides)));
+    for (const key of keys) {
+      const ch = chartOf(key), out = {};
       for (const k of H.CLASSES) { const c = ch[k]; if (!((c.fold || 0) >= 0.999)) out[k] = c; }
-      charts[s.id] = out;
-    });
-    return JSON.stringify({ app: 'holdem-lab', version: 1, exported: new Date().toISOString(), note: 'Cells omitted = 100% fold. Values are frequencies 0..1.', charts }, null, 1);
+      charts[key] = out;
+    }
+    return JSON.stringify({ app: 'holdem-lab', version: 2, exported: new Date().toISOString(),
+      note: 'Keys are "players|stackBB|scenario" (scenario = rfi:SEAT or vs:HERO:OPENER). Includes every chart for the current table (' + ui.n + ' players, ' + ui.stack + 'bb) plus all your edited charts. Cells omitted = 100% fold. Values are frequencies 0..1. Version-1 files (6-max 100bb ids like "rfi_btn") can still be imported.',
+      edited: Object.keys(overrides), charts }, null, 1);
   }
   $('#export-btn').addEventListener('click', () => {
-    const json = exportJSON();
-    const m = openModal(`<h2>Export ranges</h2><p class="small muted">All ${R.SCENARIOS.length} charts (including your edits). Download the file or copy the JSON.</p><textarea class="json" readonly></textarea><div class="modal-foot"><button class="btn" id="m-copy">Copy</button><button class="btn primary" id="m-dl">Download .json</button><button class="btn" id="m-close">Close</button></div>`);
+    const json = exportJSON(), n = Object.keys(JSON.parse(json).charts).length;
+    const m = openModal(`<h2>Export ranges</h2><p class="small muted">${n} charts: every chart for the current table (${ui.n} players, ${ui.stack}bb) plus all of your edited charts. Download the file or copy the JSON.</p><textarea class="json" readonly></textarea><div class="modal-foot"><button class="btn" id="m-copy">Copy</button><button class="btn primary" id="m-dl">Download .json</button><button class="btn" id="m-close">Close</button></div>`);
     $('textarea', m).value = json;
     $('#m-copy').onclick = () => { const ta = $('textarea', m); ta.select(); (navigator.clipboard ? navigator.clipboard.writeText(json) : Promise.reject()).then(() => toast('Copied'), () => { document.execCommand('copy'); toast('Copied'); }); };
     $('#m-dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' })); a.download = 'holdem-ranges.json'; document.body.appendChild(a); a.click(); a.remove(); };
     $('#m-close').onclick = closeModal;
   });
   $('#import-btn').addEventListener('click', () => {
-    const m = openModal(`<h2>Import ranges</h2><p class="small muted">Paste JSON exported from this app, or choose a file. Only charts present in the file are replaced.</p><input type="file" accept=".json,application/json" id="m-file"><textarea class="json" placeholder='{"charts": {"rfi_btn": {"AA": {"raise": 1}, ...}}}' style="margin-top:10px"></textarea><div class="modal-foot"><span class="small" id="m-err" style="color:var(--bad);margin-right:auto"></span><button class="btn" id="m-close">Cancel</button><button class="btn primary" id="m-apply">Import</button></div>`);
+    const m = openModal(`<h2>Import ranges</h2><p class="small muted">Paste JSON exported from this app, or choose a file. Only charts present in the file are replaced. Old (version 1) files are read as 6-max 100bb.</p><input type="file" accept=".json,application/json" id="m-file"><textarea class="json" placeholder='{"charts": {"6|100|rfi:BTN": {"AA": {"raise": 1}, ...}}}' style="margin-top:10px"></textarea><div class="modal-foot"><span class="small" id="m-err" style="color:var(--bad);margin-right:auto"></span><button class="btn" id="m-close">Cancel</button><button class="btn primary" id="m-apply">Import</button></div>`);
     $('#m-file').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { $('textarea', m).value = t; }); };
     $('#m-close').onclick = closeModal;
     $('#m-apply').onclick = () => {
       try {
         const obj = JSON.parse($('textarea', m).value);
         const src = obj.charts || obj;
-        const filled = {};
-        for (const id of Object.keys(src)) { if (!SC[id]) continue; const ch = {}; for (const k of H.CLASSES) ch[k] = src[id][k] || { fold: 1 }; filled[id] = ch; }
-        const clean = sanitizeCharts(filled);
-        const n = Object.keys(clean).length;
-        if (!n) throw new Error('No known scenario ids found (expected e.g. "rfi_btn").');
-        Object.assign(overrides, clean); saveCharts(); closeModal(); renderChartView(); toast(`Imported ${n} chart${n > 1 ? 's' : ''}`);
+        const edited = Array.isArray(obj.edited) ? new Set(obj.edited.map(k => { const p = M.parseKey(k); return p ? M.makeKey(p.n, p.s, p.id) : k; })) : null;
+        const clean = sanitizeCharts(src) || {};
+        // version-2 files list which charts were edited; unedited defaults are not stored as overrides
+        for (const k of Object.keys(clean)) if (!edited || !edited.has(k)) { if (JSON.stringify(clean[k]) === JSON.stringify(sanitizeCharts({ [k]: defaultOf(k) })[k])) delete clean[k]; }
+        const n = Object.keys(clean).length, total = Object.keys(src).filter(k => M.parseKey(k)).length;
+        if (!total) throw new Error('No known chart keys found (expected e.g. "6|100|rfi:BTN" or "rfi_btn").');
+        Object.assign(overrides, clean); saveCharts(); closeModal(); renderChartView(); toast(`Imported ${total} chart${total > 1 ? 's' : ''} (${n} differ from defaults)`);
       } catch (err) { $('#m-err').textContent = err.message; }
     };
   });
@@ -1319,12 +1693,13 @@ self.onmessage = function (e) {
   /* ================= TRAINER ================= */
   let stats = Object.assign({ total: 0, correct: 0, streak: 0, best: 0, per: {}, recent: [] }, load(LS.stats, {}));
   let cur = null;
-  const SEATS = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
   function trainerPool() {
-    if (ui.trSc === 'all') return R.SCENARIOS.map(s => s.id);
-    if (ui.trSc === 'rfi') return R.SCENARIOS.filter(s => s.group.startsWith('RFI')).map(s => s.id);
-    if (ui.trSc === 'facing') return R.SCENARIOS.filter(s => !s.group.startsWith('RFI')).map(s => s.id);
-    return SC[ui.trSc] ? [ui.trSc] : R.SCENARIOS.map(s => s.id);
+    fixSel();
+    const ids = M.scenarioIds(ui.n);
+    const ofType = ids.filter(id => ui.trType === 'all' || id.startsWith(ui.trType + ':'));
+    let pool = ofType.filter(id => ui.trHero === 'any' || M.parseId(id).hero === ui.trHero);
+    if (!pool.length) pool = ofType.length ? ofType : ids;
+    return pool.map(id => M.makeKey(ui.n, ui.stack, id));
   }
   function isBorderline(chart, k) {
     const cell = chart[k];
@@ -1349,24 +1724,26 @@ self.onmessage = function (e) {
     cur = { id, k: pick.k, cards, answered: false, border: pick.b };
     renderTrainer();
   }
+  const KEYHINT = { fold: 'F', call: 'C', raise: 'R', '3bet': '3', jam: 'J' };
   function renderTrainer() {
-    if (!cur) { deal(); return; }
-    const s = SC[cur.id];
-    const heroIdx = SEATS.indexOf(s.hero), vIdx = s.villain ? SEATS.indexOf(s.villain) : -1;
-    $('#tr-seats').innerHTML = SEATS.map((p, i) => {
+    if (!cur || !scOf(cur.id)) { deal(); return; }
+    const s = scOf(cur.id), seats = M.SEATS[s.n];
+    const heroIdx = seats.indexOf(s.hero), vIdx = s.villain ? seats.indexOf(s.villain) : -1;
+    $('#tr-seats').innerHTML = seats.map((p, i) => {
       let cls = 'seat';
       if (i === heroIdx) cls += ' hero'; else if (i === vIdx) cls += ' villain';
-      else if (i < heroIdx || (s.villain && i !== vIdx && i < heroIdx)) cls += ' folded';
-      const lbl = i === heroIdx ? p + ' (you)' : i === vIdx ? p + ' raises' : p;
-      return `<span class="${cls}">${lbl}</span>`;
+      else if (i < heroIdx) cls += ' folded';
+      const nm = M.seatLabel(s.n, p);
+      const lbl = i === heroIdx ? nm + ' (you)' : i === vIdx ? nm + ' raises' : nm;
+      return `<span class="${cls}">${esc(lbl)}</span>`;
     }).join('');
-    $('#tr-desc').textContent = s.desc;
+    $('#tr-desc').innerHTML = `<span class="trcfg">${esc(s.short)}</span> ${esc(s.desc)}`;
     $('#tr-cards').innerHTML = cur.cards.map(c => cardHTML(c, 'big')).join('');
-    $('#tr-handname').textContent = cur.k + (cur.border ? '' : '');
-    $('#tr-actions').innerHTML = s.actions.slice().reverse().map(a => `<button class="act" data-a="${a}" style="background:${A[a].color}${a === 'fold' ? ';color:#cfd5e0;background:#3a4558' : ''}" ${cur.answered ? 'disabled' : ''}>${A[a].label}<kbd>${A[a].key.toUpperCase()}</kbd></button>`).join('');
+    $('#tr-handname').textContent = cur.k;
+    $('#tr-actions').innerHTML = s.actions.slice().reverse().map(a => `<button class="act" data-a="${a}" style="background:${A[a].color}${a === 'fold' ? ';color:#cfd5e0;background:#3a4558' : ''}" ${cur.answered ? 'disabled' : ''}>${A[a].label}<kbd>${KEYHINT[a]}</kbd></button>`).join('');
     if (!cur.answered) {
       $('#tr-feedback').className = 'feedback idle';
-      $('#tr-feedback').innerHTML = 'Pick an action.<span class="kbdhint">&nbsp;Keys: <b>F</b> fold &middot; <b>C</b> call &middot; <b>R</b> raise &middot; <b>3</b> 3-bet &middot; <b>Space</b> next</span>';
+      $('#tr-feedback').innerHTML = 'Pick an action.<span class="kbdhint">&nbsp;Keys: ' + s.actions.slice().reverse().map(a => `<b>${KEYHINT[a]}</b> ${A[a].label.toLowerCase()}`).join(' &middot; ') + ' &middot; <b>Space</b> next</span>';
       $('#tr-grid').innerHTML = ''; $('#tr-grid').classList.remove('has-sel');
       $('#tr-chart-empty').hidden = false; $('#tr-chart-title').textContent = '';
     }
@@ -1374,7 +1751,7 @@ self.onmessage = function (e) {
   }
   function answer(a) {
     if (!cur || cur.answered) return;
-    const s = SC[cur.id];
+    const s = scOf(cur.id);
     if (!s.actions.includes(a)) return;
     const cell = chartOf(cur.id)[cur.k], f = cell[a] || 0;
     const maxF = Math.max(...Object.values(cell));
@@ -1387,29 +1764,27 @@ self.onmessage = function (e) {
     const mixed = mixEntries(cell).length > 1;
     const fb = $('#tr-feedback');
     fb.className = 'feedback ' + (correct ? 'good' : 'bad');
-    fb.innerHTML = `<span>${correct ? '&#10003; Correct' : '&#10007; Not quite'} &mdash; you: <b>${A[a].label}</b> &middot; chart <b>${cur.k}</b>: ${mixText(cell, s.actions)}${mixed ? ' <span class="small">(mixed)</span>' : ''}</span>`;
+    fb.innerHTML = `<span>${correct ? '&#10003; Correct' : '&#10007; Not quite'} &mdash; you: <b>${A[a].label}</b> &middot; chart <b>${cur.k}</b>: ${mixText(cell)}${mixed ? ' <span class="small">(mixed)</span>' : ''}</span>`;
     $$('#tr-actions .act').forEach(b => { b.disabled = true; if (b.dataset.a === a) b.style.outline = '3px solid #fff'; });
     $('#tr-chart-empty').hidden = true;
-    $('#tr-chart-title').textContent = s.name + (overrides[s.id] ? ' (edited)' : '');
+    $('#tr-chart-title').textContent = s.name + ' · ' + s.short + (overrides[cur.id] ? ' (edited)' : s.model ? ' (model)' : '');
     renderGrid($('#tr-grid'), chartOf(cur.id), { highlight: cur.k });
     $('#tr-grid').classList.add('has-sel');
     if (ui.trAutoChart) $('#tr-chart-fold').open = true;
     renderTrainerStats();
   }
+  const scName = key => { const s = scOf(key); return s ? s.name + ' · ' + s.short : key; };
   function renderTrainerStats() {
     const acc = stats.total ? stats.correct / stats.total : 0;
     $('#tr-kpis').innerHTML = `<span>Accuracy <b>${stats.total ? pct(acc, 0) : '—'}</b></span><span>Correct <b>${stats.correct}/${stats.total}</b></span><span>Streak <b>${stats.streak}</b></span><span>Best <b>${stats.best}</b></span>`;
     const wl = { uniform: 'Uniform', border: 'Borderline focus', only: 'Borderline only' };
     $('#tr-set-sum').textContent = wl[ui.trWeight] || '';
-    $('#tr-recent').innerHTML = stats.recent.length ? stats.recent.map(r => `<span class="${r.ok ? 'y' : 'n'}" title="${esc(SC[r.id] ? SC[r.id].name : r.id)}">${esc(r.k)}</span>`).join('') : '<span class="dim small">No hands yet.</span>';
-    const rows = R.SCENARIOS.filter(s => stats.per[s.id]).map(s => { const p = stats.per[s.id], a = p.c / p.n; return `<tr><td>${esc(s.name)}</td><td class="num">${p.c}/${p.n}</td><td style="width:38%"><div class="bar" style="height:8px"><i style="width:${a * 100}%;background:${a >= 0.8 ? 'var(--good)' : a >= 0.6 ? 'var(--warn)' : 'var(--bad)'}"></i></div></td><td class="num">${pct(a, 0)}</td></tr>`; }).join('');
+    $('#tr-recent').innerHTML = stats.recent.length ? stats.recent.map(r => `<span class="${r.ok ? 'y' : 'n'}" title="${esc(scName(r.id))}">${esc(r.k)}</span>`).join('') : '<span class="dim small">No hands yet.</span>';
+    const rows = Object.keys(stats.per).filter(k => scOf(k)).sort((a, b) => stats.per[b].n - stats.per[a].n).map(k => { const p = stats.per[k], a = p.c / p.n; return `<tr><td>${esc(scName(k))}</td><td class="num">${p.c}/${p.n}</td><td style="width:30%"><div class="bar" style="height:8px"><i style="width:${a * 100}%;background:${a >= 0.8 ? 'var(--good)' : a >= 0.6 ? 'var(--warn)' : 'var(--bad)'}"></i></div></td><td class="num">${pct(a, 0)}</td></tr>`; }).join('');
     $('#tr-table').innerHTML = rows ? `<tr><th>Scenario</th><th class="num">Score</th><th></th><th class="num">Acc</th></tr>${rows}` : '<tr><td class="dim small">Answer some hands to see per-scenario accuracy.</td></tr>';
   }
-  fillScenarioSelect($('#tr-sc'), '<option value="all">Random: all scenarios</option><option value="rfi">Random: all RFI (opens)</option><option value="facing">Random: facing an open</option>');
-  $('#tr-sc').value = ui.trSc; if (!$('#tr-sc').value) { ui.trSc = 'all'; $('#tr-sc').value = 'all'; }
   $('#tr-weight').value = ui.trWeight;
   $('#tr-showchart').checked = !!ui.trAutoChart;
-  $('#tr-sc').addEventListener('change', e => { ui.trSc = e.target.value; saveUI(); deal(); });
   $('#tr-weight').addEventListener('change', e => { ui.trWeight = e.target.value; saveUI(); deal(); });
   $('#tr-showchart').addEventListener('change', e => { ui.trAutoChart = e.target.checked; saveUI(); });
   $('#tr-actions').addEventListener('click', e => { const b = e.target.closest('.act'); if (b) answer(b.dataset.a); });
@@ -1421,10 +1796,11 @@ self.onmessage = function (e) {
     const key = e.key.toLowerCase();
     if (key === ' ' || key === 'enter' || key === 'n') { e.preventDefault(); if (cur && cur.answered) deal(); return; }
     if (!cur || cur.answered) return;
-    const s = SC[cur.id];
+    const s = scOf(cur.id);
     let a = null;
-    if (key === 'f') a = 'fold'; else if (key === 'c') a = 'call'; else if (key === '3') a = '3bet';
-    else if (key === 'r') a = s.actions.includes('raise') ? 'raise' : '3bet';
+    if (key === 'f') a = 'fold'; else if (key === 'c') a = 'call'; else if (key === '3') a = s.actions.includes('3bet') ? '3bet' : 'jam';
+    else if (key === 'j' || key === 'a') a = 'jam';
+    else if (key === 'r') a = s.actions[0];
     if (a && s.actions.includes(a)) { e.preventDefault(); answer(a); }
   });
 
@@ -1434,7 +1810,8 @@ self.onmessage = function (e) {
     $('#chart-view').hidden = m !== 'chart';
     $('#tab-ranges').classList.toggle('mode-train', m === 'train');
     $('#train-view').hidden = m !== 'train';
-    if (m === 'train') { fillScenarioSelect($('#tr-sc'), '<option value="all">Random: all scenarios</option><option value="rfi">Random: all RFI (opens)</option><option value="facing">Random: facing an open</option>'); $('#tr-sc').value = ui.trSc; renderTrainer(); }
+    renderCfg();
+    if (m === 'train') { if (cur && !trainerPool().includes(cur.id)) cur = null; renderTrainer(); }
     else renderChartView();
   }
   $$('#rmode button').forEach(b => b.addEventListener('click', () => setRMode(b.dataset.m)));
@@ -1515,9 +1892,14 @@ self.onmessage = function (e) {
     return r;
   }
   function chartOptions() {
-    let html = '<option value="">Load from chart…</option>';
-    R.SCENARIOS.forEach(s => s.actions.filter(a => a !== 'fold').forEach(a => { html += `<option value="${s.id}|${a}">${esc(s.name)}: ${A[a].label}</option>`; }));
-    return html;
+    fixSel();
+    let html = `<option value="">Load from chart (${ui.n === 2 ? 'HU' : ui.n + '-max'} ${ui.stack}bb)…</option>`, grp = null;
+    M.scenarioIds(ui.n).forEach(id => {
+      const key = M.makeKey(ui.n, ui.stack, id), s = scOf(key);
+      if (s.group !== grp) { if (grp) html += '</optgroup>'; html += `<optgroup label="${esc(s.group)}">`; grp = s.group; }
+      s.actions.filter(a => a !== 'fold').forEach(a => { html += `<option value="${esc(key)}#${a}">${esc(s.name)}: ${A[a].label}${overrides[key] ? ' ✎' : ''}</option>`; });
+    });
+    return html + '</optgroup>';
   }
   function renderEquityInputs() {
     const box = $('#players');
@@ -1588,10 +1970,10 @@ self.onmessage = function (e) {
   $('#players').addEventListener('change', e => {
     const t = e.target;
     if (t.dataset.chart != null && t.value) {
-      const i = +t.dataset.chart, [id, a] = t.value.split('|'), ch = chartOf(id), set = {};
+      const i = +t.dataset.chart, [id, a] = t.value.split('#'), ch = chartOf(id), set = {};
       H.CLASSES.forEach(k => { if ((ch[k][a] || 0) >= 0.5) set[k] = 1; });
       eq.players[i].range = H.rangeToString(set); saveEq(); renderEquityInputs();
-      toast(`Loaded ${SC[id].name}: ${A[a].label} (cells ≥50%)`);
+      toast(`Loaded ${scName(id)}: ${A[a].label} (cells ≥50%)`);
     }
   });
   $('#add-player').addEventListener('click', () => { if (eq.players.length >= 6) return; eq.players.push({ mode: 'range', cards: [null, null], range: '' }); saveEq(); renderEquityInputs(); });
@@ -1742,6 +2124,7 @@ self.onmessage = function (e) {
 
   /* ---------------- init ---------------- */
   $$('details[data-fold]').forEach(d => { d.open = !!folds[d.dataset.fold]; });
+  setTab.ready = true;
   setTab(ui.tab);
   setRMode(ui.rmode);
   renderEquityInputs();
