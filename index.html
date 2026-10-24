@@ -482,6 +482,130 @@ footer{display:none}
   .boardrow .slot{font-size:17px}
 }
 
+/* =================== v5: big matrix, dense controls =================== */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.grid13 .cell{font-size:var(--cfs,11px)!important;letter-spacing:-.04em;white-space:nowrap;line-height:1;min-width:0;min-height:0;padding:0}
+.seg.game .gs{display:none}
+.sit-slot:empty{display:none}
+/* desktop: give the matrix more of the height */
+@media (min-width:641px){
+  .gridpanel{padding:10px 12px}
+  .chead{margin-bottom:6px}
+  .legend{margin-top:6px}
+  #cell-info{margin-top:5px;padding:5px 10px}
+}
+
+/* ---------- phone ---------- */
+@media (max-width:640px){
+  :root{--hdr:38px;--gap:4px}
+  header.top{height:var(--hdr);padding:0 6px;gap:6px}
+  .logo .mark{width:24px;height:24px;font-size:13px;border-radius:7px}
+  .tabs{padding:2px;gap:2px;border-radius:9px}
+  .tabs button{min-height:28px;font-size:13px;padding:0 6px;border-radius:7px}
+  main{padding:4px 4px 6px}
+  .panel{padding:4px;border-radius:10px}
+  /* row 1: [Cash|MTT] [9p · 80bb ▾] [Open|vs Open] */
+  .setup{padding:4px;gap:4px;flex-wrap:wrap}
+  .seg{border-radius:8px;padding:2px;gap:2px}
+  .seg button{min-height:28px;font-size:13px;padding:0 6px;border-radius:6px}
+  .setup .seg.game{flex:0 0 auto}
+  .seg.game button{min-height:28px;font-size:13px;padding:0 8px}
+  .seg.game .gl{display:none}.seg.game .gs{display:inline}
+  .setup-sum{min-height:32px;padding:0 7px;gap:4px;font-size:12.5px;border-radius:8px;flex:0 0 auto}
+  .setup-sum .chev{font-size:10px}
+  .sit-slot{flex:1 1 0;min-width:0}
+  .sit-slot .seg button{padding:0 4px;white-space:nowrap}
+  .setup-body{padding:2px 4px 4px}
+  .setup-body .field{margin-top:6px}
+  .bbslider{margin:4px 0}
+  .gnote{font-size:11.5px;margin-top:4px}
+  /* seat rows */
+  .sitpanel{padding:3px 4px}
+  .sitpanel .field,.sitpanel .field:first-of-type{margin-top:0;gap:4px}
+  .sitpanel .field + .field{margin-top:3px}
+  .sitpanel .flabel{flex:0 0 34px;font-size:10px;letter-spacing:0;color:var(--muted)}
+  .seats-btns{gap:2px}
+  .seats-btns button{min-height:28px;font-size:11.5px;letter-spacing:-.03em;border-radius:6px}
+  .seats-btns button.active{box-shadow:0 0 0 1.5px rgba(159,192,255,.9)}
+  .seats-btns.vill button.active{box-shadow:0 0 0 1.5px rgba(255,180,150,.9)}
+  /* chart: edge to edge */
+  .gridpanel{padding:4px 0 0;border:0;background:transparent;border-radius:0}
+  .gridpanel.editing{box-shadow:none;outline:2px solid #f5b041;outline-offset:1px;border-radius:6px}
+  .chead{margin-bottom:4px;gap:4px;padding:0 2px;align-items:center}
+  #headline{font-size:13.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ctitle{min-width:0;flex:1}
+  .subline{font-size:11px;margin-top:1px;line-height:1.25}
+  .chip,#edit-toggle{min-height:30px;min-width:30px;padding:0 8px;font-size:13px}
+  .pill.edited{font-size:10.5px;padding:1px 6px}
+  .grid13{gap:1px}
+  .grid13.main{width:100%;max-width:none}
+  .grid13 .cell{border-radius:2px;letter-spacing:-.05em}
+  .editbar{gap:4px;padding:4px;margin-bottom:4px;font-size:12px}
+  .editbar .brush{min-height:28px;padding:0 7px;font-size:12px}
+  .legend{font-size:11.5px;gap:2px 9px;margin-top:4px;line-height:1.3}
+  .legend .sw{width:11px;height:11px}
+  #cell-info{margin-top:3px;padding:3px 8px;font-size:12px;min-height:0;border-radius:8px}
+  .selpill{font-size:10.5px;padding:0 6px;margin-right:5px}
+  /* folds as two compact buttons on one row */
+  .side{flex-direction:row;flex-wrap:wrap;gap:4px}
+  .side > details.fold{flex:1 1 0;min-width:0;border-radius:8px}
+  .side > details.fold[open]{flex-basis:100%}
+  details.fold > summary{min-height:30px;padding:0 8px;font-size:12px;gap:5px}
+  details.fold > summary .sumval{font-size:11px}
+  .fold-body{padding:2px 8px 8px}
+  /* trainer */
+  .felt{padding:6px 6px 8px;border-width:3px;border-radius:14px}
+  .trhead{font-size:12px;margin-bottom:4px}
+  .seats{gap:3px;margin-bottom:4px}
+  .seat{font-size:10.5px;padding:2px 6px}
+  .scdesc{font-size:12.5px;margin:0 0 4px;line-height:1.3}
+  .pcard.big{font-size:24px}
+  .hand-name{font-size:12px}
+  .actions{margin-top:6px;gap:6px}
+  .act{min-height:42px;font-size:15px;border-radius:10px}
+  .act.picked{outline-width:2px}
+  .fbrow{margin-top:6px;gap:6px}
+  .fbrow .feedback{min-height:34px;padding:4px 8px;font-size:12px}
+  #tr-next{min-width:72px;min-height:34px}
+  .scoreline{margin-top:4px;padding:4px 8px;font-size:11.5px;gap:2px 12px}
+  .scoreline b{font-size:13px}
+  #tr-chart-fold{margin-top:4px}
+  /* equity */
+  .eq-layout{gap:4px}
+  .eqin,#results-panel{padding:6px}
+  .seg.mini button{min-height:26px;padding:0 7px;font-size:11.5px}
+  .iconbtn{min-height:26px;padding:0 7px;font-size:11.5px}
+  .prow .x{min-width:26px;min-height:26px}
+  .boardrow{padding:6px 0}
+  .calcrow{padding-top:6px}
+  .calcrow .btn{min-height:32px;font-size:13px}
+  .eqin details.fold{margin-top:4px}
+  .player{margin-bottom:3px}
+}
+@media (max-width:360px){
+  .seats-btns button{font-size:10.5px}
+  .setup-sum{font-size:12px;padding:0 5px}
+}
+@media (max-width:640px){
+  .side > details.fold > summary{white-space:nowrap}
+  .sitpanel .flabel{align-self:center;display:block}
+}
+@media (max-width:420px){ .side > details.fold:not([open]) > summary .sumval{display:none} }
+@media (max-width:640px){
+  .eqfolds{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+  .eqfolds > details.fold{flex:1 1 0;min-width:0;margin-top:0!important}
+  .eqfolds > details.fold[open]{flex-basis:100%}
+  .eqfolds > details.fold > summary{white-space:nowrap}
+  .eqfolds > details.fold:not([open]) .sumval{display:none}
+  .eqin > .row{margin-bottom:4px!important}
+  .eqhint{font-size:11px}
+  #results-panel > h3{display:none}
+  #eq-status{margin-top:3px;font-size:11.5px}
+  #results .res-note{margin-top:2px}
+}
+@media (max-width:640px) and (max-height:760px){ #results .ci,#results .cinote{display:none} }
+@media (max-width:640px) and (max-height:760px){ main{padding-bottom:2px} #results table.t td,#results table.t th{padding-top:2px;padding-bottom:2px} }
+
 </style>
 </head>
 <body>
@@ -502,9 +626,10 @@ footer{display:none}
       <aside class="ctrl">
         <div class="panel setup" id="setup">
           <div class="seg game" id="cfg-g" role="group" aria-label="Game type">
-            <button data-g="cash">Cash</button><button data-g="mtt">Tournament</button>
+            <button data-g="cash">Cash</button><button data-g="mtt"><span class="gl">Tournament</span><span class="gs">MTT</span></button>
           </div>
           <button class="setup-sum" id="setup-sum" aria-expanded="false" aria-controls="setup-body" title="Players and stack"><span id="setup-sum-txt"></span><span class="chev">&#9662;</span></button>
+          <div class="sit-slot" id="sit-slot"></div>
           <div class="setup-body" id="setup-body">
             <div class="field">
               <div class="flabel">Players</div>
@@ -610,7 +735,7 @@ footer{display:none}
         <div id="players"></div>
         <div class="row" style="margin-bottom:8px">
           <button class="btn small" id="add-player">+ Player</button>
-          <span class="small dim">Up to 6. Empty cards = random hand.</span>
+          <span class="small dim eqhint">Up to 6. Empty cards = random hand.</span>
         </div>
         <div class="boardrow">
           <span class="lbl">Board</span>
@@ -623,7 +748,7 @@ footer{display:none}
           <div class="progress"><i id="prog"></i></div>
         </div>
         <div class="small muted" id="eq-status">Ready.</div>
-        <details class="fold" data-fold="e-dead"><summary>Dead cards <span class="sumval" id="dead-sum"></span></summary>
+        <div class="eqfolds"><details class="fold" data-fold="e-dead"><summary>Dead cards <span class="sumval" id="dead-sum"></span></summary>
           <div class="fold-body"><div id="dead-slots"></div>
           <div class="row" style="margin-top:8px"><button class="btn small" id="clear-dead">Clear dead cards</button></div></div>
         </details>
@@ -632,7 +757,7 @@ footer{display:none}
             <select id="eq-mode"><option value="auto">Auto (exact if feasible)</option><option value="exact">Force exact</option><option value="mc">Monte Carlo</option></select>
             <select id="eq-trials"><option value="100000">100k trials</option><option value="300000">300k trials</option><option value="1000000">1M trials</option><option value="3000000">3M trials</option><option value="10000000">10M trials</option></select>
           </div></div>
-        </details>
+        </details></div>
       </div>
       <div class="panel" id="results-panel">
         <h3>Results</h3>
@@ -1684,6 +1809,14 @@ self.onmessage = function (e) {
     d.style.background = cellBg(cell);
     d.classList.toggle('isfold', (cell.fold || 0) >= 0.999);
   }
+  // label size follows the cell size so 3-character labels never overflow
+  const sizeGridFont = el => {
+    const w = el.clientWidth; if (!w) return;
+    const gap = parseFloat(getComputedStyle(el).columnGap) || 0, cs = (w - 12 * gap) / 13;
+    el.style.setProperty('--cfs', Math.max(5.5, Math.min(16, (cs - 2.5) / 1.72)).toFixed(2) + 'px');
+  };
+  const gridRO = typeof ResizeObserver === 'function' ? new ResizeObserver(es => es.forEach(e => sizeGridFont(e.target))) : null;
+  const watchGrid = el => { sizeGridFont(el); if (gridRO && !el._ro) { gridRO.observe(el); el._ro = 1; } };
   function renderGrid(container, chart, opts) {
     opts = opts || {};
     container.innerHTML = '';
@@ -1696,6 +1829,7 @@ self.onmessage = function (e) {
       frag.appendChild(d);
     }
     container.appendChild(frag);
+    watchGrid(container);
   }
   const ACOL = a => a === 'fold' ? '#b4bccb' : A[a].color;
   function mixText(cell) {
@@ -1726,6 +1860,9 @@ self.onmessage = function (e) {
   }
   const curId = () => ui.type === 'rfi' ? 'rfi:' + ui.hero : `vs:${ui.hero}:${ui.vill}`;
   const curKey = () => { fixSel(); return M.makeKey(ui.g, ui.n, stackOf(), curId()); };
+  const PHONE = window.matchMedia('(max-width:640px)');
+  const onPhoneChange = () => { renderCfg(); fitGrid(); };
+  if (PHONE.addEventListener) PHONE.addEventListener('change', () => onPhoneChange()); else if (PHONE.addListener) PHONE.addListener(() => onPhoneChange());
   const segBtns = (items, active, attr) => items.map(([v, l, t]) => `<button data-${attr}="${esc(v)}" class="${v === active ? 'active' : ''}"${t ? ` title="${esc(t)}"` : ''} aria-pressed="${v === active}">${l}</button>`).join('');
   const TICKS = { cash: [50, 100, 200, 300, 500], mtt: [5, 10, 15, 25, 40, 60, 100] };
   const stackTxt = (g, s) => (g === 'cash' && s >= 500 ? '500+' : s) + ' bb';
@@ -1739,7 +1876,8 @@ self.onmessage = function (e) {
     el.style.setProperty('--p', (100 * i / (list.length - 1)).toFixed(2) + '%');
     $('#cfg-stack-v').textContent = stackTxt(ui.g, stackOf());
     el.setAttribute('aria-valuetext', stackTxt(ui.g, stackOf()).replace('bb', 'big blinds'));
-    $('#setup-sum-txt').textContent = `${ui.n === 2 ? 'HU' : ui.n + ' players'} · ${stackTxt(ui.g, stackOf())}`;
+    $('#setup-sum-txt').textContent = `${ui.n === 2 ? 'HU' : ui.n + 'p'} · ${stackTxt(ui.g, stackOf()).replace(' ', '')}`;
+    $('#setup-sum').setAttribute('aria-label', `${ui.n === 2 ? 'Heads-up' : ui.n + ' players'}, ${stackTxt(ui.g, stackOf())}. Change players and stack`);
   }
   function renderCfg() {
     fixSel();
@@ -1754,17 +1892,21 @@ self.onmessage = function (e) {
     $('#setup-sum').setAttribute('aria-expanded', String(!!ui.setupOpen));
     const seats = M.SEATS[ui.n], L = s => esc(M.seatLabel(ui.n, s));
     // chart situation
-    let h = `<div class="seg sit full" role="group" aria-label="Situation">${segBtns([['rfi', 'Open', 'First in: everyone before you folded'], ['vs', 'vs Open', 'Facing a single open raise']], ui.type, 'type')}</div>`;
+    const mob = PHONE.matches;
+    const typeSeg = `<div class="seg sit full" role="group" aria-label="Situation">${segBtns([['rfi', 'Open', 'First in: everyone before you folded'], ['vs', 'vs Open', 'Facing a single open raise']], ui.type, 'type')}</div>`;
+    const trSeg = `<div class="seg sit full" role="group" aria-label="Drill type">${segBtns([['all', mob ? 'Mix' : 'Mixed', 'Mixed: open and vs-open spots'], ['rfi', 'Open'], ['vs', mob ? 'vs' : 'vs Open', 'vs Open']], ui.trType, 'trtype')}</div>`;
+    $('#sit-slot').innerHTML = mob ? (ui.rmode === 'train' ? trSeg : typeSeg) : '';
+    let h = mob ? '' : typeSeg;
     const heroSeats = ui.type === 'rfi' ? seats.filter(s => s !== 'BB') : seats.slice(1);
-    h += `<div class="field"><div class="flabel">Your seat</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns(heroSeats.map(s => [s, L(s)]), ui.hero, 'hero')}</div></div>`;
+    h += `<div class="field"><div class="flabel">${mob ? 'You' : 'Your seat'}</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns(heroSeats.map(s => [s, L(s)]), ui.hero, 'hero')}</div></div>`;
     if (ui.type === 'vs') {
       const vs = seats.slice(0, seats.indexOf(ui.hero));
       h += `<div class="field"><div class="flabel">Opener</div><div class="seats-btns vill" role="group" aria-label="Opener position">${segBtns(vs.map(s => [s, L(s)]), ui.vill, 'vill')}</div></div>`;
     }
     $('#sitbar').innerHTML = h;
     // trainer situation
-    let t = `<div class="seg sit full" role="group" aria-label="Drill type">${segBtns([['all', 'Mixed'], ['rfi', 'Open'], ['vs', 'vs Open']], ui.trType, 'trtype')}</div>`;
-    t += `<div class="field"><div class="flabel">Your seat</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns([['any', 'Any']].concat(seats.map(s => [s, L(s)])), ui.trHero, 'trhero')}</div></div>`;
+    let t = mob ? '' : trSeg;
+    t += `<div class="field"><div class="flabel">${mob ? 'You' : 'Your seat'}</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns([['any', 'Any']].concat(seats.map(s => [s, L(s)])), ui.trHero, 'trhero')}</div></div>`;
     $('#trsitbar').innerHTML = t;
   }
   function cfgChanged() { saveUI(); renderCfg(); if (ui.rmode === 'train') deal(); else renderChartView(); }
@@ -1774,6 +1916,11 @@ self.onmessage = function (e) {
   $('#cfg-stack').addEventListener('input', e => { const l = M.STACKS[ui.g]; ui.stacks[ui.g] = l[+e.target.value] || M.DEFAULT_STACK[ui.g]; paintSlider(); if (ui.rmode !== 'train') { saveUI(); renderChartView(); } });
   $('#cfg-stack').addEventListener('change', () => cfgChanged());
   $('#cfg-ticks').addEventListener('click', e => { const tk = e.target.closest('.tk'); if (!tk) return; ui.stacks[ui.g] = M.snapStack(ui.g, +tk.dataset.s); cfgChanged(); });
+  $('#sit-slot').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.type) { ui.type = b.dataset.type; cfgChanged(); }
+    else if (b.dataset.trtype) { ui.trType = b.dataset.trtype; saveUI(); renderCfg(); deal(); }
+  });
   $('#sitbar').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.type) ui.type = b.dataset.type; else if (b.dataset.hero) ui.hero = b.dataset.hero; else if (b.dataset.vill) ui.vill = b.dataset.vill; else return;
@@ -2275,6 +2422,7 @@ self.onmessage = function (e) {
       <div class="modal-foot"><button class="btn" id="rg-clear">Clear</button><button class="btn" id="rg-all">All</button><span style="flex:1"></span><button class="btn" id="rg-cancel">Cancel</button><button class="btn primary" id="rg-apply">Apply</button></div>`);
     const g = $('#rg', m);
     H.CLASSES.forEach(k => { const d = document.createElement('div'); d.className = 'cell'; d.dataset.key = k; d.textContent = k; g.appendChild(d); });
+    watchGrid(g);
     const refresh = () => {
       let n = 0;
       $$('.cell', g).forEach(d => { const on = !!set[d.dataset.key]; d.classList.toggle('on', on); d.classList.toggle('off', !on); if (on) n += H.classCount(d.dataset.key); });
@@ -2386,14 +2534,14 @@ self.onmessage = function (e) {
       const desc = d.cards ? d.cards.map(c => cardHTML(c)).join('') : `<span class="handdesc" title="${esc(d.text)}">${esc(d.text)}</span>`;
       const se = !r.exact && r.total ? Math.sqrt(p.equity * (1 - p.equity) / r.total) : 0;
       return `<tr><td><span class="dot" style="background:${PCOLORS[i]}"></span><b>${i === 0 ? 'Hero' : 'V' + i}</b></td><td style="font-size:11px">${desc}</td>
-        <td style="min-width:130px"><div class="eqbar"><i style="width:${(p.equity * 100).toFixed(2)}%;background:${PCOLORS[i]}"></i><b>${pct(p.equity, 2)}</b></div>${se ? `<div class="dim" style="font-size:10.5px;text-align:center">±${(se * 196).toFixed(2)}%</div>` : ''}</td>
+        <td style="min-width:130px"><div class="eqbar"><i style="width:${(p.equity * 100).toFixed(2)}%;background:${PCOLORS[i]}"></i><b>${pct(p.equity, 2)}</b></div>${se ? `<div class="dim ci" style="font-size:10.5px;text-align:center">±${(se * 196).toFixed(2)}%</div>` : ''}</td>
         <td class="num">${pct(p.win, 2)}</td><td class="num">${pct(p.tie, 2)}</td></tr>`;
     }).join('');
     const kind = r.exact ? 'Exact enumeration' : 'Monte Carlo';
     let cats = '<tr><th>Made hand</th>' + r.players.map((_, i) => `<th class="num">${i === 0 ? 'Hero' : 'V' + i}</th>`).join('') + '</tr>';
     for (let c = 8; c >= 0; c--) cats += `<tr><td>${H.CAT_NAMES[c]}</td>${r.players.map(p => `<td class="num">${pct(p.cats[c], 1)}</td>`).join('')}</tr>`;
     $('#results').innerHTML = `<div class="tscroll"><table class="t"><tr><th>Player</th><th>Hand / range</th><th>Equity</th><th class="num">Win</th><th class="num">Tie</th></tr>${rows}</table></div>
-      <div class="res-note">${info.board.length ? 'Board: ' + info.board.map(c => cardHTML(c)).join('') + ' &middot; ' : 'Preflop &middot; '}${kind} &middot; <b>${fmtN(r.total)}</b> ${r.exact ? 'boards evaluated' : 'trials'}${r.elapsed != null ? ' &middot; ' + (r.elapsed / 1000).toFixed(2) + 's' : ''}${!done ? (stopped ? ' &middot; <span style="color:var(--warn)">partial (stopped)</span>' : ' &middot; running…') : ''}${!r.exact ? ' &middot; ± = 95% CI' : ''}</div>
+      <div class="res-note">${info.board.length ? 'Board: ' + info.board.map(c => cardHTML(c)).join('') + ' &middot; ' : 'Preflop &middot; '}${kind} &middot; <b>${fmtN(r.total)}</b> ${r.exact ? 'boards evaluated' : 'trials'}${r.elapsed != null ? ' &middot; ' + (r.elapsed / 1000).toFixed(2) + 's' : ''}${!done ? (stopped ? ' &middot; <span style="color:var(--warn)">partial (stopped)</span>' : ' &middot; running…') : ''}${!r.exact ? '<span class="cinote"> &middot; ± = 95% CI</span>' : ''}</div>
       <details class="fold" data-fold="e-dist"${foldAttr('e-dist')} style="margin-top:8px"><summary>Hand distribution at showdown</summary><div class="fold-body tscroll"><table class="t">${cats}</table></div></details>`;
   }
 
