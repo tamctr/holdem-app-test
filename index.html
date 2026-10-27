@@ -693,12 +693,31 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #tr-side > .hand-tray .hand-cards{margin:0;display:flex;gap:6px}
 #tr-side > .hand-tray .hand-name{font-size:18px;color:#eaf6ef;min-width:3.2em;text-align:left}
 .felt .hand-tray .hand-cards{display:flex;justify-content:center;gap:6px}
-.pcard.big{position:relative;display:inline-block;font-size:30px;width:2.15em;height:2.7em;margin:0;border-radius:.2em;background:linear-gradient(180deg,#fff 0,#f2f4f8 100%);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 3px 8px rgba(0,0,0,.45);overflow:hidden;line-height:1}
-.pcard.big .r{position:absolute;left:.12em;top:.08em;font-size:1em;letter-spacing:-.05em}
-.pcard.big .cs{position:absolute;left:.22em;top:44%;font-size:.5em}
-.pcard.big .s{position:absolute;right:.1em;bottom:.06em;margin:0;font-size:1.3em}
+.pcard.big{font-size:30px;margin:0}
 @media (max-width:640px){ .pcard.big{font-size:22px} .felt .hand-tray .hand-cards{gap:5px} }
 @media (min-width:901px){ #train-view .actions{flex-wrap:nowrap} #train-view .act{flex:1 1 0;min-width:0;max-width:150px;padding:0 8px} }
+
+/* v9: every playing card uses a natural ~0.8 width:height face (corner rank + small suit, large suit bottom-right) */
+.pcard{position:relative;display:inline-block;width:2.15em;height:2.7em;border-radius:.2em;background:linear-gradient(180deg,#fff 0,#f0f2f6 100%);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 2px 6px rgba(0,0,0,.42);overflow:hidden;line-height:1;vertical-align:middle;padding:0}
+.pcard .r{position:absolute;left:.12em;top:.08em;font-size:1em;letter-spacing:-.05em;margin:0}
+.pcard .cs{position:absolute;left:.2em;top:44%;font-size:.5em}
+.pcard .s{position:absolute;right:.1em;bottom:.06em;margin:0;font-size:1.3em}
+.slot{width:2.15em;height:2.7em;border-radius:.2em}
+.slot.target{border-radius:.26em}
+.picker{container-type:inline-size}
+.picker .pcard{width:100%;height:auto;aspect-ratio:2.15/2.7;margin:0;font-size:clamp(10px,2.4vw,17px);font-size:min(calc((100cqw - 48px) / 13 / 2.15),22px)}
+/* equity: card picker / range grid docked on the right of the inputs (wide screens) */
+.eqdock h2{margin:0 0 10px;font-size:16px}
+.eqdock .modal-foot{margin-top:10px}
+.eqdock .picker{gap:4px}
+@media (min-width:901px){
+  .eq-layout{grid-template-areas:"in res"}
+  .eq-layout > .eqin{grid-area:in}
+  .eq-layout > #results-panel{grid-area:res}
+  .eq-layout.docked{grid-template-areas:"in dock" "res dock";grid-template-rows:auto 1fr;align-items:start}
+  .eq-layout > #eq-dock{grid-area:dock;position:sticky;top:8px;border-color:rgba(79,140,255,.45);box-shadow:0 0 0 1px rgba(79,140,255,.18),var(--shadow)}
+  #eq-dock #rg{width:min(100%,calc(100dvh - 250px));margin:0 auto}
+}
 
 </style>
 </head>
@@ -860,6 +879,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
         <h3>Results</h3>
         <div id="results"><div class="dim small">Run a calculation to see equities.</div></div>
       </div>
+      <div class="panel eqdock" id="eq-dock" hidden aria-live="polite"></div>
     </div>
   </section>
 </main>
@@ -1895,17 +1915,34 @@ self.onmessage = function (e) {
   function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2200); }
 
   /* ---------------- modal ---------------- */
-  let modalClose = null;
-  function openModal(html, onClose) { $('#modal').innerHTML = html; $('#modal-bg').classList.add('open'); modalClose = onClose || null; return $('#modal'); }
-  function closeModal() { $('#modal-bg').classList.remove('open'); $('#modal').innerHTML = ''; const f = modalClose; modalClose = null; if (f) f(); }
+  // Equity's card picker and range grid open in a panel docked on the RIGHT of the equity inputs on wide screens
+  // (opts.dock); everything else, and phones, use the centred modal.
+  let modalClose = null, modalHost = null;
+  const dockWide = window.matchMedia('(min-width:901px)');
+  function openModal(html, onClose, opts) {
+    if (modalHost) closeModal();
+    const dock = !!(opts && opts.dock) && dockWide.matches;
+    const host = dock ? $('#eq-dock') : $('#modal');
+    host.innerHTML = html;
+    if (dock) { host.hidden = false; $('#tab-equity .eq-layout').classList.add('docked'); }
+    else $('#modal-bg').classList.add('open');
+    modalHost = host; modalClose = onClose || null; return host;
+  }
+  function closeModal() {
+    const host = modalHost; modalHost = null;
+    if (host && host.id === 'eq-dock') { host.hidden = true; host.innerHTML = ''; $('#tab-equity .eq-layout').classList.remove('docked'); }
+    else { $('#modal-bg').classList.remove('open'); $('#modal').innerHTML = ''; }
+    const f = modalClose; modalClose = null; if (f) f();
+  }
+  const dockOpen = () => !!modalHost && modalHost.id === 'eq-dock';
   $('#modal-bg').addEventListener('mousedown', e => { if (e.target.id === 'modal-bg') closeModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal-bg').classList.contains('open')) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modalHost) closeModal(); });
+  if (dockWide.addEventListener) dockWide.addEventListener('change', () => { if (dockOpen()) closeModal(); });
 
   /* ---------------- cards ---------------- */
   function cardHTML(c, cls) {
     const r = H.RANKS[c >> 2], s = H.SUITS[c & 3];
-    const big = cls === 'big' ? `<span class="cs">${H.SUIT_SYM[s]}</span>` : '';
-    return `<span class="pcard s-${s} ${cls || ''}"><span class="r">${r}</span>${big}<span class="s">${H.SUIT_SYM[s]}</span></span>`;
+    return `<span class="pcard s-${s} ${cls || ''}"><span class="r">${r}</span><span class="cs">${H.SUIT_SYM[s]}</span><span class="s">${H.SUIT_SYM[s]}</span></span>`;
   }
 
   /* ---------------- UI state ---------------- */
@@ -1923,6 +1960,7 @@ self.onmessage = function (e) {
   // top-level sections: Charts | Trainer | Equity (Charts and Trainer share the ranges view)
   const tabName = () => ui.tab === 'equity' ? 'equity' : ui.rmode === 'train' ? 'trainer' : 'charts';
   function setTab(t) {
+    if (dockOpen() && t !== 'equity') closeModal();
     if (t === 'charts' || t === 'trainer') { ui.tab = 'ranges'; ui.rmode = t === 'trainer' ? 'train' : 'chart'; }
     else if (t === 'ranges') ui.tab = 'ranges';
     else ui.tab = 'equity';
@@ -2512,7 +2550,7 @@ self.onmessage = function (e) {
   $('#tr-next').addEventListener('click', deal);
   $('#tr-reset').addEventListener('click', () => { if (!confirm('Reset trainer stats?')) return; stats = { total: 0, correct: 0, streak: 0, best: 0, per: {}, recent: [] }; save(LS.stats, stats); renderTrainerStats(); });
   document.addEventListener('keydown', e => {
-    if (ui.tab !== 'ranges' || ui.rmode !== 'train' || $('#modal-bg').classList.contains('open')) return;
+    if (ui.tab !== 'ranges' || ui.rmode !== 'train' || modalHost) return;
     if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement && document.activeElement.tagName)) return;
     const key = e.key.toLowerCase();
     if (key === ' ' || key === 'enter' || key === 'n') { e.preventDefault(); if (cur && cur.answered) deal(); return; }
@@ -2568,6 +2606,7 @@ self.onmessage = function (e) {
     const c = getSlot(t);
     return `<button class="slot ${c != null ? 'filled' : ''} ${extra || ''}" data-t="${t}" title="${c != null ? 'Change card' : 'Pick card'}">${c != null ? cardHTML(c) : '+'}</button>`;
   }
+  function markTarget(t) { $$('#tab-equity .eqin .slot').forEach(b => b.classList.toggle('target', b.dataset.t === t)); }
   function openPicker(target) {
     let tgt = target;
     const draw = () => {
@@ -2576,7 +2615,8 @@ self.onmessage = function (e) {
       html += `<div class="row" style="margin-bottom:10px;gap:4px">${group.map(g => slotHTML(g, g === tgt ? 'target' : '')).join('')}</div><div class="picker">`;
       for (const s of [3, 2, 1, 0]) for (let r = 12; r >= 0; r--) { const c = r * 4 + s; html += `<button data-c="${c}" ${used.has(c) ? 'disabled' : ''}>${cardHTML(c)}</button>`; }
       html += `</div><div class="modal-foot"><input type="text" id="m-type" placeholder="or type e.g. Ah Kd 7c" style="flex:1;min-width:160px"><button class="btn" id="m-clear">Clear card</button><button class="btn primary" id="m-done">Done</button></div>`;
-      const m = openModal(html, () => { saveEq(); renderEquityInputs(); });
+      const m = openModal(html, () => { saveEq(); renderEquityInputs(); }, { dock: true });
+      if (dockOpen()) { saveEq(); renderEquityInputs(); markTarget(tgt); }
       $$('.picker button', m).forEach(b => b.onclick = () => choose(+b.dataset.c));
       $$('.slot', m).forEach(b => b.onclick = () => { tgt = b.dataset.t; draw(); });
       $('#m-clear', m).onclick = () => { setSlot(tgt, null); draw(); };
@@ -2660,7 +2700,7 @@ self.onmessage = function (e) {
   }
   $('#tab-equity').addEventListener('click', e => {
     const slot = e.target.closest('.slot');
-    if (slot && !e.target.closest('.modal')) { openPicker(slot.dataset.t); return; }
+    if (slot && !e.target.closest('.modal, .eqdock')) { openPicker(slot.dataset.t); return; }
     const b = e.target.closest('[data-act]'); if (!b) return;
     const i = +b.dataset.i, act = b.dataset.act;
     if (act === 'mode') { eq.players[i].mode = b.dataset.m; }
@@ -2717,7 +2757,7 @@ self.onmessage = function (e) {
       <div class="grid13 pickable" id="rg"></div>
       <div class="row" style="margin-top:10px"><label class="small muted">Top</label><input type="range" min="0" max="100" step="0.5" value="${p.top != null ? p.top : 15}" id="rg-top" style="accent-color:var(--accent)"><span class="small" id="rg-topv"></span><span class="small muted" id="rg-count" style="margin-left:auto"></span></div>
       ${specific.length ? `<p class="small dim">Specific combos kept: ${esc(specific.join(', '))}</p>` : ''}
-      <div class="modal-foot"><button class="btn" id="rg-clear">Clear</button><button class="btn" id="rg-all">All</button><span style="flex:1"></span><button class="btn" id="rg-cancel">Cancel</button><button class="btn primary" id="rg-apply">Apply</button></div>`);
+      <div class="modal-foot"><button class="btn" id="rg-clear">Clear</button><button class="btn" id="rg-all">All</button><span style="flex:1"></span><button class="btn" id="rg-cancel">Cancel</button><button class="btn primary" id="rg-apply">Apply</button></div>`, null, { dock: true });
     const g = $('#rg', m);
     H.CLASSES.forEach(k => { const d = document.createElement('div'); d.className = 'cell'; d.dataset.key = k; d.textContent = k; g.appendChild(d); });
     watchGrid(g);
