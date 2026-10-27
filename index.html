@@ -468,10 +468,11 @@ footer{display:none}
 @media (max-width:640px){.pname .sh{display:inline}}
 /* trainer: felt + chart side by side on two-column layouts */
 @media (min-width:901px){
-  #train-view:not([hidden]){display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-areas:"felt chart" "kpis chart";gap:10px;align-items:start;align-content:start}
+  #train-view:not([hidden]){display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);grid-template-areas:"felt side" "kpis side";grid-template-rows:auto 1fr;gap:10px;align-items:start;align-content:start}
   #train-view > .felt{grid-area:felt}
   #train-view > #tr-kpis{grid-area:kpis;margin:0}
-  #train-view > #tr-chart-fold{grid-area:chart;margin:0}
+  #train-view > .tr-side{grid-area:side;display:flex;flex-direction:column;gap:8px;min-width:0}
+  #tr-side > #tr-chart-fold{margin:0}
   #tr-grid .cell{min-height:0;min-width:0}
 }
 @media (min-width:901px){
@@ -686,6 +687,19 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   .seg.game button.icm.on::after{content:"";width:6px;height:6px;border-radius:50%;background:#fde047;margin-left:3px}
 }
 
+/* v8: trainer hole cards on the right (above the chart) + natural-proportion playing cards */
+.hand-tray{display:flex;flex-direction:column;align-items:center}
+#tr-side > .hand-tray{flex-direction:row;justify-content:center;gap:14px;padding:10px 14px;border-radius:14px;background:radial-gradient(ellipse at center,#1d5a3e 0,#123a29 70%,#0d2a1e 100%);border:4px solid #2a2016;box-shadow:inset 0 0 24px rgba(0,0,0,.45),var(--shadow)}
+#tr-side > .hand-tray .hand-cards{margin:0;display:flex;gap:6px}
+#tr-side > .hand-tray .hand-name{font-size:18px;color:#eaf6ef;min-width:3.2em;text-align:left}
+.felt .hand-tray .hand-cards{display:flex;justify-content:center;gap:6px}
+.pcard.big{position:relative;display:inline-block;font-size:30px;width:2.15em;height:2.7em;margin:0;border-radius:.2em;background:linear-gradient(180deg,#fff 0,#f2f4f8 100%);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 3px 8px rgba(0,0,0,.45);overflow:hidden;line-height:1}
+.pcard.big .r{position:absolute;left:.12em;top:.08em;font-size:1em;letter-spacing:-.05em}
+.pcard.big .cs{position:absolute;left:.22em;top:44%;font-size:.5em}
+.pcard.big .s{position:absolute;right:.1em;bottom:.06em;margin:0;font-size:1.3em}
+@media (max-width:640px){ .pcard.big{font-size:22px} .felt .hand-tray .hand-cards{gap:5px} }
+@media (min-width:901px){ #train-view .actions{flex-wrap:nowrap} #train-view .act{flex:1 1 0;min-width:0;max-width:150px;padding:0 8px} }
+
 </style>
 </head>
 <body>
@@ -792,8 +806,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
             <div class="trhead" id="tr-head"></div>
             <div class="seats" id="tr-seats"></div>
             <div class="scdesc" id="tr-desc"></div>
-            <div class="hand-cards" id="tr-cards"></div>
-            <div class="hand-name" id="tr-handname"></div>
+            <div class="hand-tray" id="tr-hand"><div class="hand-cards" id="tr-cards"></div><div class="hand-name" id="tr-handname"></div></div>
             <div class="actions" id="tr-actions"></div>
             <div class="fbrow">
               <div class="feedback idle" id="tr-feedback"></div>
@@ -801,9 +814,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
             </div>
           </div>
           <div class="scoreline" id="tr-kpis"></div>
+          <div class="tr-side" id="tr-side">
           <details class="fold" data-fold="t-chart" id="tr-chart-fold"><summary>Chart for this hand <span class="sumval" id="tr-chart-title"></span></summary>
             <div class="fold-body"><div class="small muted" id="tr-chart-empty">Answer to reveal the chart with your hand highlighted.</div><div id="tr-grid" class="grid13 mini"></div></div>
           </details>
+          </div>
         </div>
       </div>
     </div>
@@ -1889,7 +1904,8 @@ self.onmessage = function (e) {
   /* ---------------- cards ---------------- */
   function cardHTML(c, cls) {
     const r = H.RANKS[c >> 2], s = H.SUITS[c & 3];
-    return `<span class="pcard s-${s} ${cls || ''}"><span class="r">${r}</span><span class="s">${H.SUIT_SYM[s]}</span></span>`;
+    const big = cls === 'big' ? `<span class="cs">${H.SUIT_SYM[s]}</span>` : '';
+    return `<span class="pcard s-${s} ${cls || ''}"><span class="r">${r}</span>${big}<span class="s">${H.SUIT_SYM[s]}</span></span>`;
   }
 
   /* ---------------- UI state ---------------- */
@@ -2284,6 +2300,16 @@ self.onmessage = function (e) {
     g.style.width = Math.floor(Math.max(180, Math.min(pw, 560, avail))) + 'px';
   }
   $('#tr-chart-fold').addEventListener('toggle', () => fitTrGrid());
+  // trainer: on wide layouts the hole cards sit on the right, above the chart; on one-column layouts they stay on the felt
+  const trWide = window.matchMedia('(min-width:901px)');
+  function placeHand() {
+    const h = $('#tr-hand'), side = $('#tr-side'), felt = $('#train-view .felt');
+    if (trWide.matches) { if (h.parentElement !== side) side.insertBefore(h, side.firstChild); }
+    else if (h.parentElement !== felt) felt.insertBefore(h, $('#tr-actions'));
+    fitTrGrid();
+  }
+  if (trWide.addEventListener) trWide.addEventListener('change', placeHand); else trWide.addListener(placeHand);
+  placeHand();
   window.addEventListener('resize', () => {
     clearTimeout(fitGrid._t);
     fitGrid._t = setTimeout(() => {
