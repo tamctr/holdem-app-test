@@ -719,6 +719,20 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   #eq-dock #rg{width:min(100%,calc(100dvh - 250px));margin:0 auto}
 }
 
+/* =================== v8: cash side games (stackable toggles; UI + state only) =================== */
+.sidefield .flabel .side-hint{font-weight:600;font-size:11px;color:#8a95a8;letter-spacing:0}
+.seg.sideg button.sg{flex:1 1 0;min-width:0;min-height:32px;font-size:12.5px;padding:0 6px;color:#c9d0dc;border:1px dashed #3f4b61;white-space:nowrap}
+.seg.sideg button.sg.on{background:#0f766e;color:#fff;border:1px solid #5eead4;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.seg.sideg button.sg.on::before{content:"\2713";margin-right:4px;font-weight:900}
+.seg.sideg button.sg:disabled{opacity:.38;cursor:not-allowed;border-style:dotted}
+.sidefield.inactive .flabel{opacity:.6}
+.side-note{margin-top:5px;font-size:11.5px;line-height:1.4;color:var(--muted)}
+@media (max-width:640px){
+  .sidefield{margin-top:4px}
+  .seg.sideg button.sg{min-height:30px;font-size:12px;padding:0 4px}
+  .side-note{font-size:11px;margin-top:3px}
+}
+
 </style>
 </head>
 <body>
@@ -744,6 +758,13 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
           <button class="setup-sum" id="setup-sum" aria-expanded="false" aria-controls="setup-body" title="Players and stack"><span id="setup-sum-txt"></span><span class="chev">&#9662;</span></button>
           <div class="sit-slot" id="sit-slot"></div>
           <div class="setup-body" id="setup-body">
+            <div class="field sidefield" id="side-field">
+              <div class="flabel">Side games <span class="side-hint" id="side-hint">stack any</span></div>
+              <div class="seg sideg" id="cfg-side" role="group" aria-label="Cash side games (cash only, can be combined)">
+                <button class="sg" data-sg="squid" aria-pressed="false">Squid</button><button class="sg" data-sg="mushroom" aria-pressed="false">Mushroom</button><button class="sg" data-sg="streak" aria-pressed="false">Win 3+</button>
+              </div>
+              <div class="side-note" id="side-note" hidden></div>
+            </div>
             <div class="field">
               <div class="flabel">Players</div>
               <div class="seg nums" id="cfg-n" role="group" aria-label="Number of players"></div>
@@ -1981,6 +2002,14 @@ self.onmessage = function (e) {
   // ICM toggle: tournament only (ignored in cash), persisted in the UI state
   const icmOn = () => ui.g === 'mtt' && !!ui.icm;
   const keyFor = id => M.makeKey(ui.g, ui.n, stackOf(), id, icmOn());
+  // Cash side games (Squid / Mushroom / Win 3+): independent flags that stack, persisted in the UI state.
+  // UI + state only for now: chart keys and ranges are unchanged (plain cash) until side-game rules exist.
+  const SIDE_GAMES = [['squid', 'Squid'], ['mushroom', 'Mushroom'], ['streak', 'Win 3+']];
+  if (!ui.side || typeof ui.side !== 'object') ui.side = {};
+  for (const [k] of SIDE_GAMES) ui.side[k] = !!ui.side[k];
+  // active side games (cash only); later range/rules work should read this
+  const sideGames = () => ui.g === 'cash' ? SIDE_GAMES.filter(([k]) => ui.side[k]).map(([k]) => k) : [];
+  const sideLabels = () => sideGames().map(k => SIDE_GAMES.find(x => x[0] === k)[1]);
   const ORDER = ['jam', 'raise', '3bet', 'limp', 'call', 'fold'];
   // migrate older UI state: single 6-max scenario id (v1) or one shared stack (v2)
   if (ui.n == null) {
@@ -2102,8 +2131,10 @@ self.onmessage = function (e) {
   const stackTxt = (g, s) => (g === 'cash' && s >= 500 ? '500+' : s) + ' bb';
   function setupSummary() {
     const s = stackOf();
-    return `${M.GAME_LABEL[ui.g]}${icmOn() ? ' ICM' : ''} · ${ui.n === 2 ? 'Heads-up' : ui.n + ' players'} · ${stackTxt(ui.g, s)}`;
+    const sg = sideLabels();
+    return `${M.GAME_LABEL[ui.g]}${icmOn() ? ' ICM' : ''} · ${ui.n === 2 ? 'Heads-up' : ui.n + ' players'} · ${stackTxt(ui.g, s)}${sg.length ? ' · ' + sg.join(' + ') : ''}`;
   }
+  const setupChip = () => { const n = sideGames().length; return `${ui.n === 2 ? 'HU' : ui.n + 'p'} · ${stackTxt(ui.g, stackOf()).replace(' ', '')}${n ? ' · +' + n : ''}`; };
   // slider: fine-grained 0..RES positions, buckets evenly spaced; snaps to a bucket on release
   const RES = 1000;
   let sliderDrag = null;
@@ -2113,7 +2144,7 @@ self.onmessage = function (e) {
   function stackLabels() {
     $('#cfg-stack-v').textContent = stackTxt(ui.g, stackOf());
     $('#cfg-stack').setAttribute('aria-valuetext', stackTxt(ui.g, stackOf()).replace('bb', 'big blinds'));
-    $('#setup-sum-txt').textContent = `${ui.n === 2 ? 'HU' : ui.n + 'p'} · ${stackTxt(ui.g, stackOf()).replace(' ', '')}`;
+    $('#setup-sum-txt').textContent = setupChip();
   }
   function paintSlider() {
     const list = M.STACKS[ui.g], i = list.indexOf(stackOf()), el = $('#cfg-stack');
@@ -2121,7 +2152,7 @@ self.onmessage = function (e) {
     if (!sliderDrag) sliderVis(sPos(ui.g, i));
     $('#cfg-stack-v').textContent = stackTxt(ui.g, stackOf());
     el.setAttribute('aria-valuetext', stackTxt(ui.g, stackOf()).replace('bb', 'big blinds'));
-    $('#setup-sum-txt').textContent = `${ui.n === 2 ? 'HU' : ui.n + 'p'} · ${stackTxt(ui.g, stackOf()).replace(' ', '')}`;
+    $('#setup-sum-txt').textContent = setupChip();
     $('#setup-sum').setAttribute('aria-label', `${ui.n === 2 ? 'Heads-up' : ui.n + ' players'}, ${stackTxt(ui.g, stackOf())}. Change players and stack`);
   }
   function renderCfg() {
@@ -2139,6 +2170,18 @@ self.onmessage = function (e) {
       ? '<b>Tournament · ICM on</b> (approx. bubble ICM, not a full prize-pool solve): calls much tighter, early opens a little tighter, late jams wider. Equal stacks assumed. 1bb BB ante.'
       : '<b>Tournament · chip-EV:</b> 1bb big-blind ante. Re-raises are all-in below 31bb; opens are jam-or-fold at 12bb and below (Nash push/fold).')
       : '<b>Cash:</b> no ante, raked solver anchors, 2.5bb opens (3bb from the SB). Deeper stacks add suited connectors, small pairs and suited aces.';
+    const cash = ui.g === 'cash', sg = sideGames();
+    $$('#cfg-side [data-sg]').forEach(b => {
+      const on = cash && !!ui.side[b.dataset.sg], lab = SIDE_GAMES.find(x => x[0] === b.dataset.sg)[1];
+      b.disabled = !cash; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+      b.title = cash ? lab + ' side game ' + (on ? 'on' : 'off') + ' (can be combined). Tap to toggle.' : 'Side games apply to cash only';
+    });
+    $('#side-field').classList.toggle('inactive', !cash);
+    $('#side-hint').textContent = cash ? (sg.length ? sg.length + ' on' : 'stack any') : 'cash only';
+    const sn = $('#side-note');
+    sn.hidden = !sg.length;
+    sn.textContent = sg.length ? 'Side games on (' + sideLabels().join(' + ') + ') \u2014 ranges still use plain cash until side-game rules are set.' : '';
+    $('#tab-ranges').classList.toggle('side-on', sg.length > 0);
     $('#setup').classList.toggle('collapsed', !ui.setupOpen);
     $('#tab-ranges').classList.toggle('g-mtt', ui.g === 'mtt');
     $('#tab-ranges').classList.toggle('icm-on', icmOn());
@@ -2168,6 +2211,14 @@ self.onmessage = function (e) {
   $('#setup-sum').addEventListener('click', () => { ui.setupOpen = !ui.setupOpen; saveUI(); renderCfg(); });
   $('#cfg-g').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if (!b || b.dataset.g === ui.g) return; ui.g = b.dataset.g; cfgChanged(); });
   $('#cfg-icm').addEventListener('click', e => { e.stopPropagation(); if (ui.g !== 'mtt') return; ui.icm = !ui.icm; toast('ICM ' + (ui.icm ? 'on: approx. bubble pressure' : 'off: chip-EV')); cfgChanged(); });
+  $('#cfg-side').addEventListener('click', e => {
+    const b = e.target.closest('[data-sg]'); if (!b) return; e.stopPropagation();
+    if (ui.g !== 'cash') return;
+    const k = b.dataset.sg; ui.side[k] = !ui.side[k];
+    const lab = SIDE_GAMES.find(x => x[0] === k)[1];
+    toast(lab + (ui.side[k] ? ' on' : ' off') + (sideGames().length ? ' \u00b7 ranges still plain cash' : ''));
+    cfgChanged();
+  });
   $('#cfg-n').addEventListener('click', e => { const b = e.target.closest('[data-n]'); if (!b) return; ui.n = +b.dataset.n; cfgChanged(); });
   // live preview: label + fill follow every move; the chart repaints at most once per frame and only when the bucket changes
   let sliderRaf = 0, sliderAnim = 0;
@@ -2415,7 +2466,7 @@ self.onmessage = function (e) {
       for (const k of H.CLASSES) { const c = ch[k]; if (!((c.fold || 0) >= 0.999)) out[k] = c; }
       charts[key] = out;
     }
-    return JSON.stringify({ app: 'holdem-lab', version: 3, exported: new Date().toISOString(), game: ui.g, players: ui.n, stack: stackOf(),
+    return JSON.stringify({ app: 'holdem-lab', version: 3, exported: new Date().toISOString(), game: ui.g, players: ui.n, stack: stackOf(), sideGames: sideGames(),
       note: 'Keys are "game|players|stackBB|spot": game = cash or mtt (tournament, 1bb BB ante); spot = rfi:SEAT or vs:HERO:OPENER. Includes every chart for the current table (' + setupSummary() + ') plus all your edited charts. Cells omitted = 100% fold. Values are frequencies 0..1. Version 1 ("rfi_btn") and version 2 ("6|100|rfi:BTN", read as cash) files can still be imported.',
       edited: Object.keys(overrides), charts }, null, 1);
   }
