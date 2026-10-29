@@ -290,6 +290,14 @@ button:focus-visible{outline:2px solid #ffe14d;outline-offset:2px}
 .sw-fold{background:var(--fold);box-shadow:inset 0 0 0 1px #4a5568}
 .lg-mix{color:var(--muted)}
 .lg-tot{padding-left:12px;border-left:1px solid var(--border);color:var(--muted)}
+.lg-mdf{padding-left:12px;border-left:1px solid var(--border);color:var(--muted);white-space:nowrap}
+.lg-mdf .mdf-v{font-size:11.5px;font-weight:700;padding:0 6px;border-radius:999px;border:1px solid currentColor}
+.mdf-under{color:#ff9f7a}.mdf-at{color:#7ee2a8}.mdf-over{color:#8fc7ff}
+.lg-mdf.mdf-under .mdf-v{color:#ff9f7a}.lg-mdf.mdf-at .mdf-v{color:#7ee2a8}.lg-mdf.mdf-over .mdf-v{color:#8fc7ff}
+.lg-mdf.mdf-under,.lg-mdf.mdf-at,.lg-mdf.mdf-over{color:var(--muted)}
+.mdf-row{margin-top:4px}
+/* .lg-lbl: full text stays in the DOM; narrow MDF legends show data-short instead */
+#legend .lg-lbl::before{content:attr(data-short);display:none}
 .info{min-height:0;margin-top:8px;padding:7px 12px;font-size:13px;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .info .ik{font-size:15px}
 .isep{color:#5f6b82}
@@ -423,6 +431,8 @@ footer{display:none}
   .legend{font-size:12px;gap:4px 10px;margin-top:6px}
   .legend .lg-mix{display:none}
   .lg-tot{padding-left:8px}
+  .lg-mdf{padding-left:8px}
+  .lg-mdf .mdf-v{font-size:10.5px;padding:0 5px}
   .info{margin-top:6px;padding:6px 8px;font-size:12.5px}
   details.fold > summary{min-height:38px}
   .felt{padding:10px 8px}
@@ -631,12 +641,29 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   .seats-btns{grid-template-columns:repeat(8,minmax(0,1fr));min-height:0;flex:1}
   #trsitbar .seats-btns{grid-template-columns:repeat(10,minmax(0,1fr));min-height:0}
 }
+@media (max-width:360px){
+  .legend.has-mdf .sw{display:none}
+  #legend.has-mdf{gap:2px 5px}
+  #legend.has-mdf .lg-tot,#legend.has-mdf .lg-mdf{padding-left:4px}
+}
+/* MDF on, narrow screens: fold % is implied by continue %, verdict drops the word MDF */
+@media (max-width:900px){
+  .legend.has-mdf .lg-fold{display:none}
+  #legend.has-mdf .mdf-v .lg-lbl{font-size:0}
+  #legend.has-mdf .mdf-v .lg-lbl::before{display:inline;font-size:10.5px}
+}
 @media (max-width:640px){
   .chead{height:32px}
   .editbar{height:32px;margin-bottom:4px;padding:2px 4px}
   .editbar .brush,.editbar .btn{min-height:26px;height:26px}
   .editbar select{padding:2px 4px}
   .legend{height:16px;line-height:16px}
+  /* MDF on, phones: "Cont" + tighter gaps so the one-line legend still fits */
+  .legend.has-mdf{gap:2px 8px}
+  #legend.has-mdf .lg-tot .lg-lbl{font-size:0}
+  #legend.has-mdf .lg-tot .lg-lbl::before{display:inline;font-size:11.5px}
+  #legend.has-mdf .lg-tot,#legend.has-mdf .lg-mdf{gap:4px}
+  .legend.has-mdf .lg-tot,.legend.has-mdf .lg-mdf{padding-left:6px}
   .info,#cell-info{height:22px;line-height:16px;padding-top:2px;padding-bottom:2px}
   #cell-info *{line-height:16px}
   #cell-info .ik{font-size:13px}
@@ -1728,6 +1755,20 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
     if (s < REJAM_BELOW[g]) return ['jam', 'call', 'fold'];
     return ['3bet', 'call', 'fold'];
   }
+  /* Minimum defence frequency facing a single open (display aid; ranges do not use it).
+     pot = everything in the middle when hero acts (blinds + ante + the open; the opener's posted blind is part of
+     the open), toCall = open - hero's posted blind, MDF = pot / (pot + toCall). Null for opens, jams or bad ids. */
+  function mdf(g, n, s, hero, villain) {
+    g = normG(g); n = normN(n); s = snapStack(g, s);
+    if (!hero || !villain || hero === villain) return null;
+    var open = openSize(g, n, s, villain);
+    if (open == null) return null;
+    var sb = n === 2 ? 'BTN' : 'SB'; // heads-up: the button posts the small blind
+    var blind = function (seat) { return seat === 'BB' ? 1 : seat === sb ? 0.5 : 0; };
+    var pot = 1.5 + ANTE[g] - blind(villain) + open, toCall = open - blind(hero);
+    if (toCall <= 0) return null;
+    return { pot: pot, toCall: toCall, open: open, mdf: pot / (pot + toCall) };
+  }
   function fmtBB(x) { return (Math.round(x * 10) / 10) + 'bb'; }
   function scenario(g, n, s, id, icm) {
     g = normG(g); n = normN(n); s = snapStack(g, s); icm = !!icm && g === 'mtt';
@@ -1893,7 +1934,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
     JAM_BELOW: JAM_BELOW, REJAM_BELOW: REJAM_BELOW, ANTE: ANTE, LEGACY: LEGACY, OPEN: OPEN, COLS: COLS, PF: PF, ICM_OPEN: ICM_OPEN, sbRaiseShare: sbRaiseShare,
     seatLabel: seatLabel, snapStack: snapStack, stackLabel: stackLabel, scenarioIds: scenarioIds, parseId: parseId, validId: validId,
     makeKey: makeKey, parseKey: parseKey, scenario: scenario, generate: generate, openPct: openPct, vsTargets: vsTargets,
-    stats: stats, playPct: playPct, orderFor: orderFor
+    stats: stats, playPct: playPct, orderFor: orderFor, mdf: mdf
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.HoldemModel = API;
@@ -2330,19 +2371,33 @@ self.onmessage = function (e) {
     const key = curKey(), s = scOf(key), chart = chartOf(key), t = chartStats(chart);
     const play = 1326 - (t.fold || 0);
     const cells = H.CLASSES.filter(k => (chart[k].fold || 0) < 0.999).length;
+    const md = mdfInfo(s), cont = play / 1326;
     let html = '';
     for (const a of s.actions) {
       const v = t[a] || 0;
       html += `<div class="stat"><i class="sw" style="background:${A[a].color}"></i><span>${A[a].label}</span><span><b>${pct(v / 1326)}</b> <span class="muted small">${fmtN(v, 1)} combos</span></span><div class="bar"><i style="width:${(v / 1326 * 100).toFixed(2)}%;background:${A[a].color}"></i></div></div>`;
     }
     html += `<div class="small muted" style="margin-top:8px">${s.rfi ? 'Playing' : 'Continuing'}: <b style="color:var(--text)">${pct(play / 1326)}</b> &middot; ${fmtN(play, 1)} / 1326 combos &middot; ${cells} of 169 hands</div>`;
+    if (md) html += `<div class="small muted mdf-row" id="mdf-detail">Min. defence (MDF): <b style="color:var(--text)">${pct(md.mdf)}</b> &middot; pot ${fmtN(md.pot, 2)}bb, ${fmtN(md.toCall, 2)}bb to call &rarr; pot / (pot + call) &middot; continuing ${pct(cont)} = <b class="mdf-${mdfVerdict(cont, md.mdf)[0]}">${mdfVerdict(cont, md.mdf)[1]}</b></div>`;
     $('#stats').innerHTML = html;
     $('#stats-sum').textContent = `${s.rfi ? 'play' : 'continue'} ${pct(play / 1326)}`;
     // compact legend: action + % of all hands, then the total
+    $('#legend').classList.toggle('has-mdf', !!md);
     $('#legend').innerHTML = s.actions.filter(a => a !== 'fold').map(a => `<span class="lg-i"><i class="sw" style="background:${A[a].color}"></i>${A[a].label} <b>${pct((t[a] || 0) / 1326)}</b></span>`).join('')
-      + `<span class="lg-i"><i class="sw sw-fold"></i>Fold <b>${pct((t.fold || 0) / 1326)}</b></span>`
+      + `<span class="lg-i lg-fold"><i class="sw sw-fold"></i>Fold <b>${pct((t.fold || 0) / 1326)}</b></span>`
       + `<span class="lg-i lg-mix" title="Split cells are mixed: the hand plays each action part of the time"><i class="sw" style="background:linear-gradient(90deg,${A[s.actions[0]].color} 50%,${A.fold.color} 50%)"></i>Mixed</span>`
-      + `<span class="lg-tot" id="summary">${s.rfi ? 'Play' : 'Continue'} <b>${pct(play / 1326)}</b></span>`;
+      + `<span class="lg-tot" id="summary">${s.rfi ? 'Play' : '<span class="lg-lbl" data-short="Cont">Continue</span>'} <b>${pct(play / 1326)}</b></span>`
+      + (md ? `<span class="lg-mdf mdf-${mdfVerdict(cont, md.mdf)[0]}" id="mdf" title="Minimum defence frequency from pot odds: pot ${fmtN(md.pot, 2)}bb / (pot + ${fmtN(md.toCall, 2)}bb to call). Shown because a cash side game is on.">MDF <b>${pct(md.mdf)}</b> <span class="mdf-v"><span class="lg-lbl" data-short="${mdfVerdict(cont, md.mdf)[0]}">${mdfVerdict(cont, md.mdf)[1]}</span></span></span>` : '');
+  }
+  // MDF (minimum defence frequency) is only shown on cash facing-open charts while a side game is on
+  function mdfInfo(s) {
+    if (!s || s.rfi || s.g !== 'cash' || !sideGames().length) return null;
+    return M.mdf(s.g, s.n, s.stack, s.hero, s.villain);
+  }
+  // within 1.5 points counts as "at MDF"
+  function mdfVerdict(cont, target) {
+    const d = cont - target;
+    return Math.abs(d) <= 0.015 ? ['at', 'at MDF'] : d < 0 ? ['under', 'under MDF'] : ['over', 'over MDF'];
   }
   // Chart grid size is LOCKED: worked out once from the viewport, for the worst-case layout (the seat and
   // opener rows always take their full fixed height, header/legend/info lines are fixed height, edit bar
