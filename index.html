@@ -772,6 +772,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #tab-equity .slot,#tab-equity .prow .slot,#tab-equity .boardrow .slot,#tab-equity #results .pcard,#tab-equity #dead-sum .pcard,#tab-equity #dead-slots .slot{font-size:16px!important}
 #tab-equity .slot .pcard,#tab-equity #dead-sum .pcard{font-size:inherit!important;width:100%;height:100%;margin:0}
 #tab-equity #dead-sum .pcard{width:1.93em;height:2.7em;font-size:16px!important}
+/* Lock every Equity card face/slot (hole, board, dead slots, dead summary) to the #dead-sum .pcard box */
+#tab-equity .slot,#tab-equity #dead-sum .pcard,#tab-equity #dead-slots .slot{font-size:16px!important;width:1.93em!important;height:2.7em!important;flex:0 0 auto;box-sizing:border-box}
+#tab-equity .slot .pcard{width:100%!important;height:100%!important;font-size:inherit!important;margin:0}
 
 </style>
 </head>
@@ -2797,8 +2800,8 @@ self.onmessage = function (e) {
       const rm = eq.players.length > 2 ? `<button class="x" data-act="remove" data-i="${i}" title="Remove player">&times;</button>` : '';
       let mid, extra = '';
       if (p.mode === 'cards') {
-        const st = p.cards.every(c => c == null) ? '<span class="dim">random hand</span>' : p.cards.some(c => c == null) ? '<span class="err">pick both</span>' : '';
-        mid = `<span class="cardsbox">${slotHTML(`p:${i}:0`)}${slotHTML(`p:${i}:1`)}<button class="iconbtn" data-act="clearcards" data-i="${i}" title="Clear cards">Clear</button><button class="iconbtn" data-act="randcards" data-i="${i}" title="Deal two random unused cards">Random</button><span class="rmeta">${st}</span></span>`;
+        const st = '';
+        mid = `<span class="cardsbox">${slotHTML(`p:${i}:0`)}${slotHTML(`p:${i}:1`)}<button class="iconbtn" data-act="clearcards" data-i="${i}" title="Clear cards">Clear</button><button class="iconbtn" data-act="randcards" data-i="${i}" title="Random hand">RND</button><span class="rmeta">${st}</span></span>`;
       } else {
         const r = rangeInfo(p);
         const top = p.top != null ? p.top : 15;
