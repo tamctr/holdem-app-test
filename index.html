@@ -768,6 +768,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .slot{width:1.93em;height:2.7em;border-radius:.2em}
 .picker .pcard{width:100%;height:auto;aspect-ratio:5/7;margin:0}
 .picker button:disabled .pcard{opacity:.16;box-shadow:none}
+/* equity: uniform card size = dead-card face size */
+#tab-equity .slot,#tab-equity .prow .slot,#tab-equity .boardrow .slot,#tab-equity #results .pcard,#tab-equity #dead-sum .pcard,#tab-equity #dead-slots .slot{font-size:16px!important}
+#tab-equity .slot .pcard,#tab-equity #dead-sum .pcard{font-size:inherit!important;width:100%;height:100%;margin:0}
+#tab-equity #dead-sum .pcard{width:1.93em;height:2.7em;font-size:16px!important}
 
 </style>
 </head>
@@ -2794,7 +2798,7 @@ self.onmessage = function (e) {
       let mid, extra = '';
       if (p.mode === 'cards') {
         const st = p.cards.every(c => c == null) ? '<span class="dim">random hand</span>' : p.cards.some(c => c == null) ? '<span class="err">pick both</span>' : '';
-        mid = `<span class="cardsbox">${slotHTML(`p:${i}:0`)}${slotHTML(`p:${i}:1`)}<button class="iconbtn" data-act="clearcards" data-i="${i}" title="Clear cards">Clear</button><span class="rmeta">${st}</span></span>`;
+        mid = `<span class="cardsbox">${slotHTML(`p:${i}:0`)}${slotHTML(`p:${i}:1`)}<button class="iconbtn" data-act="clearcards" data-i="${i}" title="Clear cards">Clear</button><button class="iconbtn" data-act="randcards" data-i="${i}" title="Deal two random unused cards">Random</button><span class="rmeta">${st}</span></span>`;
       } else {
         const r = rangeInfo(p);
         const top = p.top != null ? p.top : 15;
@@ -2830,6 +2834,7 @@ self.onmessage = function (e) {
     if (act === 'mode') { eq.players[i].mode = b.dataset.m; }
     else if (act === 'remove') { eq.players.splice(i, 1); }
     else if (act === 'clearcards') { eq.players[i].cards = [null, null]; }
+    else if (act === 'randcards') { eq.players[i].cards = [null, null]; const used = usedCards(); for (let j = 0; j < 2; j++) { let c; do { c = (Math.random() * 52) | 0; } while (used.has(c)); used.set(c, 'p:' + i + ':' + j); eq.players[i].cards[j] = c; } }
     else if (act === 'grid') { openRangeGrid(i); return; }
     else if (act === 'tools') { eq.players[i].open = !eq.players[i].open; }
     saveEq(); renderEquityInputs();
@@ -2864,8 +2869,7 @@ self.onmessage = function (e) {
   $('#clear-board').addEventListener('click', () => { eq.board = [null, null, null, null, null]; saveEq(); renderEquityInputs(); });
   $('#clear-dead').addEventListener('click', () => { eq.dead = eq.dead.map(() => null); saveEq(); renderEquityInputs(); });
   $('#rand-flop').addEventListener('click', () => {
-    const used = usedCards(); eq.board = [null, null, null, null, null];
-    eq.board.forEach((c, j) => used.delete(c));
+    eq.board = [null, null, null, null, null]; const used = usedCards();
     for (let j = 0; j < 3; j++) { let c; do { c = (Math.random() * 52) | 0; } while (used.has(c)); used.set(c, 'b:' + j); eq.board[j] = c; }
     saveEq(); renderEquityInputs();
   });
