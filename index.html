@@ -760,6 +760,15 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   .side-note{font-size:11px;margin-top:3px}
 }
 
+/* v10: PLO5-style card faces everywhere — white face, 5:7, bold centred rank over a big SVG suit, four-colour deck */
+.pcard{position:relative;display:inline-block;box-sizing:border-box;width:1.93em;height:2.7em;border-radius:.2em;background:#fff;border:1px solid rgba(0,0,0,.08);box-shadow:0 .1em .28em rgba(0,0,0,.45),0 1px 2px rgba(0,0,0,.3);overflow:hidden;line-height:1;vertical-align:middle;padding:0;color:#111}
+.pcard svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.pcard text{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;font-weight:800;fill:currentColor}
+.pcard.s0{color:#111}.pcard.s1{color:#d7141f}.pcard.s2{color:#1769d6}.pcard.s3{color:#0e8a3c}
+.slot{width:1.93em;height:2.7em;border-radius:.2em}
+.picker .pcard{width:100%;height:auto;aspect-ratio:5/7;margin:0}
+.picker button:disabled .pcard{opacity:.16;box-shadow:none}
+
 </style>
 </head>
 <body>
@@ -2002,9 +2011,18 @@ self.onmessage = function (e) {
   if (dockWide.addEventListener) dockWide.addEventListener('change', () => { if (dockOpen()) closeModal(); });
 
   /* ---------------- cards ---------------- */
+  // PLO5-style faces: white card, bold centred rank over a big SVG suit (no emoji), four-colour deck.
+  // suit shapes on a 100x100 box, index 0..3 = spade, heart, diamond, club (same paths as the PLO5 app)
+  const SUITP = ['<path d="M50 3C41 18 3 39 3 62c0 14 11 22 23 22 9 0 16-4 20-10-1 11-6 18-14 24h36c-8-6-13-13-14-24 4 6 11 10 20 10 12 0 23-8 23-22C97 39 59 18 50 3z"/>',
+    '<path d="M50 94C21 70 3 52 3 31 3 15 15 5 29 5c10 0 17 6 21 14 4-8 11-14 21-14 14 0 26 10 26 26 0 21-18 39-47 63z"/>',
+    '<path d="M50 2L87 50 50 98 13 50z"/>',
+    '<circle cx="50" cy="27" r="22"/><circle cx="26" cy="58" r="22"/><circle cx="74" cy="58" r="22"/><circle cx="50" cy="52" r="13"/><path d="M45 56c0 20-5 32-14 42h38c-9-10-14-22-14-42z"/>'];
+  const SUIT_IDX = { s: 0, h: 1, d: 2, c: 3 };
   function cardHTML(c, cls) {
-    const r = H.RANKS[c >> 2], s = H.SUITS[c & 3];
-    return `<span class="pcard s-${s} ${cls || ''}"><span class="r">${r}</span><span class="cs">${H.SUIT_SYM[s]}</span><span class="s">${H.SUIT_SYM[s]}</span></span>`;
+    const R = H.RANKS[c >> 2], s = H.SUITS[c & 3], su = SUIT_IDX[s], r = R === 'T' ? '10' : R;
+    return `<span class="pcard s${su} ${cls || ''}" role="img" aria-label="${R}${s}"><svg viewBox="0 0 50 70" aria-hidden="true">` +
+      `<text x="25" y="34" text-anchor="middle" font-size="42"${r.length > 1 ? ' textLength="44" lengthAdjust="spacingAndGlyphs"' : ''}>${r}</text>` +
+      `<g transform="translate(11 40.5) scale(.28)" fill="currentColor">${SUITP[su]}</g></svg></span>`;
   }
 
   /* ---------------- UI state ---------------- */
