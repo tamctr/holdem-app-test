@@ -65,6 +65,7 @@ expect(Math.abs((layout.eqTop + layout.eqBottom) / 2 - (layout.slotTop + layout.
 expect(layout.labels.join(',') === 'Equity,Win,Tie', 'labels ' + layout.labels.join(','));
 expect(/QQ\+/.test(layout.rangeLine || ''), 'villain range summary missing ' + layout.rangeLine);
 expect(layout.scroll <= layout.client + 1, 'horizontal overflow ' + layout.scroll + '>' + layout.client);
+await page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-mobile-390.png', fullPage: true });
 
 await page.click('#players .flop-btn');
 await page.waitForFunction(() => /19,600/.test(document.querySelector('.flop-body').textContent), { timeout: 5000 });
@@ -74,7 +75,9 @@ expect(/Flush draw/.test(flopText) && /Open-ended straight draw/.test(flopText) 
 expect(/Board pair/.test(flopText) && /Board trips/.test(flopText), 'board-only labels missing');
 expect(/both ends live/.test(flopText) && /not one open-ended/.test(flopText), 'oesd vs double gutshot copy missing');
 expect(/100%/.test(flopText), 'made-hand total missing');
-await page.screenshot({ path: '/opt/cursor/artifacts/equity-v2-mobile-flopability.png', fullPage: true });
+const flopOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
+expect(flopOverflow, 'flopability horizontal overflow');
+await page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-mobile-flop.png', fullPage: true });
 
 await page.evaluate(() => {
   const app = window.__holdemApp;
@@ -130,6 +133,7 @@ await page.click('#calc');
 await page.waitForFunction(() => document.querySelector('.eqmini [data-k="eq"]').textContent.includes('%'), { timeout: 8000 });
 const eqBefore = await page.$eval('.eqmini [data-k="eq"]', el => el.textContent);
 expect(eqBefore === '100.00%', 'AA should win this board, got ' + eqBefore);
+await page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-mobile-results.png', fullPage: true });
 const beside = await page.evaluate(() => {
   const slot = document.querySelector('#players .slot').getBoundingClientRect();
   const eq = document.querySelector('.eqmini').getBoundingClientRect();
@@ -183,7 +187,7 @@ expect(picker.rangeHeading, 'range section missing from picker');
 expect(new Set(picker.colors).size === 4, 'four-colour faces ' + picker.colors.join('|'));
 expect(new Set(picker.slotSizes).size === 1, 'picker slots differ ' + picker.slotSizes.join(','));
 expect(picker.scroll <= picker.client + 1, 'picker overflow ' + picker.scroll);
-await page.screenshot({ path: '/opt/cursor/artifacts/equity-v2-mobile-picker.png' });
+await page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-mobile-picker.png' });
 await page.keyboard.press('Escape');
 
 await page.click('#tabs button[data-tab="charts"]');
@@ -201,7 +205,7 @@ await page.click('#cfg-side [data-sg="squid"]');
 const sideOn = await page.$eval('#cfg-side [data-sg="squid"]', el => el.classList.contains('on') && el.getAttribute('aria-pressed') === 'true');
 expect(sideOn, 'squid toggle did not turn on');
 await page.click('#cfg-side [data-sg="squid"]');
-await page.screenshot({ path: '/opt/cursor/artifacts/equity-v2-charts-mobile.png' });
+await page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-charts-390.png', fullPage: true });
 
 const desktop = await boot(1280, 900);
 await desktop.page.click('#tabs button[data-tab="equity"]');
@@ -216,7 +220,13 @@ const dock = await desktop.page.evaluate(() => ({
 }));
 expect(dock.open && dock.cells === 169, 'desktop dock range ' + JSON.stringify(dock));
 expect(dock.scroll <= dock.client + 1, 'desktop overflow');
-await desktop.page.screenshot({ path: '/opt/cursor/artifacts/equity-v2-desktop-picker.png' });
+await desktop.page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-desktop.png' });
+await desktop.page.keyboard.press('Escape');
+await desktop.page.click('#players .flop-btn');
+await desktop.page.waitForFunction(() => /19,600/.test(document.querySelector('.flop-body').textContent), { timeout: 5000 });
+const deskOverflow = await desktop.page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
+expect(deskOverflow, 'desktop flop overflow');
+await desktop.page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-desktop-flop.png', fullPage: true });
 
 const errors = mobile.errors.concat(desktop.errors);
 expect(errors.length === 0, 'page errors ' + errors.join(' | '));
