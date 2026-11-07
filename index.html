@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-holdem-version="2">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0c0f15">
-<title>Hold'em Lab — Preflop Ranges, Trainer &amp; Equity</title>
+<title>Hold'em Lab v2 — Preflop Ranges, Trainer &amp; Equity</title>
 <style>
 :root{
   --bg:#0c0f15; --bg2:#121722; --panel:#161c28; --panel2:#1b2231; --border:#262f40; --text:#e7eaf0; --muted:#9aa4b8; --dim:#8590a5;
@@ -775,6 +775,59 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Lock every Equity card face/slot (hole, board, dead slots, dead summary) to the #dead-sum .pcard box */
 #tab-equity .slot,#tab-equity #dead-sum .pcard,#tab-equity #dead-slots .slot{font-size:16px!important;width:1.93em!important;height:2.7em!important;flex:0 0 auto;box-sizing:border-box}
 #tab-equity .slot .pcard{width:100%!important;height:100%!important;font-size:inherit!important;margin:0}
+#modal .slot{font-size:16px!important;width:1.93em!important;height:2.7em!important;flex:0 0 auto;box-sizing:border-box}
+#modal .slot .pcard{width:100%!important;height:100%!important;font-size:inherit!important;margin:0}
+
+/* ===== Equity v2: range inside Pick a card, inline equity, flopability ===== */
+.eqver{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:none;vertical-align:1px}
+.phand-top{display:flex;align-items:center;gap:6px;margin-bottom:6px;min-width:0}
+.phand-actions{display:flex;gap:4px;margin-left:auto;flex:0 0 auto}
+.phand-top .x{margin-left:2px;min-width:28px;min-height:28px}
+.phand-mid{display:flex;align-items:center;gap:8px;min-width:0}
+.phand-mid .cardsbox{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.eqmini{display:flex;align-items:stretch;justify-content:flex-end;gap:6px;margin-left:auto;min-width:0}
+.eqmini div{text-align:center;min-width:52px}
+.eqmini b{display:block;font-size:13.5px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--pc,#e7eaf0);line-height:1.15}
+.eqmini span{display:block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.eqmini .ci{display:block;font-style:normal;font-size:9px;color:var(--dim);line-height:1.1;min-height:1em}
+.eqmini .ci:empty{display:none}
+.range-line{display:block;width:100%;margin-top:6px;text-align:left;border:1px dashed var(--border);background:var(--bg2);border-radius:8px;padding:4px 8px;font-family:var(--mono);font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.range-line:hover{border-color:var(--accent)}
+.flop-btn{display:flex;align-items:center;width:100%;margin-top:6px;min-height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-weight:700;font-size:12.5px;text-align:left}
+.flop-btn::before{content:'\25B8';color:var(--muted);font-size:10px;margin-right:6px;transition:transform .15s}
+.flop-btn.on{border-color:var(--accent);color:#fff}
+.flop-btn.on::before{transform:rotate(90deg)}
+.flop-body{margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)}
+.flop-note,.flop-gloss{margin:0 0 6px;font-size:12px;line-height:1.45;color:var(--muted)}
+.flop-gloss b{color:#d5dbe8}
+.flop-h{margin:8px 0 3px;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
+.flop-sub{margin:2px 0 4px;font-size:11px;color:var(--dim);line-height:1.35}
+table.flop{width:100%;border-collapse:collapse;font-size:12.5px}
+table.flop td{padding:3px 0;border-bottom:1px solid #1e2634;vertical-align:baseline}
+table.flop td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+table.flop tr.zero td{color:#667389;font-weight:500}
+table.flop tr.zero td.num{font-weight:600}
+table.flop tr.hit td.num{color:var(--text)}
+.pick-range{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+.pick-range h3{margin:0 0 4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pick-range .rinput{width:100%;margin:6px 0}
+.pick-range .grid13{max-width:none;gap:1px}
+.pick-range .grid13 .cell{font-size:clamp(8px,2.2vw,11px)!important;letter-spacing:-.05em}
+.pick-range .grid13 .cell.off{background:#2a3548!important;color:#e7eefb!important;font-weight:700}
+.pick-range .modal-foot{margin-top:8px}
+#pk-status{margin:6px 0 0;color:var(--muted)}
+@media (max-width:640px){
+  .player{padding:6px}
+  .phand-top{margin-bottom:4px}
+  .phand-mid{gap:6px}
+  .eqmini{gap:3px}
+  .eqmini div{min-width:44px}
+  .eqmini b{font-size:12px}
+  .eqmini span{font-size:8px;letter-spacing:.03em}
+  .flop-btn{min-height:32px}
+  .pick-range .rtools{gap:4px}
+  .pick-range .rtools select{max-width:100%}
+}
 
 </style>
 </head>
@@ -911,11 +964,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   <section class="tab" id="tab-equity">
     <div class="eq-layout">
       <div class="panel eqin">
-        <h3>Hands</h3>
+        <h3>Hands <span class="eqver" title="Equity version 2">v2</span></h3>
         <div id="players"></div>
         <div class="row" style="margin-bottom:8px">
           <button class="btn small" id="add-player">+ Player</button>
-          <span class="small dim eqhint">Up to 6. Empty cards = random hand.</span>
+          <span class="small dim eqhint">Up to 6. Empty cards = random hand. Range is inside Pick a card.</span>
         </div>
         <div class="boardrow">
           <span class="lbl">Board</span>
@@ -1395,12 +1448,192 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
     return job.result();
   }
 
+  /* ---------- Flopability (exact flop texture for two hole cards) ----------
+     Made-hand categories are a partition of every legal flop (they sum to the denominator).
+     Draws overlap each other and can overlap a made hand; they are not part of that sum.
+     Set = pocket pair + exactly one board card of that rank.
+     Trips = one hole card + a paired board of that rank.
+     Board trips / board pair = the pair is on the board and neither hole card matches it.
+     Open-ended = four consecutive ranks (2345 counts; both A and 6 complete it) with both ends live.
+     Double gutshot = two different completing ranks that are not one open-ended run.
+     Gutshot = exactly one completing rank, including one-way edges (AKQJ, A234).
+     A draw counts only when a hole card is part of it. Board-only pairs are labelled, not claimed as hole-card pairs. */
+  var STR_WINDOWS = [0x100F]; // A-5 wheel
+  for (var sw = 4; sw <= 12; sw++) STR_WINDOWS.push(31 << (sw - 4));
+
+  function bitCount(x) { var n = 0; while (x) { x &= x - 1; n++; } return n; }
+
+  function flopTexture(hole, flop) {
+    var h0 = hole[0], h1 = hole[1], b0 = flop[0], b1 = flop[1], b2 = flop[2];
+    var hr0 = h0 >> 2, hr1 = h1 >> 2;
+    var br0 = b0 >> 2, br1 = b1 >> 2, br2 = b2 >> 2;
+    var rc0 = 0, rc1 = 0, rc2 = 0, rc3 = 0, rc4 = 0, rc5 = 0, rc6 = 0, rc7 = 0, rc8 = 0, rc9 = 0, rc10 = 0, rc11 = 0, rc12 = 0;
+    function addR(r) {
+      if (r === 0) rc0++; else if (r === 1) rc1++; else if (r === 2) rc2++; else if (r === 3) rc3++;
+      else if (r === 4) rc4++; else if (r === 5) rc5++; else if (r === 6) rc6++; else if (r === 7) rc7++;
+      else if (r === 8) rc8++; else if (r === 9) rc9++; else if (r === 10) rc10++; else if (r === 11) rc11++; else rc12++;
+    }
+    addR(hr0); addR(hr1); addR(br0); addR(br1); addR(br2);
+    var rc = [rc0, rc1, rc2, rc3, rc4, rc5, rc6, rc7, rc8, rc9, rc10, rc11, rc12];
+    var sc = [0, 0, 0, 0];
+    sc[h0 & 3]++; sc[h1 & 3]++; sc[b0 & 3]++; sc[b1 & 3]++; sc[b2 & 3]++;
+    var holeSuit = [0, 0, 0, 0];
+    holeSuit[h0 & 3]++; holeSuit[h1 & 3]++;
+    var rankMask = 0, pairN = 0, tripsR = -1, quadsR = -1, pairR = -1;
+    for (var r = 0; r < 13; r++) {
+      var c = rc[r];
+      if (!c) continue;
+      rankMask |= 1 << r;
+      if (c === 4) quadsR = r;
+      else if (c === 3) tripsR = r;
+      else if (c === 2) { pairN++; pairR = r; }
+    }
+    var flushSuit = -1;
+    for (var s = 0; s < 4; s++) if (sc[s] >= 5) flushSuit = s;
+    var straightHigh = STR[rankMask];
+    var pocket = hr0 === hr1;
+    var made;
+    if (flushSuit >= 0 && straightHigh >= 0) made = 'straightFlush';
+    else if (quadsR >= 0) made = 'quads';
+    else if (tripsR >= 0 && pairN >= 1) made = 'fullHouse';
+    else if (flushSuit >= 0) made = 'flush';
+    else if (straightHigh >= 0) made = 'straight';
+    else if (tripsR >= 0) {
+      var onBoard = (br0 === tripsR ? 1 : 0) + (br1 === tripsR ? 1 : 0) + (br2 === tripsR ? 1 : 0);
+      if (onBoard === 3) made = 'boardTrips';
+      else if (pocket && hr0 === tripsR) made = 'set';
+      else made = 'trips';
+    } else if (pairN === 2) made = 'twoPair';
+    else if (pairN === 1) made = (hr0 === pairR || hr1 === pairR) ? 'onePair' : 'boardPair';
+    else made = 'noPair';
+
+    var flushDraw = false, flushDrawBoth = false, flushDrawOne = false, backdoorFlush = false;
+    if (flushSuit < 0) {
+      for (s = 0; s < 4; s++) {
+        if (sc[s] === 4 && holeSuit[s] > 0) {
+          flushDraw = true;
+          if (holeSuit[s] === 2) flushDrawBoth = true; else flushDrawOne = true;
+        } else if (sc[s] === 3 && holeSuit[s] > 0) backdoorFlush = true;
+      }
+    }
+    var oesd = false, oesdExtra = false, doubleGut = false, gutshot = false, straightOuts = 0;
+    if (straightHigh < 0) {
+      var outs = 0, w, W, have, miss;
+      for (w = 0; w < STR_WINDOWS.length; w++) {
+        W = STR_WINDOWS[w];
+        have = rankMask & W;
+        miss = W & ~rankMask;
+        if (bitCount(have) !== 4 || bitCount(miss) !== 1) continue;
+        if (!((have >>> hr0) & 1) && !((have >>> hr1) & 1)) continue;
+        outs |= miss;
+      }
+      straightOuts = bitCount(outs);
+      for (var rs = 0; rs <= 8; rs++) {
+        if (((rankMask >>> rs) & 15) !== 15) continue;
+        var usesHole = false;
+        for (var k = 0; k < 4; k++) { var rr = rs + k; if (rr === hr0 || rr === hr1) usesHole = true; }
+        if (usesHole) { oesd = true; break; }
+      }
+      if (oesd) { if (straightOuts > 2) oesdExtra = true; }
+      else if (straightOuts >= 2) doubleGut = true;
+      else if (straightOuts === 1) gutshot = true;
+    }
+    return {
+      made: made, pocket: pocket,
+      flushDraw: flushDraw, flushDrawBoth: flushDrawBoth, flushDrawOne: flushDrawOne, backdoorFlush: backdoorFlush,
+      oesd: oesd, oesdExtra: oesdExtra, doubleGut: doubleGut, gutshot: gutshot, straightOuts: straightOuts
+    };
+  }
+
+  var MADE_KEYS = ['straightFlush', 'quads', 'fullHouse', 'flush', 'straight', 'set', 'trips', 'boardTrips', 'twoPair', 'onePair', 'boardPair', 'noPair'];
+
+  function emptyMade() {
+    var o = {};
+    for (var i = 0; i < MADE_KEYS.length; i++) o[MADE_KEYS[i]] = 0;
+    return o;
+  }
+
+  function takeCard(seen, c) {
+    if (c == null || c === '') return null;
+    c = +c;
+    if (c !== (c | 0) || c < 0 || c > 51 || seen[c]) return false;
+    seen[c] = 1;
+    return c;
+  }
+
+  /* spec = { hole:[c,c], board:[up to 5, nulls allowed], dead:[cards] }
+     Returns exact counts. kind 'realized' when all three flop cards are known. */
+  function flopability(spec) {
+    spec = spec || {};
+    var holeIn = spec.hole || [];
+    if (holeIn.length !== 2 || holeIn[0] == null || holeIn[1] == null) return { status: 'need-hand', exact: false };
+    var seen = new Uint8Array(52);
+    var h0 = takeCard(seen, holeIn[0]), h1 = takeCard(seen, holeIn[1]);
+    if (h0 === false || h1 === false) return { status: 'conflict', message: 'Hole cards are missing, duplicated, or invalid.' };
+    var board = spec.board || [];
+    var flop = [null, null, null], later = [], i, c;
+    for (i = 0; i < board.length; i++) {
+      if (board[i] == null || board[i] === '') continue;
+      c = takeCard(seen, board[i]);
+      if (c === false) return { status: 'conflict', message: 'A board card duplicates another card or is invalid.' };
+      if (i < 3) flop[i] = c; else later.push(c);
+    }
+    var dead = spec.dead || [];
+    for (i = 0; i < dead.length; i++) {
+      if (dead[i] == null || dead[i] === '') continue;
+      if (takeCard(seen, dead[i]) === false) return { status: 'conflict', message: 'A dead card duplicates another card or is invalid.' };
+    }
+    var known = [];
+    var missing = 0;
+    for (i = 0; i < 3; i++) { if (flop[i] == null) missing++; else known.push(flop[i]); }
+    var deck = [];
+    for (c = 0; c < 52; c++) if (!seen[c]) deck.push(c);
+    var made = emptyMade();
+    var draws = { flushDraw: 0, flushDrawBoth: 0, flushDrawOne: 0, backdoorFlush: 0, oesd: 0, oesdExtra: 0, doubleGut: 0, gutshot: 0 };
+    function addTex(tex) {
+      made[tex.made]++;
+      if (tex.flushDraw) draws.flushDraw++;
+      if (tex.flushDrawBoth) draws.flushDrawBoth++;
+      if (tex.flushDrawOne) draws.flushDrawOne++;
+      if (tex.backdoorFlush) draws.backdoorFlush++;
+      if (tex.oesd) draws.oesd++;
+      if (tex.oesdExtra) draws.oesdExtra++;
+      if (tex.doubleGut) draws.doubleGut++;
+      if (tex.gutshot) draws.gutshot++;
+    }
+    var denom = 0;
+    if (missing === 0) {
+      addTex(flopTexture([h0, h1], known));
+      denom = 1;
+    } else if (missing === 1) {
+      for (i = 0; i < deck.length; i++) { addTex(flopTexture([h0, h1], known.concat(deck[i]))); denom++; }
+    } else if (missing === 2) {
+      for (i = 0; i < deck.length; i++) for (var j = i + 1; j < deck.length; j++) {
+        addTex(flopTexture([h0, h1], known.concat(deck[i], deck[j]))); denom++;
+      }
+    } else {
+      for (i = 0; i < deck.length; i++) for (var j2 = i + 1; j2 < deck.length; j2++) for (var t = j2 + 1; t < deck.length; t++) {
+        addTex(flopTexture([h0, h1], [deck[i], deck[j2], deck[t]])); denom++;
+      }
+    }
+    var sum = 0;
+    for (i = 0; i < MADE_KEYS.length; i++) sum += made[MADE_KEYS[i]];
+    if (sum !== denom) return { status: 'error', message: 'Made-hand counts ' + sum + ' do not match denominator ' + denom + '.' };
+    return {
+      status: 'ok', exact: true, kind: missing === 0 ? 'realized' : 'exact',
+      denominator: denom, missing: missing, deckSize: deck.length,
+      turnRiverKnown: later.length > 0, pocket: h0 >> 2 === h1 >> 2,
+      made: made, draws: draws
+    };
+  }
+
   var API = {
     RANKS: RANKS, SUITS: SUITS, SUIT_SYM: SUIT_SYM, CAT_NAMES: CAT_NAMES, CLASSES: CLASSES, HAND_ORDER: HAND_ORDER,
     cardStr: cardStr, parseCard: parseCard, parseCards: parseCards, evalHand: evalHand, handCategory: handCategory,
     gridKey: gridKey, keyToGrid: keyToGrid, classCount: classCount, classCombos: classCombos, comboClass: comboClass,
     topPercentClasses: topPercentClasses, parseRange: parseRange, rangeToString: rangeToString,
-    mulberry32: mulberry32, nCk: nCk, EquityJob: EquityJob, runEquity: runEquity
+    mulberry32: mulberry32, nCk: nCk, EquityJob: EquityJob, runEquity: runEquity,
+    flopTexture: flopTexture, flopability: flopability
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.HoldemCore = API;
@@ -2714,7 +2947,7 @@ self.onmessage = function (e) {
   });
   let eq = load(LS.eq, null);
   if (!eq || !Array.isArray(eq.players) || eq.players.length < 2) eq = defaultEq();
-  const saveEq = () => save(LS.eq, eq);
+  const saveEq = () => { eq.v = 2; save(LS.eq, eq); };
   const allCombos = (() => { const o = []; for (let a = 51; a >= 0; a--) for (let b = a - 1; b >= 0; b--) o.push([a, b]); return o; })();
 
   function usedCards(exceptTarget) {
@@ -2738,19 +2971,199 @@ self.onmessage = function (e) {
     return `<button class="slot ${c != null ? 'filled' : ''} ${extra || ''}" data-t="${t}" title="${c != null ? 'Change card' : 'Pick card'}">${c != null ? cardHTML(c) : '+'}</button>`;
   }
   function markTarget(t) { $$('#tab-equity .eqin .slot').forEach(b => b.classList.toggle('target', b.dataset.t === t)); }
+  function chartOptions() {
+    fixSel();
+    let html = `<option value="">Load from chart (${esc(setupSummary())})…</option>`, grp = null;
+    M.scenarioIds(ui.n).forEach(id => {
+      const key = keyFor(id), s = scOf(key);
+      if (s.group !== grp) { if (grp) html += '</optgroup>'; html += `<optgroup label="${esc(s.group)}">`; grp = s.group; }
+      s.actions.filter(a => a !== 'fold').forEach(a => { html += `<option value="${esc(key)}#${a}">${esc(s.name)}: ${A[a].label}${overrides[key] ? ' ✎' : ''}</option>`; });
+    });
+    return html + '</optgroup>';
+  }
+  function rangeMeta(r) {
+    const n = r.combos.length;
+    return `<b style="color:var(--text)">${n}</b>c ${pct(n / 1326, 1)}${r.errors.length ? ` <span class="err" title="Unrecognised: ${esc(r.errors.join(', '))}">&#9888; ${esc(r.errors.join(', '))}</span>` : ''}`;
+  }
+
+  /* ===== Equity v2 ===== */
+  let resultSig = null, eqRunToken = 0, pickerGen = 0, pickerTarget = null, rangePointerUp = null;
+  let worker = null, running = false, lastResult = null, lastSpecInfo = null, fallbackCancel = null;
+  const flopCache = new Map(), flopPending = new Set();
+  function detachRangePointer() {
+    if (rangePointerUp) { window.removeEventListener('pointerup', rangePointerUp); rangePointerUp = null; }
+  }
+  function currentSig() {
+    return JSON.stringify({ p: eq.players.map(pl => [pl.mode, pl.cards, pl.range]), b: eq.board, d: eq.dead, m: eq.mode, t: eq.trials });
+  }
+  function invalidateEquity() {
+    eqRunToken++;
+    if (worker) { worker.terminate(); worker = null; }
+    if (fallbackCancel) { fallbackCancel(); fallbackCancel = null; }
+    running = false;
+    const calcBtn = $('#calc'), stopBtn = $('#stop');
+    if (calcBtn) { calcBtn.disabled = false; calcBtn.innerHTML = '&#9654; Calculate equity'; }
+    if (stopBtn) stopBtn.disabled = true;
+    lastResult = null; lastSpecInfo = null; resultSig = null;
+    const prog = $('#prog'); if (prog) prog.style.width = '0%';
+    const st = $('#eq-status'); if (st) st.textContent = 'Ready.';
+    const res = $('#results'); if (res) res.innerHTML = '<div class="dim small">Run a calculation to see equities.</div>';
+    paintInline(null);
+  }
+  function noteCardsChanged() {
+    flopCache.clear();
+    invalidateEquity();
+    saveEq();
+    renderEquityInputs();
+  }
+  function paintInline(r) {
+    $$('#players .eqmini').forEach(el => {
+      const i = +el.dataset.i, p = r && r.players && r.players[i];
+      const eqEl = el.querySelector('[data-k="eq"]'), winEl = el.querySelector('[data-k="win"]'), tieEl = el.querySelector('[data-k="tie"]'), ciEl = el.querySelector('[data-k="ci"]');
+      if (!eqEl || !winEl || !tieEl) return;
+      if (!p || !r.total) { eqEl.textContent = '—'; winEl.textContent = '—'; tieEl.textContent = '—'; if (ciEl) ciEl.textContent = ''; return; }
+      eqEl.textContent = pct(p.equity, 2); winEl.textContent = pct(p.win, 2); tieEl.textContent = pct(p.tie, 2);
+      if (ciEl) {
+        if (!r.exact && r.total) { const se = Math.sqrt(Math.max(0, p.equity * (1 - p.equity) / r.total)); ciEl.textContent = '±' + (se * 196).toFixed(2); }
+        else ciEl.textContent = '';
+      }
+    });
+  }
+  function inlineEqHTML(i) {
+    const live = lastResult && resultSig === currentSig() && lastResult.players[i] && lastResult.total;
+    let eqT = '—', winT = '—', tieT = '—', ciT = '';
+    if (live) {
+      const p = lastResult.players[i];
+      eqT = pct(p.equity, 2); winT = pct(p.win, 2); tieT = pct(p.tie, 2);
+      if (!lastResult.exact) { const se = Math.sqrt(Math.max(0, p.equity * (1 - p.equity) / lastResult.total)); ciT = '±' + (se * 196).toFixed(2); }
+    }
+    return `<div class="eqmini" data-i="${i}"><div><b data-k="eq">${eqT}</b><i class="ci" data-k="ci">${ciT}</i><span>Equity</span></div><div><b data-k="win">${winT}</b><span>Win</span></div><div><b data-k="tie">${tieT}</b><span>Tie</span></div></div>`;
+  }
+  function fmtInt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function fpct(n, d) { return d ? (100 * n / d).toFixed(2) + '%' : '—'; }
+  function fcell(n, res) { return res.kind === 'realized' ? (n ? 'Yes' : '—') : fpct(n, res.denominator); }
+  function flopKey(i) {
+    const p = eq.players[i];
+    if (!p || p.mode === 'range' || p.cards[0] == null || p.cards[1] == null) return null;
+    const blockers = [];
+    eq.players.forEach((q, j) => { if (j !== i && q.mode !== 'range') q.cards.forEach(c => { if (c != null) blockers.push(c); }); });
+    eq.dead.forEach(c => { if (c != null) blockers.push(c); });
+    blockers.sort((a, b) => a - b);
+    return p.cards[0] + ',' + p.cards[1] + '|' + eq.board.map(c => c == null ? '' : c).join(',') + '|' + blockers.join(',');
+  }
+  function flopSpec(i) {
+    const dead = [];
+    eq.dead.forEach(c => { if (c != null) dead.push(c); });
+    eq.players.forEach((q, j) => { if (j !== i && q.mode !== 'range') q.cards.forEach(c => { if (c != null) dead.push(c); }); });
+    return { hole: eq.players[i].cards.slice(), board: eq.board.slice(), dead: dead };
+  }
+  function flopNeedHTML(p) {
+    if (p.mode === 'range' && (p.range || '').trim()) {
+      const n = H.parseRange(p.range || '').combos.length;
+      return `<p class="flop-note">Flopability needs two specific hole cards. This seat is a range (${n} combos), not one fixed hand, so there is no single flop figure for it. Pick both cards to see exact odds.</p>`;
+    }
+    return `<p class="flop-note">Flopability needs two specific hole cards. Pick both cards, or press RND. An empty seat is not treated as a made hand.</p>`;
+  }
+  function scheduleFlop(i, key) {
+    if (flopPending.has(key)) return;
+    flopPending.add(key);
+    const spec = flopSpec(i);
+    setTimeout(() => {
+      flopPending.delete(key);
+      let res;
+      try { res = H.flopability(spec); }
+      catch (err) { res = { status: 'error', message: err.message || String(err) }; }
+      flopCache.set(key, res);
+      const el = document.getElementById('flop-body-' + i);
+      if (el && eq.players[i] && eq.players[i].flopOpen && flopKey(i) === key) el.innerHTML = flopResultHTML(res);
+    }, 0);
+  }
+  function flopResultHTML(res) {
+    if (!res || res.status === 'need-hand') return '<p class="flop-note">Pick both hole cards to compute flopability.</p>';
+    if (res.status !== 'ok') return `<p class="flop-note">${esc(res.message || 'Could not compute flopability.')}</p>`;
+    const realized = res.kind === 'realized';
+    const lead = realized
+      ? 'This flop is already dealt, so each row is what this board is, not a probability.' + (res.turnRiverKnown ? ' Turn and river cards are not part of the flop.' : '')
+      : 'Exact: each of the ' + fmtInt(res.denominator) + ' ' + (res.missing === 3 ? 'three-card flops' : res.missing === 2 ? 'ways to add the two missing flop cards' : 'ways to fill the last flop card') + ' from the ' + fmtInt(res.deckSize) + ' cards still in the deck is equally likely.' + (res.turnRiverKnown ? ' Turn and river cards already chosen are removed, so they cannot appear on the flop.' : '');
+    const madeRows = [['straightFlush', 'Straight flush'], ['quads', 'Four of a kind'], ['fullHouse', 'Full house'], ['flush', 'Flush'], ['straight', 'Straight'], ['set', 'Set'], ['trips', 'Trips'], ['boardTrips', 'Board trips'], ['twoPair', 'Two pair'], ['onePair', 'One pair'], ['boardPair', 'Board pair'], ['noPair', 'No pair']];
+    const drawRows = [['flushDraw', 'Flush draw'], ['backdoorFlush', 'Backdoor flush draw'], ['oesd', 'Open-ended straight draw'], ['doubleGut', 'Double gutshot'], ['gutshot', 'Gutshot']];
+    const row = (key, label, bag) => {
+      const n = bag[key] || 0;
+      return `<tr class="${n ? 'hit' : 'zero'}"><td>${label}</td><td class="num">${fcell(n, res)}</td></tr>`;
+    };
+    let html = `<p class="flop-note">${lead} Removed before the count: these two hole cards, dead cards, other seats' known hole cards, and board cards already set.</p>`;
+    html += '<div class="flop-h">Made hands · one each, sum 100%</div><table class="flop"><tbody>';
+    madeRows.forEach(r => { html += row(r[0], r[1], res.made); });
+    html += `<tr class="hit"><td>Total</td><td class="num">${realized ? 'Dealt' : '100%'}</td></tr></tbody></table>`;
+    if (res.pocket && !realized) {
+      const better = res.made.set + res.made.fullHouse + res.made.quads;
+      html += `<p class="flop-sub">Set or better (set + full house + quads, already inside the rows above): ${fpct(better, res.denominator)}.</p>`;
+    }
+    html += '<div class="flop-h">Draws · can overlap a made hand</div><table class="flop"><tbody>';
+    drawRows.forEach(r => { html += row(r[0], r[1], res.draws); });
+    html += '</tbody></table>';
+    if (res.draws.flushDraw) {
+      html += res.kind === 'realized'
+        ? `<p class="flop-sub">${res.draws.flushDrawBoth ? 'Both hole cards are in the flush draw.' : 'Only one hole card is in the flush draw.'}</p>`
+        : `<p class="flop-sub">Flush draw with both hole cards: ${fpct(res.draws.flushDrawBoth, res.denominator)}. With one hole card: ${fpct(res.draws.flushDrawOne, res.denominator)}.</p>`;
+    }
+    if (res.draws.oesdExtra) html += `<p class="flop-sub">${realized ? 'This open-ender also has an extra gutshot rank.' : 'Open-enders that also have an extra gutshot rank: ' + fpct(res.draws.oesdExtra, res.denominator) + '.'}</p>`;
+    html += '<p class="flop-gloss"><b>Set</b> is a pocket pair plus exactly one board card of that rank. <b>Trips</b> is one hole card plus a paired board of that rank. A pocket pair on a three-of-a-kind board is a full house, not board trips. <b>Board trips</b> and <b>board pair</b> are on the board only — your hole cards do not match them, so they are not your set, trips, or one pair.</p>';
+    html += '<p class="flop-gloss"><b>Open-ended</b> is four ranks in a row with both ends live (2345 counts: an ace or a six completes it). <b>Double gutshot</b> is two different completing ranks that are not one open-ended run — also eight outs, but not open-ended. <b>Gutshot</b> is one completing rank (four outs), including one-way edges such as AKQJ needing a ten. These are the flop shape, not the chance of hitting on a later street. A draw is listed only when a hole card is part of it.</p>';
+    return html;
+  }
+  function flopBodyInner(i) {
+    const p = eq.players[i];
+    const key = flopKey(i);
+    if (!key) return flopNeedHTML(p);
+    if (flopCache.has(key)) return flopResultHTML(flopCache.get(key));
+    scheduleFlop(i, key);
+    return '<p class="flop-note">Computing exact flop odds…</p>';
+  }
+  function pickLabel(t) {
+    if (t[0] === 'p') return +t.split(':')[1] === 0 ? 'Hero' : 'Villain ' + t.split(':')[1];
+    if (t[0] === 'b') return ['Flop 1', 'Flop 2', 'Flop 3', 'Turn', 'River'][+t.split(':')[1]];
+    return 'Dead card';
+  }
+  function syncPickerSlots(root, tgt) {
+    $$('.slot', root).forEach(b => {
+      const c = getSlot(b.dataset.t);
+      b.classList.toggle('filled', c != null);
+      b.classList.toggle('target', b.dataset.t === tgt);
+      b.innerHTML = c != null ? cardHTML(c) : '+';
+    });
+  }
   function openPicker(target) {
     let tgt = target;
     const draw = () => {
-      const used = usedCards(tgt), group = groupSlots(tgt);
-      let html = `<h2>Pick a card <span class="small muted">&mdash; ${tgt[0] === 'p' ? (+tgt.split(':')[1] === 0 ? 'Hero' : 'Villain ' + tgt.split(':')[1]) : tgt[0] === 'b' ? ['Flop 1', 'Flop 2', 'Flop 3', 'Turn', 'River'][+tgt.split(':')[1]] : 'Dead card'}</span></h2>`;
-      html += `<div class="row" style="margin-bottom:10px;gap:4px">${group.map(g => slotHTML(g, g === tgt ? 'target' : '')).join('')}</div><div class="picker">`;
-      for (const s of [3, 2, 1, 0]) for (let r = 12; r >= 0; r--) { const c = r * 4 + s; html += `<button data-c="${c}" ${used.has(c) ? 'disabled' : ''}>${cardHTML(c)}</button>`; }
-      html += `</div><div class="modal-foot"><input type="text" id="m-type" placeholder="or type e.g. Ah Kd 7c" style="flex:1;min-width:160px"><button class="btn" id="m-clear">Clear card</button><button class="btn primary" id="m-done">Done</button></div>`;
-      const m = openModal(html, () => { saveEq(); renderEquityInputs(); }, { dock: true });
+      const myGen = ++pickerGen;
+      pickerTarget = tgt;
+      const used = usedCards(tgt), group = groupSlots(tgt), isPlayer = tgt[0] === 'p', pi = isPlayer ? +tgt.split(':')[1] : -1;
+      let html = `<h2>Pick a card <span class="small muted">&mdash; ${esc(pickLabel(tgt))}</span></h2>`;
+      html += `<div class="row pick-slots" style="margin-bottom:10px;gap:4px">${group.map(g => slotHTML(g, g === tgt ? 'target' : '')).join('')}</div><div class="picker">`;
+      for (const s of [3, 2, 1, 0]) for (let r = 12; r >= 0; r--) { const c = r * 4 + s; html += `<button type="button" data-c="${c}" ${used.has(c) ? 'disabled' : ''}>${cardHTML(c)}</button>`; }
+      html += '</div>';
+      html += `<div class="modal-foot"><input type="text" id="m-type" placeholder="or type e.g. Ah Kd 7c" style="flex:1;min-width:140px" aria-label="Type cards"><button type="button" class="btn" id="m-clear">Clear card</button><button type="button" class="btn primary" id="m-done">Done</button></div>`;
+      if (isPlayer) {
+        const p = eq.players[pi];
+        html += `<div class="pick-range"><h3>Range</h3><p class="small muted" style="margin:0 0 6px">Pairs on the diagonal, suited above, offsuit below. A range clears these hole cards. Picking cards clears the range.</p>
+          <input class="rinput" id="pk-range" type="text" value="${esc(p.mode === 'range' ? p.range : '')}" placeholder="e.g. QQ+, AKs, 22-66, 15%" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Range">
+          <div class="grid13 pickable" id="rg"></div>
+          <div class="rtools" style="margin-top:8px"><label class="small muted">Top</label><input type="range" min="0" max="100" step="0.5" value="${p.top != null ? p.top : 15}" id="pk-top" aria-label="Top percent of hands"><span class="small" id="pk-topv">${p.top != null ? p.top : 15}%</span>
+          <button type="button" class="btn small" id="pk-clear">Clear range</button><button type="button" class="btn small" id="pk-all">All</button></div>
+          <div class="rtools" style="margin-top:8px"><select id="pk-chart" aria-label="Load range from chart">${chartOptions()}</select><span class="small muted" id="pk-count" style="margin-left:auto"></span></div>
+          <div class="small" id="pk-meta"></div><p class="small" id="pk-status"></p></div>`;
+      }
+      const m = openModal(html, () => {
+        detachRangePointer();
+        if (pickerGen !== myGen) return;
+        pickerTarget = null; saveEq(); renderEquityInputs();
+      }, { dock: true });
+      pickerTarget = tgt;
       if (dockOpen()) { saveEq(); renderEquityInputs(); markTarget(tgt); }
       $$('.picker button', m).forEach(b => b.onclick = () => choose(+b.dataset.c));
-      $$('.slot', m).forEach(b => b.onclick = () => { tgt = b.dataset.t; draw(); });
-      $('#m-clear', m).onclick = () => { setSlot(tgt, null); draw(); };
+      $$('.slot', m).forEach(b => b.onclick = () => { tgt = b.dataset.t; pickerTarget = tgt; draw(); });
+      $('#m-clear', m).onclick = () => { setSlot(tgt, null); noteCardsChanged(); draw(); };
       $('#m-done', m).onclick = closeModal;
       const ti = $('#m-type', m);
       ti.addEventListener('keydown', e => {
@@ -2764,159 +3177,158 @@ self.onmessage = function (e) {
         const used2 = usedCards();
         const clash = cs.find(c => used2.has(c));
         if (clash != null) { targets.forEach((t, j) => setSlot(t, old[j])); toast(H.cardStr(clash) + ' is already used'); return; }
+        if (tgt[0] === 'p') { const pl = eq.players[+tgt.split(':')[1]]; pl.mode = 'cards'; pl.range = ''; pl.top = null; }
         targets.forEach((t, j) => setSlot(t, cs[j]));
+        noteCardsChanged();
         closeModal();
       });
+      if (isPlayer) wireRangePicker(m, pi, () => tgt);
       if (window.matchMedia('(pointer:fine)').matches) ti.focus();
     };
     const choose = c => {
+      if (tgt[0] === 'p') { const pl = eq.players[+tgt.split(':')[1]]; pl.mode = 'cards'; pl.range = ''; pl.top = null; }
       setSlot(tgt, c);
+      noteCardsChanged();
       const group = groupSlots(tgt), i = group.indexOf(tgt);
       const next = group.slice(i + 1).concat(group.slice(0, i)).find(g => getSlot(g) == null);
-      if (next && (tgt[0] !== 'd')) { tgt = next; draw(); } else closeModal();
+      if (next && tgt[0] !== 'd') { tgt = next; pickerTarget = tgt; draw(); } else closeModal();
     };
     draw();
   }
-
-  function rangeInfo(p) {
-    const r = H.parseRange(p.range || '');
-    return r;
-  }
-  function chartOptions() {
-    fixSel();
-    let html = `<option value="">Load from chart (${esc(setupSummary())})…</option>`, grp = null;
-    M.scenarioIds(ui.n).forEach(id => {
-      const key = keyFor(id), s = scOf(key);
-      if (s.group !== grp) { if (grp) html += '</optgroup>'; html += `<optgroup label="${esc(s.group)}">`; grp = s.group; }
-      s.actions.filter(a => a !== 'fold').forEach(a => { html += `<option value="${esc(key)}#${a}">${esc(s.name)}: ${A[a].label}${overrides[key] ? ' ✎' : ''}</option>`; });
+  function wireRangePicker(m, pi, getTgt) {
+    const p = eq.players[pi];
+    const parsed = H.parseRange(p.mode === 'range' ? (p.range || '') : '');
+    const set = Object.assign({}, parsed.classes);
+    let specific = parsed.specific.map(cb => H.cardStr(cb[0]) + H.cardStr(cb[1]));
+    const g = $('#rg', m);
+    H.CLASSES.forEach(k => { const d = document.createElement('div'); d.className = 'cell'; d.dataset.key = k; d.textContent = k; g.appendChild(d); });
+    watchGrid(g);
+    const setStatus = () => {
+      const el = $('#pk-status', m); if (!el) return;
+      const pl = eq.players[pi];
+      if (pl.mode === 'range' && pl.range) el.textContent = 'Equity uses this range. Hole cards are cleared while the range is selected.';
+      else if (pl.cards[0] != null || pl.cards[1] != null) el.textContent = 'Equity uses the hole cards above. The range is cleared while cards are selected.';
+      else el.textContent = 'No hole cards and no range yet. Empty cards deal a random hand when you calculate equity.';
+    };
+    const refreshGrid = () => {
+      let n = 0;
+      $$('.cell', g).forEach(d => { const on = !!set[d.dataset.key]; d.classList.toggle('on', on); d.classList.toggle('off', !on); if (on) n += H.classCount(d.dataset.key); });
+      const count = $('#pk-count', m); if (count) count.textContent = n + ' combos · ' + pct(n / 1326);
+      const meta = $('#pk-meta', m);
+      const text = eq.players[pi].mode === 'range' ? eq.players[pi].range : '';
+      if (meta) meta.innerHTML = text ? rangeMeta(H.parseRange(text)) : '';
+    };
+    const writeRange = text => {
+      const pl = eq.players[pi], pr = H.parseRange(text || '');
+      if (text && pr.combos.length && !pr.errors.length) { pl.mode = 'range'; pl.range = text; pl.cards = [null, null]; }
+      else { pl.range = ''; if (pl.mode === 'range') pl.cards = [null, null]; pl.mode = 'cards'; }
+      const inp = $('#pk-range', m);
+      if (inp && document.activeElement !== inp) inp.value = pl.mode === 'range' ? pl.range : '';
+      syncPickerSlots(m, getTgt());
+      setStatus();
+      refreshGrid();
+      noteCardsChanged();
+    };
+    const commitGrid = () => {
+      const s = H.rangeToString(set);
+      writeRange([s].concat(specific).filter(Boolean).join(', '));
+    };
+    detachRangePointer();
+    let drag = null;
+    g.addEventListener('pointerdown', e => { const c = e.target.closest('.cell'); if (!c) return; e.preventDefault(); drag = !set[c.dataset.key]; if (drag) set[c.dataset.key] = 1; else delete set[c.dataset.key]; commitGrid(); });
+    g.addEventListener('pointermove', e => {
+      if (drag === null) return;
+      const el = document.elementFromPoint(e.clientX, e.clientY), c = el && el.closest && el.closest('#rg .cell');
+      if (!c) return;
+      if (drag) set[c.dataset.key] = 1; else delete set[c.dataset.key];
+      commitGrid();
     });
-    return html + '</optgroup>';
+    rangePointerUp = () => { drag = null; };
+    window.addEventListener('pointerup', rangePointerUp);
+    const top = $('#pk-top', m);
+    top.oninput = () => {
+      $('#pk-topv', m).textContent = top.value + '%';
+      Object.keys(set).forEach(k => delete set[k]); specific = [];
+      H.topPercentClasses(+top.value).forEach(k => { set[k] = 1; });
+      eq.players[pi].top = +top.value;
+      commitGrid();
+    };
+    $('#pk-clear', m).onclick = () => { Object.keys(set).forEach(k => delete set[k]); specific = []; commitGrid(); };
+    $('#pk-all', m).onclick = () => { specific = []; H.CLASSES.forEach(k => { set[k] = 1; }); commitGrid(); };
+    $('#pk-chart', m).onchange = e => {
+      const sel = e.target; if (!sel.value) return;
+      const [id, a] = sel.value.split('#'), ch = chartOf(id);
+      Object.keys(set).forEach(k => delete set[k]); specific = [];
+      H.CLASSES.forEach(k => { if ((ch[k][a] || 0) >= 0.5) set[k] = 1; });
+      commitGrid();
+      toast('Loaded ' + scName(id) + ': ' + A[a].label + ' (cells ≥50%)');
+    };
+    const inp = $('#pk-range', m);
+    inp.addEventListener('input', () => {
+      const pr = H.parseRange(inp.value);
+      const meta = $('#pk-meta', m); if (meta) meta.innerHTML = rangeMeta(pr);
+      if (pr.errors.length) { $('#pk-status', m).textContent = 'Unrecognised: ' + pr.errors.join(', '); return; }
+      Object.keys(set).forEach(k => delete set[k]);
+      Object.keys(pr.classes).forEach(k => { set[k] = 1; });
+      specific = pr.specific.map(cb => H.cardStr(cb[0]) + H.cardStr(cb[1]));
+      const pl = eq.players[pi];
+      if (pr.combos.length) { pl.mode = 'range'; pl.range = inp.value.trim(); pl.cards = [null, null]; }
+      else { pl.range = ''; if (pl.mode === 'range') pl.cards = [null, null]; pl.mode = 'cards'; }
+      refreshGrid(); syncPickerSlots(m, getTgt()); setStatus(); noteCardsChanged();
+    });
+    inp.addEventListener('blur', () => { inp.value = eq.players[pi].mode === 'range' ? (eq.players[pi].range || '') : ''; });
+    refreshGrid(); setStatus();
   }
+
   function renderEquityInputs() {
     const box = $('#players');
     box.innerHTML = eq.players.map((p, i) => {
-      const name = i === 0 ? 'Hero' : 'Villain ' + i;
-      const seg = `<div class="seg mini"><button data-act="mode" data-m="cards" data-i="${i}" class="${p.mode === 'cards' ? 'active' : ''}" title="Exact hole cards">Cards</button><button data-act="mode" data-m="range" data-i="${i}" class="${p.mode === 'range' ? 'active' : ''}" title="Range of hands">Range</button></div>`;
-      const rm = eq.players.length > 2 ? `<button class="x" data-act="remove" data-i="${i}" title="Remove player">&times;</button>` : '';
-      let mid, extra = '';
-      if (p.mode === 'cards') {
-        const st = '';
-        mid = `<span class="cardsbox">${slotHTML(`p:${i}:0`)}${slotHTML(`p:${i}:1`)}<button class="iconbtn" data-act="clearcards" data-i="${i}" title="Clear cards">Clear</button><button class="iconbtn" data-act="randcards" data-i="${i}" title="Random hand">RND</button><span class="rmeta">${st}</span></span>`;
-      } else {
-        const r = rangeInfo(p);
-        const top = p.top != null ? p.top : 15;
-        mid = `<input class="rinput" type="text" data-i="${i}" value="${esc(p.range)}" placeholder="e.g. QQ+, AKs, 22-66, 15%" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="${name} range">
-          <span class="rmeta" data-meta="${i}">${rangeMeta(r)}</span>
-          <button class="iconbtn" data-act="grid" data-i="${i}" title="Pick range on a 13x13 grid">&#9638; Grid</button>
-          <button class="iconbtn ${p.open ? 'on' : ''}" data-act="tools" data-i="${i}" title="More range tools (top-% slider, load from chart)" aria-expanded="${!!p.open}">${p.open ? '&#9662;' : '&#8943;'}</button>`;
-        if (p.open) extra = `<div class="ptools"><div class="rtools" style="margin:0"><label class="small muted">Top</label><input type="range" min="0" max="100" step="0.5" value="${top}" data-top="${i}"><span class="small" data-topv="${i}" style="min-width:42px">${top}%</span>
-          <select data-chart="${i}">${chartOptions()}</select></div><div class="small err" data-errs="${i}">${r.errors.length ? 'Unrecognised: ' + esc(r.errors.join(', ')) : ''}</div></div>`;
-      }
-      return `<div class="player" style="--pc:${PCOLORS[i]}"><div class="prow"><span class="pname" style="color:${PCOLORS[i]}">${i === 0 ? 'Hero' : `<span class="lg">Villain </span><span class="sh">V</span>${i}`}</span>${seg}${mid}${rm}</div>${extra}</div>`;
+      const rm = eq.players.length > 2 ? `<button type="button" class="x" data-act="remove" data-i="${i}" title="Remove player">&times;</button>` : '';
+      const rangeLine = p.mode === 'range' ? `<button type="button" class="range-line" data-act="openrange" data-i="${i}">${esc(p.range || 'Empty range')} · ${H.parseRange(p.range || '').combos.length} combos</button>` : '';
+      const open = !!p.flopOpen;
+      return `<div class="player" data-pi="${i}" style="--pc:${PCOLORS[i]}"><div class="phand-top"><span class="pname" style="color:${PCOLORS[i]}">${i === 0 ? 'Hero' : `<span class="lg">Villain </span><span class="sh">V</span>${i}`}</span><span class="phand-actions"><button type="button" class="iconbtn" data-act="clearcards" data-i="${i}" title="Clear hand">Clear</button><button type="button" class="iconbtn" data-act="randcards" data-i="${i}" title="Random hand">RND</button></span>${rm}</div><div class="phand-mid"><span class="cardsbox">${slotHTML('p:' + i + ':0')}${slotHTML('p:' + i + ':1')}</span>${inlineEqHTML(i)}</div>${rangeLine}<button type="button" class="flop-btn${open ? ' on' : ''}" data-act="flop" data-i="${i}" aria-expanded="${open ? 'true' : 'false'}" aria-controls="flop-body-${i}">Flopability</button><div class="flop-body" id="flop-body-${i}"${open ? '' : ' hidden'}>${open ? flopBodyInner(i) : ''}</div></div>`;
     }).join('');
     $('#add-player').disabled = eq.players.length >= 6;
     $('#board-slots').innerHTML = eq.board.map((_, j) => slotHTML('b:' + j) + (j === 2 || j === 3 ? '<span style="display:inline-block;width:8px"></span>' : '')).join('');
     $('#dead-slots').innerHTML = eq.dead.map((_, j) => slotHTML('d:' + j)).join('');
     $('#eq-mode').value = eq.mode; $('#eq-trials').value = String(eq.trials);
     updateEqSums();
+    if (pickerTarget && dockOpen()) markTarget(pickerTarget);
   }
   function updateEqSums() {
     const nd = eq.dead.filter(c => c != null).length;
     $('#dead-sum').innerHTML = nd ? eq.dead.filter(c => c != null).map(c => cardHTML(c)).join('') : 'none';
     $('#set-sum').textContent = (eq.mode === 'auto' ? 'Auto' : eq.mode === 'exact' ? 'Exact' : 'Monte Carlo') + ' · ' + (eq.trials >= 1e6 ? eq.trials / 1e6 + 'M' : eq.trials / 1e3 + 'k') + ' trials';
   }
-  function rangeMeta(r) {
-    const n = r.combos.length;
-    return `<b style="color:var(--text)">${n}</b>c ${pct(n / 1326, 1)}${r.errors.length ? ` <span class="err" title="Unrecognised: ${esc(r.errors.join(', '))}">&#9888; ${esc(r.errors.join(', '))}</span>` : ''}`;
-  }
   $('#tab-equity').addEventListener('click', e => {
     const slot = e.target.closest('.slot');
     if (slot && !e.target.closest('.modal, .eqdock')) { openPicker(slot.dataset.t); return; }
-    const b = e.target.closest('[data-act]'); if (!b) return;
+    const b = e.target.closest('[data-act]'); if (!b || !b.closest('#players, #tab-equity')) return;
+    if (b.closest('.modal, .eqdock')) return;
     const i = +b.dataset.i, act = b.dataset.act;
-    if (act === 'mode') { eq.players[i].mode = b.dataset.m; }
-    else if (act === 'remove') { eq.players.splice(i, 1); }
-    else if (act === 'clearcards') { eq.players[i].cards = [null, null]; }
-    else if (act === 'randcards') { eq.players[i].cards = [null, null]; const used = usedCards(); for (let j = 0; j < 2; j++) { let c; do { c = (Math.random() * 52) | 0; } while (used.has(c)); used.set(c, 'p:' + i + ':' + j); eq.players[i].cards[j] = c; } }
-    else if (act === 'grid') { openRangeGrid(i); return; }
-    else if (act === 'tools') { eq.players[i].open = !eq.players[i].open; }
-    saveEq(); renderEquityInputs();
+    if (act === 'flop') { eq.players[i].flopOpen = !eq.players[i].flopOpen; saveEq(); renderEquityInputs(); return; }
+    if (act === 'openrange') { openPicker('p:' + i + ':0'); return; }
+    if (act === 'remove') eq.players.splice(i, 1);
+    else if (act === 'clearcards') { const p = eq.players[i]; p.cards = [null, null]; p.range = ''; p.mode = 'cards'; p.top = null; }
+    else if (act === 'randcards') {
+      const p = eq.players[i]; p.mode = 'cards'; p.range = ''; p.top = null; p.cards = [null, null];
+      const used = usedCards();
+      for (let j = 0; j < 2; j++) { let c; do { c = (Math.random() * 52) | 0; } while (used.has(c)); used.set(c, 'p:' + i + ':' + j); p.cards[j] = c; }
+    } else return;
+    noteCardsChanged();
   });
-  $('#players').addEventListener('input', e => {
-    const t = e.target;
-    if (t.classList.contains('rinput')) {
-      const i = +t.dataset.i; eq.players[i].range = t.value; saveEq();
-      const pr = H.parseRange(t.value); $(`[data-meta="${i}"]`).innerHTML = rangeMeta(pr);
-      const er = $(`[data-errs="${i}"]`); if (er) er.textContent = pr.errors.length ? 'Unrecognised: ' + pr.errors.join(', ') : '';
-    } else if (t.dataset.top != null) {
-      const i = +t.dataset.top, v = parseFloat(t.value);
-      eq.players[i].top = v;
-      const set = {}; H.topPercentClasses(v).forEach(k => { set[k] = 1; });
-      eq.players[i].range = H.rangeToString(set);
-      $(`[data-topv="${i}"]`).textContent = v + '%';
-      const inp = $(`.rinput[data-i="${i}"]`); inp.value = eq.players[i].range;
-      $(`[data-meta="${i}"]`).innerHTML = rangeMeta(H.parseRange(inp.value));
-      saveEq();
-    }
-  });
-  $('#players').addEventListener('change', e => {
-    const t = e.target;
-    if (t.dataset.chart != null && t.value) {
-      const i = +t.dataset.chart, [id, a] = t.value.split('#'), ch = chartOf(id), set = {};
-      H.CLASSES.forEach(k => { if ((ch[k][a] || 0) >= 0.5) set[k] = 1; });
-      eq.players[i].range = H.rangeToString(set); saveEq(); renderEquityInputs();
-      toast(`Loaded ${scName(id)}: ${A[a].label} (cells ≥50%)`);
-    }
-  });
-  $('#add-player').addEventListener('click', () => { if (eq.players.length >= 6) return; eq.players.push({ mode: 'range', cards: [null, null], range: '' }); saveEq(); renderEquityInputs(); });
-  $('#clear-board').addEventListener('click', () => { eq.board = [null, null, null, null, null]; saveEq(); renderEquityInputs(); });
-  $('#clear-dead').addEventListener('click', () => { eq.dead = eq.dead.map(() => null); saveEq(); renderEquityInputs(); });
+  $('#add-player').addEventListener('click', () => { if (eq.players.length >= 6) return; eq.players.push({ mode: 'cards', cards: [null, null], range: '' }); noteCardsChanged(); });
+  $('#clear-board').addEventListener('click', () => { eq.board = [null, null, null, null, null]; noteCardsChanged(); });
+  $('#clear-dead').addEventListener('click', () => { eq.dead = eq.dead.map(() => null); noteCardsChanged(); });
   $('#rand-flop').addEventListener('click', () => {
     eq.board = [null, null, null, null, null]; const used = usedCards();
     for (let j = 0; j < 3; j++) { let c; do { c = (Math.random() * 52) | 0; } while (used.has(c)); used.set(c, 'b:' + j); eq.board[j] = c; }
-    saveEq(); renderEquityInputs();
+    noteCardsChanged();
   });
-  $('#eq-mode').addEventListener('change', e => { eq.mode = e.target.value; saveEq(); updateEqSums(); });
-  $('#eq-trials').addEventListener('change', e => { eq.trials = +e.target.value; saveEq(); updateEqSums(); });
+  $('#eq-mode').addEventListener('change', e => { eq.mode = e.target.value; invalidateEquity(); saveEq(); updateEqSums(); });
+  $('#eq-trials').addEventListener('change', e => { eq.trials = +e.target.value; invalidateEquity(); saveEq(); updateEqSums(); });
 
-  function openRangeGrid(i) {
-    const p = eq.players[i], parsed = H.parseRange(p.range || '');
-    const set = Object.assign({}, parsed.classes);
-    const specific = parsed.specific.map(cb => H.cardStr(cb[0]) + H.cardStr(cb[1]));
-    const m = openModal(`<h2>Select range &mdash; ${i === 0 ? 'Hero' : 'Villain ' + i}</h2>
-      <p class="small muted" style="margin-top:-6px">Click or drag to toggle hands. Pairs on the diagonal, suited above, offsuit below.</p>
-      <div class="grid13 pickable" id="rg"></div>
-      <div class="row" style="margin-top:10px"><label class="small muted">Top</label><input type="range" min="0" max="100" step="0.5" value="${p.top != null ? p.top : 15}" id="rg-top" style="accent-color:var(--accent)"><span class="small" id="rg-topv"></span><span class="small muted" id="rg-count" style="margin-left:auto"></span></div>
-      ${specific.length ? `<p class="small dim">Specific combos kept: ${esc(specific.join(', '))}</p>` : ''}
-      <div class="modal-foot"><button class="btn" id="rg-clear">Clear</button><button class="btn" id="rg-all">All</button><span style="flex:1"></span><button class="btn" id="rg-cancel">Cancel</button><button class="btn primary" id="rg-apply">Apply</button></div>`, null, { dock: true });
-    const g = $('#rg', m);
-    H.CLASSES.forEach(k => { const d = document.createElement('div'); d.className = 'cell'; d.dataset.key = k; d.textContent = k; g.appendChild(d); });
-    watchGrid(g);
-    const refresh = () => {
-      let n = 0;
-      $$('.cell', g).forEach(d => { const on = !!set[d.dataset.key]; d.classList.toggle('on', on); d.classList.toggle('off', !on); if (on) n += H.classCount(d.dataset.key); });
-      $('#rg-count', m).textContent = `${n} combos · ${pct(n / 1326)}`;
-    };
-    let drag = null;
-    g.addEventListener('pointerdown', e => { const c = e.target.closest('.cell'); if (!c) return; e.preventDefault(); drag = !set[c.dataset.key]; toggle(c.dataset.key); });
-    g.addEventListener('pointermove', e => { if (drag === null) return; const el = document.elementFromPoint(e.clientX, e.clientY), c = el && el.closest && el.closest('#rg .cell'); if (c) toggle(c.dataset.key); });
-    const up = () => { drag = null; };
-    window.addEventListener('pointerup', up);
-    function toggle(k) { if (drag) set[k] = 1; else delete set[k]; refresh(); }
-    const top = $('#rg-top', m);
-    $('#rg-topv', m).textContent = top.value + '%';
-    top.oninput = () => { $('#rg-topv', m).textContent = top.value + '%'; Object.keys(set).forEach(k => delete set[k]); H.topPercentClasses(+top.value).forEach(k => { set[k] = 1; }); p.top = +top.value; refresh(); };
-    $('#rg-clear', m).onclick = () => { Object.keys(set).forEach(k => delete set[k]); refresh(); };
-    $('#rg-all', m).onclick = () => { H.CLASSES.forEach(k => { set[k] = 1; }); refresh(); };
-    $('#rg-cancel', m).onclick = closeModal;
-    $('#rg-apply', m).onclick = () => { const s = H.rangeToString(set); p.range = [s].concat(specific).filter(Boolean).join(', '); closeModal(); };
-    modalClose = () => { window.removeEventListener('pointerup', up); saveEq(); renderEquityInputs(); };
-    refresh();
-  }
-
-  // ---- calculation ----
   const coreSrc = $('#core-src').textContent, workerSrc = $('#worker-src').textContent;
-  let worker = null, running = false, lastResult = null, lastSpecInfo = null, fallbackCancel = null, startT = 0;
   function makeWorker() {
     try { const url = URL.createObjectURL(new Blob([coreSrc + '\n' + workerSrc], { type: 'text/javascript' })); return new Worker(url); } catch (e) { return null; }
   }
@@ -2924,20 +3336,21 @@ self.onmessage = function (e) {
     const players = [], descs = [];
     eq.players.forEach((p, i) => {
       const name = i === 0 ? 'Hero' : 'Villain ' + i;
-      if (p.mode === 'cards') {
-        const cs = p.cards.filter(c => c != null);
-        if (cs.length === 1) throw new Error(`${name}: pick both cards or leave both empty for a random hand.`);
+      const usingRange = p.mode === 'range' && (p.range || '').trim();
+      if (!usingRange) {
+        const cs = (p.cards || []).filter(c => c != null);
+        if (cs.length === 1) throw new Error(name + ': pick both cards or leave both empty for a random hand.');
         if (cs.length === 2) { players.push([[cs[0], cs[1]]]); descs.push({ cards: cs }); }
         else { players.push(allCombos); descs.push({ text: 'Random hand' }); }
       } else {
         const r = H.parseRange(p.range || '');
-        if (r.errors.length) throw new Error(`${name}: unrecognised range token(s): ${r.errors.join(', ')}`);
-        if (!r.combos.length) throw new Error(`${name}: range is empty.`);
+        if (r.errors.length) throw new Error(name + ': unrecognised range token(s): ' + r.errors.join(', '));
+        if (!r.combos.length) throw new Error(name + ': range is empty.');
         players.push(r.combos); descs.push({ text: p.range });
       }
     });
     const board = eq.board.filter(c => c != null), dead = eq.dead.filter(c => c != null);
-    return { spec: { players, board, dead, mode: eq.mode, trials: eq.trials }, descs, board };
+    return { spec: { players: players, board: board, dead: dead, mode: eq.mode, trials: eq.trials }, descs: descs, board: board };
   }
   function setRunning(on) {
     running = on;
@@ -2947,20 +3360,22 @@ self.onmessage = function (e) {
   function calc() {
     if (running) return;
     let built;
-    try { built = buildSpec(); } catch (e) { $('#eq-status').innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`; return; }
-    try { new H.EquityJob(Object.assign({}, built.spec, { trials: 1 })); } catch (e) { $('#eq-status').innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`; return; }
-    lastSpecInfo = built; lastResult = null;
-    setRunning(true); startT = performance.now();
+    try { built = buildSpec(); } catch (e) { $('#eq-status').innerHTML = '<span style="color:var(--bad)">' + esc(e.message) + '</span>'; return; }
+    try { new H.EquityJob(Object.assign({}, built.spec, { trials: 1 })); } catch (e) { $('#eq-status').innerHTML = '<span style="color:var(--bad)">' + esc(e.message) + '</span>'; return; }
+    const myToken = ++eqRunToken;
+    lastSpecInfo = built; lastResult = null; resultSig = currentSig();
+    setRunning(true);
     $('#prog').style.width = '0%';
     $('#eq-status').textContent = 'Starting…';
     const onMsg = d => {
-      if (d.type === 'start') { $('#eq-status').textContent = d.exact ? `Exact enumeration (≈${fmtN(d.boards)} deals)…` : `Monte Carlo: ${fmtN(d.boards)} trials…`; return; }
-      if (d.type === 'error') { setRunning(false); $('#eq-status').innerHTML = `<span style="color:var(--bad)">${esc(d.message)}</span>`; return; }
+      if (myToken !== eqRunToken) return;
+      if (d.type === 'start') { $('#eq-status').textContent = d.exact ? 'Exact enumeration (≈' + fmtN(d.boards) + ' deals)…' : 'Monte Carlo: ' + fmtN(d.boards) + ' trials…'; return; }
+      if (d.type === 'error') { setRunning(false); $('#eq-status').innerHTML = '<span style="color:var(--bad)">' + esc(d.message) + '</span>'; return; }
       lastResult = d.result;
       $('#prog').style.width = (d.result.progress * 100).toFixed(1) + '%';
       renderResults(d.result, d.type === 'done');
-      if (d.type === 'done') { setRunning(false); $('#eq-status').textContent = `Done in ${(d.result.elapsed / 1000).toFixed(2)}s${worker ? ' (Web Worker)' : ''}.`; }
-      else $('#eq-status').textContent = `${d.result.exact ? 'Enumerating' : 'Simulating'}… ${fmtN(d.result.total)} ${d.result.exact ? 'boards' : 'trials'} (${(d.result.progress * 100).toFixed(0)}%)`;
+      if (d.type === 'done') { setRunning(false); $('#eq-status').textContent = 'Done in ' + (d.result.elapsed / 1000).toFixed(2) + 's' + (worker ? ' (Web Worker)' : '') + '.'; }
+      else $('#eq-status').textContent = (d.result.exact ? 'Enumerating' : 'Simulating') + '… ' + fmtN(d.result.total) + ' ' + (d.result.exact ? 'boards' : 'trials') + ' (' + (d.result.progress * 100).toFixed(0) + '%)';
     };
     if (!worker) worker = makeWorker();
     if (worker) {
@@ -2987,31 +3402,26 @@ self.onmessage = function (e) {
   }
   function stop() {
     if (!running) return;
+    eqRunToken++;
     if (worker) { worker.terminate(); worker = null; }
     if (fallbackCancel) { fallbackCancel(); fallbackCancel = null; }
     setRunning(false);
     if (lastResult) renderResults(lastResult, false, true);
-    $('#eq-status').textContent = `Stopped. Showing partial result (${fmtN(lastResult ? lastResult.total : 0)} ${lastResult && lastResult.exact ? 'boards' : 'trials'}).`;
+    $('#eq-status').textContent = 'Stopped. Showing partial result (' + fmtN(lastResult ? lastResult.total : 0) + ' ' + (lastResult && lastResult.exact ? 'boards' : 'trials') + ').';
   }
   $('#calc').addEventListener('click', calc);
   $('#stop').addEventListener('click', stop);
 
   function renderResults(r, done, stopped) {
     const info = lastSpecInfo;
-    const rows = r.players.map((p, i) => {
-      const d = info.descs[i];
-      const desc = d.cards ? d.cards.map(c => cardHTML(c)).join('') : `<span class="handdesc" title="${esc(d.text)}">${esc(d.text)}</span>`;
-      const se = !r.exact && r.total ? Math.sqrt(p.equity * (1 - p.equity) / r.total) : 0;
-      return `<tr><td><span class="dot" style="background:${PCOLORS[i]}"></span><b>${i === 0 ? 'Hero' : 'V' + i}</b></td><td style="font-size:11px">${desc}</td>
-        <td style="min-width:130px"><div class="eqbar"><i style="width:${(p.equity * 100).toFixed(2)}%;background:${PCOLORS[i]}"></i><b>${pct(p.equity, 2)}</b></div>${se ? `<div class="dim ci" style="font-size:10.5px;text-align:center">±${(se * 196).toFixed(2)}%</div>` : ''}</td>
-        <td class="num">${pct(p.win, 2)}</td><td class="num">${pct(p.tie, 2)}</td></tr>`;
-    }).join('');
+    if (!info) return;
+    paintInline(r);
     const kind = r.exact ? 'Exact enumeration' : 'Monte Carlo';
-    let cats = '<tr><th>Made hand</th>' + r.players.map((_, i) => `<th class="num">${i === 0 ? 'Hero' : 'V' + i}</th>`).join('') + '</tr>';
-    for (let c = 8; c >= 0; c--) cats += `<tr><td>${H.CAT_NAMES[c]}</td>${r.players.map(p => `<td class="num">${pct(p.cats[c], 1)}</td>`).join('')}</tr>`;
-    $('#results').innerHTML = `<div class="tscroll"><table class="t"><tr><th>Player</th><th>Hand / range</th><th>Equity</th><th class="num">Win</th><th class="num">Tie</th></tr>${rows}</table></div>
-      <div class="res-note">${info.board.length ? 'Board: ' + info.board.map(c => cardHTML(c)).join('') + ' &middot; ' : 'Preflop &middot; '}${kind} &middot; <b>${fmtN(r.total)}</b> ${r.exact ? 'boards evaluated' : 'trials'}${r.elapsed != null ? ' &middot; ' + (r.elapsed / 1000).toFixed(2) + 's' : ''}${!done ? (stopped ? ' &middot; <span style="color:var(--warn)">partial (stopped)</span>' : ' &middot; running…') : ''}${!r.exact ? '<span class="cinote"> &middot; ± = 95% CI</span>' : ''}</div>
-      <details class="fold" data-fold="e-dist"${foldAttr('e-dist')} style="margin-top:8px"><summary>Hand distribution at showdown</summary><div class="fold-body tscroll"><table class="t">${cats}</table></div></details>`;
+    let cats = '<tr><th>Made hand</th>' + r.players.map((_, i) => '<th class="num">' + (i === 0 ? 'Hero' : 'V' + i) + '</th>').join('') + '</tr>';
+    for (let c = 8; c >= 0; c--) cats += '<tr><td>' + H.CAT_NAMES[c] + '</td>' + r.players.map(p => '<td class="num">' + pct(p.cats[c], 1) + '</td>').join('') + '</tr>';
+    const boardBit = info.board.length ? 'Board: ' + info.board.map(c => cardHTML(c)).join('') + ' · ' : 'Preflop · ';
+    $('#results').innerHTML = '<div class="res-note">Equity, win, and tie are next to each hand. ' + boardBit + kind + ' · <b>' + fmtN(r.total) + '</b> ' + (r.exact ? 'boards evaluated' : 'trials') + (r.elapsed != null ? ' · ' + (r.elapsed / 1000).toFixed(2) + 's' : '') + (!done ? (stopped ? ' · <span style="color:var(--warn)">partial (stopped)</span>' : ' · running…') : '') + (!r.exact ? '<span class="cinote"> · ± under equity is a 95% CI</span>' : '') + '</div>' +
+      '<details class="fold" data-fold="e-dist"' + foldAttr('e-dist') + ' style="margin-top:8px"><summary>Hand distribution at showdown</summary><div class="fold-body tscroll"><table class="t">' + cats + '</table></div></details>';
   }
 
   /* ---------------- init ---------------- */
@@ -3020,7 +3430,7 @@ self.onmessage = function (e) {
   setTab.ready = true;
   setTab(ui.tab === 'equity' ? 'equity' : ui.rmode === 'train' ? 'trainer' : 'charts');
   renderEquityInputs();
-  window.__holdemApp = { calc, deal, answer, get cur() { return cur; } }; // for tests
+  window.__holdemApp = { calc, deal, answer, noteCardsChanged, invalidateEquity, renderEquityInputs, version: 2, get cur() { return cur; }, get eq() { return eq; }, get lastResult() { return lastResult; } };
 })();
 
 </script>
