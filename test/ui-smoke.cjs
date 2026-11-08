@@ -47,8 +47,15 @@ const layout = await page.evaluate(() => {
     rndText: players[0].querySelector('[data-act="randcards"]').textContent,
     rowText: players[0].textContent,
     rangeLine: document.querySelector('.range-line') && document.querySelector('.range-line').textContent,
-    clearBottom: clear.bottom, rndBottom: rnd.bottom, slotTop: slot.top,
-    eqTop: eq.top, eqBottom: eq.bottom, slotBottom: slot.bottom, eqLeft: eq.left, slotRight: slot.right,
+    clearTop: clear.top, clearBottom: clear.bottom, clearLeft: clear.left,
+    rndTop: rnd.top, rndLeft: rnd.left, slotTop: slot.top, slotRight: slot.right,
+    eqTop: eq.top, eqBottom: eq.bottom, slotBottom: slot.bottom, eqLeft: eq.left,
+    labelAbove: (() => {
+      const lab = players[0].querySelector('.eqmini span').getBoundingClientRect();
+      const num = players[0].querySelector('.eqmini b').getBoundingClientRect();
+      return lab.bottom <= num.top + 1;
+    })(),
+    flopBadge: players[0].querySelector('.flop-btn').textContent,
     labels,
     scroll: document.documentElement.scrollWidth,
     client: document.documentElement.clientWidth,
@@ -59,10 +66,13 @@ expect(layout.version === 'v2', 'badge ' + layout.version);
 expect(layout.modes === 0, 'card/range mode toggle still present');
 expect(layout.clearText === 'Clear' && layout.rndText === 'RND', 'button labels ' + layout.clearText + '/' + layout.rndText);
 expect(!/Random hand/.test(layout.rowText), 'per-row random hand status came back');
-expect(layout.clearBottom <= layout.slotTop + 1 && layout.rndBottom <= layout.slotTop + 1, 'Clear/RND not above cards ' + JSON.stringify(layout));
+expect(layout.clearLeft >= layout.slotRight - 2 && layout.rndLeft >= layout.slotRight - 2, 'Clear/RND not beside the cards ' + JSON.stringify(layout));
+expect(layout.clearBottom <= layout.rndTop + 2, 'Clear is not stacked above RND');
 expect(layout.eqLeft >= layout.slotRight - 2, 'equity not beside cards');
-expect(Math.abs((layout.eqTop + layout.eqBottom) / 2 - (layout.slotTop + layout.slotBottom) / 2) < 24, 'equity not vertically aligned with cards');
-expect(layout.labels.join(',') === 'Equity,Win,Tie', 'labels ' + layout.labels.join(','));
+expect(Math.abs((layout.eqTop + layout.eqBottom) / 2 - (layout.slotTop + layout.slotBottom) / 2) < 28, 'equity not vertically aligned with cards');
+expect(layout.labels.join(',') === 'Equity %,Win %,Tie %', 'labels ' + layout.labels.join(','));
+expect(layout.labelAbove, 'percent label is not above the number');
+expect(layout.flopBadge === 'F', 'flopability badge ' + layout.flopBadge);
 expect(/QQ\+/.test(layout.rangeLine || ''), 'villain range summary missing ' + layout.rangeLine);
 expect(layout.scroll <= layout.client + 1, 'horizontal overflow ' + layout.scroll + '>' + layout.client);
 await page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-mobile-390.png', fullPage: true });
@@ -189,6 +199,25 @@ expect(new Set(picker.slotSizes).size === 1, 'picker slots differ ' + picker.slo
 expect(picker.scroll <= picker.client + 1, 'picker overflow ' + picker.scroll);
 await page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-mobile-picker.png' });
 await page.keyboard.press('Escape');
+
+const wide = await page.evaluate(() => document.querySelector('#players .slot').getBoundingClientRect().width);
+await page.evaluate(() => {
+  const app = window.__holdemApp;
+  while (app.eq.players.length < 6) app.eq.players.push({ mode: 'cards', cards: [null, null], range: '' });
+  app.noteCardsChanged();
+});
+const narrow = await page.evaluate(() => document.querySelector('#players .slot').getBoundingClientRect().width);
+expect(narrow < wide - 1, 'cards did not shrink for 6 players ' + narrow + ' vs ' + wide);
+const stillEqual = await page.evaluate(() => {
+  const box = sel => { const r = document.querySelector(sel).getBoundingClientRect(); return Math.round(r.width) + 'x' + Math.round(r.height); };
+  return new Set([box('#players .slot'), box('#board-slots .slot')]).size === 1;
+});
+expect(stillEqual, 'card sizes diverged at 6 players');
+await page.evaluate(() => {
+  const app = window.__holdemApp;
+  app.eq.players = app.eq.players.slice(0, 2);
+  app.noteCardsChanged();
+});
 
 await page.click('#tabs button[data-tab="charts"]');
 await page.waitForSelector('#grid .cell');

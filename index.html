@@ -785,12 +785,12 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #tab-equity .player{border:0;border-radius:12px;background:#10151f;padding:12px 12px 4px;margin:0 0 10px;box-shadow:inset 3px 0 0 var(--pc,#4f8cff)}
 .phand-top{display:flex;align-items:center;gap:8px;margin:0 0 10px;min-width:0}
 #tab-equity .pname{font-size:14px;font-weight:750;letter-spacing:-.01em;min-width:0}
-.phand-actions{display:flex;gap:6px;margin-left:auto;flex:0 0 auto}
-#tab-equity .iconbtn{min-height:36px;min-width:46px;padding:0 10px;border-radius:8px;border-color:#2c384e;background:transparent;color:#c5d0e2;font-weight:650}
-#tab-equity .iconbtn:hover{background:rgba(255,255,255,.04);color:#fff;border-color:#4c5e7e}
-.phand-top .x{margin-left:0;min-width:36px;min-height:36px;border-radius:8px}
-.phand-mid{display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:nowrap}
+.phand-top .x{margin-left:auto;min-width:36px;min-height:36px;border-radius:8px}
+.phand-mid{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:nowrap}
 .phand-mid .cardsbox{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.hand-acts{display:flex;flex-direction:column;gap:4px;flex:0 0 auto}
+#tab-equity .hand-acts .iconbtn{min-height:0;height:calc((var(--eqfs, 23px) * 2.7 - 4px) / 2);min-width:48px;padding:0 6px;border-radius:8px;border-color:#2c384e;background:#181f2d;color:#d5deec;font-size:11px;font-weight:750;line-height:1}
+#tab-equity .hand-acts .iconbtn:hover{background:#243044;color:#fff;border-color:#4c5e7e}
 #tab-equity .slot{border-color:#3a4860;background:#0c1018;color:#8ea0bb}
 #tab-equity .slot.filled{background:transparent}
 .eqmini{display:flex;align-items:stretch;justify-content:stretch;gap:0;margin-left:0;min-width:0;flex:1 1 168px;max-width:252px;background:#181f2d;border-radius:10px;padding:6px 2px}
@@ -798,16 +798,15 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .eqmini div + div{box-shadow:inset 1px 0 0 rgba(255,255,255,.06)}
 .eqmini b{display:block;font-size:15px;font-weight:750;font-variant-numeric:tabular-nums;color:#e8edf5;line-height:1.15;letter-spacing:-.02em}
 .eqmini div:first-child b{color:var(--pc,#8eb6ff);font-size:16px}
-.eqmini span{display:block;margin-top:2px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8b98ae}
+.eqmini span{display:block;margin:0 0 2px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:none;color:#9aabc2}
 .eqmini .ci{display:block;font-style:normal;font-size:9px;color:#8b98ae;line-height:1.1;min-height:0}
 .eqmini .ci:empty{display:none}
 .range-line{display:flex;align-items:center;width:100%;margin:8px 0 0;padding:0;border:0;background:transparent;border-radius:0;font-family:var(--font);font-size:12.5px;font-weight:600;color:#c5d2e6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
 .range-line:hover{color:#fff}
-.flop-btn{display:flex;align-items:center;width:calc(100% + 24px);margin:10px -12px 0;min-height:40px;padding:0 12px;border:0;border-top:1px solid rgba(255,255,255,.06);border-radius:0 0 12px 12px;background:transparent;color:#d5deec;font-weight:700;font-size:13px;text-align:left}
-.flop-btn::before{content:'\25B8';color:#8b98ae;font-size:11px;margin-right:8px;transition:transform .15s}
-.flop-btn:hover{background:rgba(255,255,255,.03);color:#fff}
-.flop-btn.on{color:#fff}
-.flop-btn.on::before{transform:rotate(90deg);color:var(--accent)}
+#tab-equity .flop-btn{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:36px;min-width:36px;height:36px;min-height:36px;margin:0;padding:0;border:1.5px solid var(--accent);border-radius:9px;background:#121a2c;color:#9ec0ff;font-weight:800;font-size:16px;letter-spacing:0;line-height:1}
+#tab-equity .flop-btn::before{content:none}
+#tab-equity .flop-btn:hover{background:#1a2744;color:#fff}
+#tab-equity .flop-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .flop-body{margin:0 0 8px;padding:10px 0 2px;border:0}
 .flop-note{margin:0 0 10px;font-size:12.5px;line-height:1.45;color:#a9b6cb}
 .flop-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 22px}
@@ -864,15 +863,19 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
 .modal-foot{margin-top:12px}
 .picker{gap:3px}
 #eq-dock{max-height:calc(100dvh - 24px);overflow:auto}
+/* hole, board, dead, and results cards stay one size; that size steps down as seats are added */
+#tab-equity .slot,#tab-equity .boardrow .slot,#tab-equity #dead-sum .pcard,#tab-equity #dead-slots .slot,#tab-equity #results .pcard,#modal .slot{font-size:var(--eqfs, 23px)!important;width:1.93em!important;height:2.7em!important}
 @media (max-width:640px){
   #tab-equity .panel{padding:10px 10px 8px;border-radius:12px}
   #tab-equity .player{padding:10px 10px 2px;margin-bottom:8px}
   .phand-top{margin-bottom:8px}
   .phand-mid{gap:8px}
-  .eqmini{max-width:none;padding:5px 0}
-  .eqmini b,.eqmini div:first-child b{font-size:13px}
-  .eqmini span{font-size:8px;letter-spacing:.06em}
-  .flop-btn{width:calc(100% + 20px);margin-left:-10px;margin-right:-10px;min-height:42px}
+  .eqmini{max-width:none;padding:4px 1px}
+  .eqmini b,.eqmini div:first-child b{font-size:10px;letter-spacing:-.04em}
+  #tab-equity .hand-acts .iconbtn{min-width:42px;font-size:10.5px}
+  .eqmini span{font-size:8px;letter-spacing:0}
+  .eqmini div{padding:0 1px}
+  #tab-equity .flop-btn{width:34px;min-width:34px;height:34px;min-height:34px;margin:0}
   #tab-equity .eqfolds{grid-template-columns:1fr 1fr;gap:0 8px}
   #tab-equity .board-actions .btn{min-height:36px}
   .pick-tools{gap:6px}
@@ -3086,7 +3089,7 @@ self.onmessage = function (e) {
       eqT = pct(p.equity, 2); winT = pct(p.win, 2); tieT = pct(p.tie, 2);
       if (!lastResult.exact) { const se = Math.sqrt(Math.max(0, p.equity * (1 - p.equity) / lastResult.total)); ciT = '±' + (se * 196).toFixed(2); }
     }
-    return `<div class="eqmini" data-i="${i}"><div><b data-k="eq">${eqT}</b><i class="ci" data-k="ci">${ciT}</i><span>Equity</span></div><div><b data-k="win">${winT}</b><span>Win</span></div><div><b data-k="tie">${tieT}</b><span>Tie</span></div></div>`;
+    return `<div class="eqmini" data-i="${i}"><div><span>Equity %</span><b data-k="eq">${eqT}</b><i class="ci" data-k="ci">${ciT}</i></div><div><span>Win %</span><b data-k="win">${winT}</b></div><div><span>Tie %</span><b data-k="tie">${tieT}</b></div></div>`;
   }
   function fmtInt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   function fpct(n, d) { return d ? (100 * n / d).toFixed(2) + '%' : '—'; }
@@ -3338,8 +3341,13 @@ self.onmessage = function (e) {
       const rm = eq.players.length > 2 ? `<button type="button" class="x" data-act="remove" data-i="${i}" title="Remove player">&times;</button>` : '';
       const rangeLine = p.mode === 'range' ? `<button type="button" class="range-line" data-act="openrange" data-i="${i}">Range · ${esc(p.range || 'Empty range')} · ${H.parseRange(p.range || '').combos.length} combos</button>` : '';
       const open = !!p.flopOpen;
-      return `<div class="player" data-pi="${i}" style="--pc:${PCOLORS[i]}"><div class="phand-top"><span class="pname" style="color:${PCOLORS[i]}">${i === 0 ? 'Hero' : `<span class="lg">Villain </span><span class="sh">V</span>${i}`}</span><span class="phand-actions"><button type="button" class="iconbtn" data-act="clearcards" data-i="${i}" title="Clear hand">Clear</button><button type="button" class="iconbtn" data-act="randcards" data-i="${i}" title="Random hand">RND</button></span>${rm}</div><div class="phand-mid"><span class="cardsbox">${slotHTML('p:' + i + ':0')}${slotHTML('p:' + i + ':1')}</span>${inlineEqHTML(i)}</div>${rangeLine}<button type="button" class="flop-btn${open ? ' on' : ''}" data-act="flop" data-i="${i}" aria-expanded="${open ? 'true' : 'false'}" aria-controls="flop-body-${i}">Flopability</button><div class="flop-body" id="flop-body-${i}"${open ? '' : ' hidden'}>${open ? flopBodyInner(i) : ''}</div></div>`;
+      return `<div class="player" data-pi="${i}" style="--pc:${PCOLORS[i]}"><div class="phand-top"><span class="pname" style="color:${PCOLORS[i]}">${i === 0 ? 'Hero' : `<span class="lg">Villain </span><span class="sh">V</span>${i}`}</span>${rm}</div><div class="phand-mid"><span class="cardsbox">${slotHTML('p:' + i + ':0')}${slotHTML('p:' + i + ':1')}</span><span class="hand-acts"><button type="button" class="iconbtn" data-act="clearcards" data-i="${i}" title="Clear hand">Clear</button><button type="button" class="iconbtn" data-act="randcards" data-i="${i}" title="Random hand">RND</button></span>${inlineEqHTML(i)}<button type="button" class="flop-btn${open ? ' on' : ''}" data-act="flop" data-i="${i}" aria-expanded="${open ? 'true' : 'false'}" aria-controls="flop-body-${i}" aria-label="Flopability" title="Flopability">F</button></div>${rangeLine}<div class="flop-body" id="flop-body-${i}"${open ? '' : ' hidden'}>${open ? flopBodyInner(i) : ''}</div></div>`;
     }).join('');
+    const n = eq.players.length;
+    const phone = window.matchMedia('(max-width:640px)').matches;
+    const fs = n <= 2 ? (phone ? 20 : 24) : n === 3 ? (phone ? 18 : 22) : n === 4 ? (phone ? 17 : 20) : (phone ? 16 : 18);
+    document.documentElement.style.setProperty('--eqfs', fs + 'px');
+    $('#tab-equity').dataset.n = String(n);
     $('#add-player').disabled = eq.players.length >= 6;
     $('#board-slots').innerHTML = eq.board.map((_, j) => slotHTML('b:' + j) + (j === 2 || j === 3 ? '<span style="display:inline-block;width:8px"></span>' : '')).join('');
     $('#dead-slots').innerHTML = eq.dead.map((_, j) => slotHTML('d:' + j)).join('');
@@ -3481,6 +3489,8 @@ self.onmessage = function (e) {
   if (folds['t-chart'] == null && window.innerWidth > 900) folds['t-chart'] = true; // wide screens: show the answer chart under the table
   $$('details[data-fold]').forEach(d => { d.open = !!folds[d.dataset.fold]; });
   setTab.ready = true;
+  const eqPhone = window.matchMedia('(max-width:640px)');
+  if (eqPhone.addEventListener) eqPhone.addEventListener('change', () => renderEquityInputs());
   setTab(ui.tab === 'equity' ? 'equity' : ui.rmode === 'train' ? 'trainer' : 'charts');
   renderEquityInputs();
   window.__holdemApp = { calc, deal, answer, noteCardsChanged, invalidateEquity, renderEquityInputs, version: 2, get cur() { return cur; }, get eq() { return eq; }, get lastResult() { return lastResult; } };
