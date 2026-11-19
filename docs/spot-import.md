@@ -1,0 +1,96 @@
+# Cash spot database and import format
+
+This is the format Hold'em Lab uses for a solved or pasted preflop strategy.
+The app does not download or copy GTO Wizard. If you are looking at a spot in
+GTO Wizard (or any other solver), export or copy the frequencies yourself and
+paste them here. The chart is then labelled **Imported reference**.
+
+## Where a chart comes from
+
+| Label | Meaning |
+| --- | --- |
+| Solved (our model) | 6-max 100bb cash, computed by `solver/solve.js`. Not GTO Wizard. |
+| Imported reference | A file or paste you imported. Stored only in this browser. |
+| Heuristic | Every other cash stack and table size, and all tournament charts. |
+
+Resetting a chart drops both your edits and an imported reference for that spot.
+
+## Spot id
+
+```
+cash|<players>|<stack bb>|<spot>
+```
+
+Examples:
+
+- `cash|6|100|rfi:BTN` — button open, folded to you
+- `cash|6|100|vs:BB:BTN` — big blind facing a button open, others folded
+- `cash|6|100|v3:BTN:BB` — button opened, big blind 3-bet, folded back to the button
+- `cash|6|100|v4:BB:BTN` — big blind 3-bet, button 4-bet
+- `cash|6|100|vj:BTN:BB` — button 4-bet, big blind moved all-in
+
+Action names the chart understands: `fold`, `call`, `raise`, `3bet`, `4bet`, `jam`, `limp`.
+Aliases: `allin`, `all-in`, `5bet` and `shove` are `jam`. `open` and `bet` are `raise`.
+A sized column such as `raise:2.5` is still the `raise` action; the size is only a label.
+
+Frequencies are 0 to 1. A number above 1 is read as a percent (65 means 0.65).
+Hands you leave out are 100% fold. If the frequencies for one hand sum to more
+than 1, they are scaled down to 1.
+
+## 1. Spot database JSON (version 1)
+
+```json
+{
+  "format": "holdem-lab.spots",
+  "version": 1,
+  "spots": [
+    {
+      "id": "cash|6|100|rfi:BTN",
+      "source": "imported",
+      "game": "cash",
+      "tableSize": 6,
+      "stackBb": 100,
+      "hero": "BTN",
+      "actions": ["raise", "fold"],
+      "hands": {
+        "AA": { "raise": 1, "ev": 2.5 },
+        "AKs": { "raise": 0.65, "fold": 0.35 },
+        "76s": { "raise": 0.4, "fold": 0.6 }
+      }
+    }
+  ]
+}
+```
+
+`ev` is optional, in big blinds. One spot object, or an array of spots, is
+accepted too. The solved file shipped with the app is `data/cash-spots.json`.
+
+## 2. CSV
+
+```
+# id: cash|6|100|vs:BB:BTN
+# note: copied from the spot I was viewing
+hand,fold,call,3bet,jam,ev
+AA,0,0,0.2,0.8,11.2
+AKs,0,0.25,0.75,0,
+72o,1,0,0,0,
+```
+
+The `# id:` line is required. `ev` is optional.
+
+## 3. Range block
+
+One action at a time. A hand with no frequency is 100% of that action.
+Hands never mentioned are folds. The same hand may appear under two actions.
+
+```
+# id: cash|6|100|rfi:CO
+# source: imported
+# hero: CO
+# note: open-raise frequencies from the spot I was viewing
+# action: raise
+AA:1, KK:1, AKs:0.8, 76s:0.35, 22:0.5
+```
+
+Older chart exports from this app (`{"charts": {...}}`, including `rfi_btn`)
+still import as edits, not as an imported reference.

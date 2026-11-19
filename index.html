@@ -48,6 +48,10 @@ select:focus,input:focus,textarea:focus{border-color:var(--accent)}
 .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:var(--bg2)}
 .pill.warn{color:#f8c471;border-color:#5a4520;background:#2a2112}
 .pill.edited{color:#9ec1ff;border-color:#2b4a85;background:#14213b}
+.pill.src-solved{color:#9ff0c3;border-color:#1e6b45;background:#10281c}
+.pill.src-imported{color:#d7c4ff;border-color:#5a3d8a;background:#221838}
+.pill.src-heuristic{color:#f8c471;border-color:#5a4520;background:#2a2112}
+.subline .pill{margin-left:6px;vertical-align:1px}
 .muted{color:var(--muted)}.dim{color:var(--dim)}.small{font-size:12px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
@@ -221,6 +225,7 @@ main{max-width:1360px;padding:var(--gap) 16px}
 .flabel{display:flex;align-items:baseline;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em;margin-bottom:6px}
 .field{margin-top:12px}
 .seg{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px}
+.seg.sit{flex-wrap:wrap}
 .seg button{flex:1;border:0;background:transparent;min-height:34px;padding:0 8px;border-radius:7px;color:#b9c1d0;font-weight:700;font-size:13.5px;transition:background .12s,color .12s}
 .seg button:hover{background:rgba(255,255,255,.06);color:var(--text)}
 .seg button.active{background:var(--accent);color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
@@ -969,7 +974,7 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
       <div class="stage">
         <div id="chart-view" class="panel gridpanel">
           <div class="chead">
-            <div class="ctitle"><h1 id="headline"></h1><div class="subline" id="subline"></div></div>
+            <div class="ctitle"><h1 id="headline"></h1><div class="subline"><span id="subline"></span> <span class="pill src-solved" id="source-pill">Solved (our model)</span></div></div>
             <div class="cact">
               <span class="pill edited" id="edited-pill" hidden>Edited</span>
               <span class="popwrap"><button class="chip" id="info-btn" aria-expanded="false" aria-controls="info-pop">&#9432;<span class="lgtxt"> Approximate</span></button>
@@ -1773,6 +1778,7 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
   ];
   var ACTIONS = {
     jam: { label: 'All-in', color: '#ff3d6e', key: 'j' },
+    '4bet': { label: '4-Bet', color: '#e6b325', key: '4' },
     raise: { label: 'Raise', color: '#f2683c', key: 'r' },
     '3bet': { label: '3-Bet', color: '#a06bff', key: '3' },
     call: { label: 'Call', color: '#2fbf71', key: 'c' },
@@ -2263,11 +2269,13 @@ self.onmessage = function (e) {
 };
 
 </script>
+<script src="solver/spots.js"></script>
+<script src="data/cash-spots.js"></script>
 <script>
 (function () {
   'use strict';
   const H = window.HoldemCore, R = window.HoldemRanges, A = R.ACTIONS;
-  const LS = { charts: 'holdem.charts.v1', stats: 'holdem.trainer.v1', eq: 'holdem.equity.v1', ui: 'holdem.ui.v1' };
+  const LS = { charts: 'holdem.charts.v1', stats: 'holdem.trainer.v1', eq: 'holdem.equity.v1', ui: 'holdem.ui.v1', imports: 'holdem.imports.v1' };
   const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } };
   const $ = (s, r) => (r || document).querySelector(s);
@@ -2347,9 +2355,62 @@ self.onmessage = function (e) {
 
   /* ================= PREFLOP CHARTS ================= */
   const M = window.HoldemModel;
-  const scOf = key => { const p = M.parseKey(key); return p ? M.scenario(p.g, p.n, p.s, p.id, p.icm) : null; };
-  const normKey = key => { const p = M.parseKey(key); return p ? M.makeKey(p.g, p.n, p.s, p.id, p.icm) : null; };
-  const defaultOf = key => { const p = M.parseKey(key); return M.generate(p.g, p.n, p.s, p.id, p.icm); };
+  const SPOT_DB = window.HOLDEM_SPOTS || null;
+  const spotById = {};
+  if (SPOT_DB && Array.isArray(SPOT_DB.spots)) SPOT_DB.spots.forEach(s => { spotById[s.id] = s; });
+  const spotRecord = key => spotById[key] || null;
+  const DEEP = ['v3', 'v4', 'vj'];
+  const SOURCE_LABEL = { solved: 'Solved (our model)', imported: 'Imported reference', heuristic: 'Heuristic', edited: 'Edited' };
+  function pairsFor(kind) {
+    if (!SPOT_DB) return [];
+    return SPOT_DB.spots.filter(s => s.kind === kind && s.tableSize === 6 && s.stackBb === 100).map(s => ({ hero: s.hero, villain: s.villain }));
+  }
+  function chartFromHands(hands) {
+    const ch = {};
+    for (const k of H.CLASSES) {
+      const src = (hands && hands[k]) || { fold: 1 };
+      const cell = {};
+      for (const a of ['jam', '4bet', 'raise', '3bet', 'limp', 'call', 'fold']) if (+src[a] > 0) cell[a] = +src[a];
+      if (!Object.keys(cell).length) cell.fold = 1;
+      ch[k] = cell;
+    }
+    return ch;
+  }
+  function scenarioFromSpot(spot) {
+    const kind = spot.kind;
+    const name = kind === 'v3' ? spot.hero + ' vs ' + spot.villain + ' 3-bet'
+      : kind === 'v4' ? spot.hero + ' vs ' + spot.villain + ' 4-bet'
+      : kind === 'vj' ? spot.hero + ' vs ' + spot.villain + ' all-in' : spot.id;
+    const desc = kind === 'v3' ? 'You opened from ' + spot.hero + ', ' + spot.villain + ' 3-bet, everyone else folded.'
+      : kind === 'v4' ? 'You 3-bet from ' + spot.hero + ', ' + spot.villain + ' 4-bet, everyone else folded.'
+      : kind === 'vj' ? 'You 4-bet from ' + spot.hero + ' and ' + spot.villain + ' moved all-in.' : '';
+    const actions = (spot.actions || ['fold']).filter(a => A[a]);
+    return {
+      id: spot.id, sid: kind + ':' + spot.hero + ':' + spot.villain, g: 'cash', icm: false, game: 'Cash',
+      n: 6, stack: 100, stackLabel: '100bb', type: kind, hero: spot.hero, villain: spot.villain || null,
+      heroLabel: spot.hero, villainLabel: spot.villain, rfi: false, group: 'Solved line', name: name,
+      table: '6-max', players: '6 players', short: 'Cash · 6-max · 100bb', headline: 'Cash · 6 players · 100bb',
+      desc: desc, actions: actions.length ? actions : ['fold'], labels: spot.labels || null
+    };
+  }
+  const scOf = key => {
+    const p = M.parseKey(key);
+    if (p) {
+      const s = M.scenario(p.g, p.n, p.s, p.id, p.icm);
+      const spot = spotRecord(key);
+      if (s && spot && spot.labels) s.labels = spot.labels;
+      return s;
+    }
+    const spot = spotRecord(key);
+    return spot ? scenarioFromSpot(spot) : null;
+  };
+  const normKey = key => { const p = M.parseKey(key); return p ? M.makeKey(p.g, p.n, p.s, p.id, p.icm) : (spotRecord(key) ? key : null); };
+  const defaultOf = key => { const p = M.parseKey(key); return p ? M.generate(p.g, p.n, p.s, p.id, p.icm) : null; };
+  function baseChart(key) {
+    const spot = spotRecord(key);
+    if (spot && spot.hands) return chartFromHands(spot.hands);
+    return defaultOf(key);
+  }
   // ICM toggle: tournament only (ignored in cash), persisted in the UI state
   const icmOn = () => ui.g === 'mtt' && !!ui.icm;
   const keyFor = id => M.makeKey(ui.g, ui.n, stackOf(), id, icmOn());
@@ -2361,7 +2422,7 @@ self.onmessage = function (e) {
   // active side games (cash only); later range/rules work should read this
   const sideGames = () => ui.g === 'cash' ? SIDE_GAMES.filter(([k]) => ui.side[k]).map(([k]) => k) : [];
   const sideLabels = () => sideGames().map(k => SIDE_GAMES.find(x => x[0] === k)[1]);
-  const ORDER = ['jam', 'raise', '3bet', 'limp', 'call', 'fold'];
+  const ORDER = ['jam', '4bet', 'raise', '3bet', 'limp', 'call', 'fold'];
   // migrate older UI state: single 6-max scenario id (v1) or one shared stack (v2)
   if (ui.n == null) {
     const p = ui.sc && M.parseKey(ui.sc);
@@ -2371,7 +2432,21 @@ self.onmessage = function (e) {
   if (!ui.stacks || typeof ui.stacks !== 'object') ui.stacks = { cash: ui.stack >= 50 ? M.snapStack('cash', ui.stack) : 100, mtt: 25 };
   delete ui.sc; delete ui.stack; delete ui.trSc;
   let overrides = sanitizeCharts(load(LS.charts, {})) || {};
+  let imports = {};
+  (function () {
+    const raw = load(LS.imports, {});
+    if (!raw || typeof raw !== 'object') return;
+    for (const key of Object.keys(raw)) {
+      if (!normKey(key) && !spotRecord(key)) continue;
+      const sc = scOf(key);
+      if (!sc) continue;
+      const ch = {};
+      for (const k of H.CLASSES) ch[k] = normCell(raw[key][k] || { fold: 1 }, sc.actions);
+      imports[key] = ch;
+    }
+  })();
   saveChartsRaw();
+  const saveImports = () => { try { localStorage.setItem(LS.imports, JSON.stringify(imports)); } catch (e) { /* ignore */ } };
 
   function normCell(cell, actions) {
     const out = {}; let tot = 0;
@@ -2398,9 +2473,16 @@ self.onmessage = function (e) {
     return out;
   }
   function saveChartsRaw() { try { localStorage.setItem(LS.charts, JSON.stringify(overrides)); } catch (e) { /* ignore */ } }
-  const chartOf = key => overrides[key] || defaultOf(key);
+  const chartOf = key => overrides[key] || imports[key] || baseChart(key);
   const saveCharts = () => saveChartsRaw();
-  function ensureEditable(key) { if (!overrides[key]) overrides[key] = JSON.parse(JSON.stringify(defaultOf(key))); return overrides[key]; }
+  function ensureEditable(key) { if (!overrides[key]) overrides[key] = JSON.parse(JSON.stringify(imports[key] || baseChart(key))); return overrides[key]; }
+  function sourceOf(key) {
+    if (overrides[key]) return 'edited';
+    if (imports[key]) return 'imported';
+    if (spotRecord(key)) return 'solved';
+    return 'heuristic';
+  }
+  const labOf = (s, a) => (s && s.labels && s.labels[a]) || (A[a] && A[a].label) || a;
   const mixEntries = cell => ORDER.filter(a => cell[a] > 0).map(a => [a, cell[a]]);
   function dominant(cell) { let best = 'fold', bv = -1; for (const a of ORDER) { const v = cell[a] || 0; if (v > bv + 1e-9) { bv = v; best = a; } } return best; }
   function cellBg(cell) {
@@ -2444,12 +2526,12 @@ self.onmessage = function (e) {
     watchGrid(container);
   }
   const ACOL = a => a === 'fold' ? '#b4bccb' : A[a].color;
-  function mixText(cell) {
-    return mixEntries(cell).sort((a, b) => b[1] - a[1]).map(([a, f]) => `<span style="color:${ACOL(a)};font-weight:700">${A[a].label} ${Math.round(f * 100)}%</span>`).join(' &middot; ');
+  function mixText(cell, labels) {
+    return mixEntries(cell).sort((a, b) => b[1] - a[1]).map(([a, f]) => `<span style="color:${ACOL(a)};font-weight:700">${(labels && labels[a]) || A[a].label} ${Math.round(f * 100)}%</span>`).join(' &middot; ');
   }
   function chartStats(chart) {
     const t = {};
-    for (const k of H.CLASSES) { const n = H.classCount(k); for (const a in chart[k]) t[a] = (t[a] || 0) + chart[k][a] * n; }
+    for (const k of H.CLASSES) { const n = H.classCount(k); for (const a in chart[k]) if (A[a]) t[a] = (t[a] || 0) + chart[k][a] * n; }
     return t;
   }
 
@@ -2460,17 +2542,25 @@ self.onmessage = function (e) {
     for (const g of M.GAMES) ui.stacks[g] = M.snapStack(g, ui.stacks[g] != null ? ui.stacks[g] : M.DEFAULT_STACK[g]);
     ui.n = M.PLAYERS.includes(+ui.n) ? +ui.n : 6;
     const seats = M.SEATS[ui.n];
-    if (ui.type !== 'vs') ui.type = 'rfi';
+    const solvedSetup = ui.g === 'cash' && ui.n === 6 && ui.stacks.cash === 100;
+    if (DEEP.includes(ui.type) && !solvedSetup) ui.type = 'rfi';
+    if (ui.type !== 'vs' && !DEEP.includes(ui.type)) ui.type = 'rfi';
     if (ui.type === 'rfi') { if (!seats.includes(ui.hero) || ui.hero === 'BB') ui.hero = 'BTN'; }
-    else {
+    else if (ui.type === 'vs') {
       if (!seats.includes(ui.hero) || seats.indexOf(ui.hero) === 0) ui.hero = 'BB';
       const hi = seats.indexOf(ui.hero);
       if (!seats.includes(ui.vill) || seats.indexOf(ui.vill) >= hi) ui.vill = seats.indexOf('BTN') >= 0 && seats.indexOf('BTN') < hi ? 'BTN' : seats[hi - 1];
+    } else {
+      const pairs = pairsFor(ui.type);
+      if (!pairs.some(p => p.hero === ui.hero && p.villain === ui.vill)) {
+        const pick = pairs.find(p => p.hero === ui.hero) || pairs[0] || { hero: 'BTN', villain: 'BB' };
+        ui.hero = pick.hero; ui.vill = pick.villain;
+      }
     }
     if (!['all', 'rfi', 'vs'].includes(ui.trType)) ui.trType = 'all';
     if (ui.trHero !== 'any' && !seats.includes(ui.trHero)) ui.trHero = 'any';
   }
-  const curId = () => ui.type === 'rfi' ? 'rfi:' + ui.hero : `vs:${ui.hero}:${ui.vill}`;
+  const curId = () => ui.type === 'rfi' ? 'rfi:' + ui.hero : (ui.type === 'vs' ? `vs:${ui.hero}:${ui.vill}` : `${ui.type}:${ui.hero}:${ui.vill}`);
   const curKey = () => { fixSel(); return keyFor(curId()); };
   const PHONE = window.matchMedia('(max-width:640px)');
   const onPhoneChange = () => { renderCfg(); fitGrid(true); };
@@ -2520,7 +2610,9 @@ self.onmessage = function (e) {
     $('#game-note').innerHTML = mtt ? (icmOn()
       ? '<b>Tournament · ICM on</b> (approx. bubble ICM, not a full prize-pool solve): calls much tighter, early opens a little tighter, late jams wider. Equal stacks assumed. 1bb BB ante.'
       : '<b>Tournament · chip-EV:</b> 1bb big-blind ante. Re-raises are all-in below 31bb; opens are jam-or-fold at 12bb and below (Nash push/fold).')
-      : '<b>Cash:</b> no ante, raked solver anchors, 2.5bb opens (3bb from the SB). Deeper stacks add suited connectors, small pairs and suited aces.';
+      : (ui.n === 6 && stackOf() === 100
+        ? '<b>Cash · 6-max 100bb:</b> solved by our preflop model (fold / call / raise / all-in frequencies). It is not a GTO Wizard solve. Other stacks and table sizes stay heuristic.'
+        : '<b>Cash:</b> heuristic charts for this stack. Switch to 6-max 100bb for the solved model.');
     const cash = ui.g === 'cash', sg = sideGames();
     $$('#cfg-side [data-sg]').forEach(b => {
       const on = cash && !!ui.side[b.dataset.sg], lab = SIDE_GAMES.find(x => x[0] === b.dataset.sg)[1];
@@ -2540,16 +2632,30 @@ self.onmessage = function (e) {
     const seats = M.SEATS[ui.n], L = s => esc(M.seatLabel(ui.n, s));
     // chart situation
     const mob = PHONE.matches;
-    const typeSeg = `<div class="seg sit full" role="group" aria-label="Situation">${segBtns([['rfi', 'Open', 'First in: everyone before you folded'], ['vs', 'vs Open', 'Facing a single open raise']], ui.type, 'type')}</div>`;
+    const typeItems = [['rfi', 'Open', 'First in: everyone before you folded'], ['vs', mob ? 'vs' : 'vs Open', 'Facing a single open raise']];
+    if (ui.g === 'cash' && ui.n === 6 && stackOf() === 100) {
+      typeItems.push(['v3', '3-Bet', 'You opened, someone 3-bet, folds back to you']);
+      typeItems.push(['v4', '4-Bet', 'You 3-bet and face a 4-bet: call or jam']);
+      typeItems.push(['vj', 'Jam', 'You 4-bet and face a 5-bet all-in']);
+    }
+    const typeSeg = `<div class="seg sit full" role="group" aria-label="Situation">${segBtns(typeItems, ui.type, 'type')}</div>`;
     const trSeg = `<div class="seg sit full" role="group" aria-label="Drill type">${segBtns([['all', mob ? 'Mix' : 'Mixed', 'Mixed: open and vs-open spots'], ['rfi', 'Open'], ['vs', mob ? 'vs' : 'vs Open', 'vs Open']], ui.trType, 'trtype')}</div>`;
     $('#sit-slot').innerHTML = mob ? (ui.rmode === 'train' ? trSeg : typeSeg) : '';
     let h = mob ? '' : typeSeg;
-    const heroSeats = ui.type === 'rfi' ? seats.filter(s => s !== 'BB') : seats.slice(1);
+    const deep = DEEP.includes(ui.type);
+    const heroSeats = ui.type === 'rfi' ? seats.filter(s => s !== 'BB')
+      : deep ? [...new Set(pairsFor(ui.type).map(p => p.hero))]
+      : seats.slice(1);
     h += `<div class="field"><div class="flabel">${mob ? 'You' : 'Your seat'}</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns(heroSeats.map(s => [s, L(s)]), ui.hero, 'hero')}</div></div>`;
-    if (ui.type !== 'vs') h += `<div class="field vrow"><div class="flabel">Opener</div><div class="seats-btns vill ghost" aria-hidden="true"><span class="ghosttxt">&mdash; none, folded to you</span></div></div>`;
+    if (ui.type === 'rfi') h += `<div class="field vrow"><div class="flabel">Opener</div><div class="seats-btns vill ghost" aria-hidden="true"><span class="ghosttxt">&mdash; none, folded to you</span></div></div>`;
     if (ui.type === 'vs') {
       const vs = seats.slice(0, seats.indexOf(ui.hero));
       h += `<div class="field"><div class="flabel">Opener</div><div class="seats-btns vill" role="group" aria-label="Opener position">${segBtns(vs.map(s => [s, L(s)]), ui.vill, 'vill')}</div></div>`;
+    }
+    if (deep) {
+      const vs = pairsFor(ui.type).filter(p => p.hero === ui.hero).map(p => p.villain);
+      const vlab = ui.type === 'vj' ? 'Jammer' : (ui.type === 'v4' ? 'Opener' : '3-bettor');
+      h += `<div class="field"><div class="flabel">${vlab}</div><div class="seats-btns vill" role="group" aria-label="${vlab}">${segBtns(vs.map(s => [s, L(s)]), ui.vill, 'vill')}</div></div>`;
     }
     $('#sitbar').innerHTML = h;
     // trainer situation
@@ -2629,11 +2735,11 @@ self.onmessage = function (e) {
     saveUI(); renderCfg(); deal();
   });
   // "Approximate" info popover
-  const INFO = '<b>Solver-calibrated approximations, not live solver output.</b>'
-    + '<p><b>Cash</b> 6-max 100bb charts are hand-tuned to a consensus (median) of published solver charts: GTO Wizard, PokaLab, BeyondGTO, ART/GTO, gtopreflop (raked, 2.5bb opens). Opens UTG 17.5% &middot; HJ 22% &middot; CO 28% &middot; BTN 43% &middot; SB 42%; BB defends ~42% vs BTN. Other table sizes and stacks come from a model fitted to the same numbers.</p>'
-    + '<p><b>Tournament</b> (1bb BB ante, chip-EV): opens and BB defence match BeyondGTO / progressGTO / ThinkGTO by stack; at 12bb and below jam-or-fold ranges come from our own Nash push/fold solver.</p>'
-    + '<p><b>ICM</b> (tournament only) is an <i>approx. bubble ICM</i> adjustment, not a full prize-pool solve: equal stacks, a bubble factor of ~1.5 on chips lost for callers (1.3 for the jammer), calls much tighter, early opens 10&ndash;16% tighter, flat calls mostly become 3-bet-or-fold. Real ICM depends on payouts and every stack.</p>'
-    + '<p>Hand composition is approximated from hand orderings (solver mixes simplified to 100%/50% cells). Sources: docs/calibration.md. Edit any chart to match your own strategy.</p>';
+  const INFO = '<b>Three kinds of chart.</b> The label under the title says which one you are looking at.'
+    + '<p><b>Solved (our model)</b> is 6-max 100bb cash only. External-sampling CFR on a preflop tree (open 2.5bb, SB 3bb, 3-bet, 4-bet, all-in) with a 169-class equity table, card removal when dealing, and a position realisation factor instead of a postflop solve. 5% rake capped at 3bb when a flop is seen; no flop, no drop. It does <b>not</b> match GTO Wizard. Suited connectors are played tighter than a full postflop solver, because this model has no implied-odds tree.</p>'
+    + '<p><b>Imported reference</b> is a range you pasted yourself (JSON, CSV, or a <span style="font-family:var(--mono)"># id:</span> block). Nothing here is downloaded from GTO Wizard.</p>'
+    + '<p><b>Heuristic</b> covers every other cash stack and table size, plus all tournament charts: hand-ordered approximations, not a solve. Tournament jam-or-fold at 12bb and below is a separate push/fold equilibrium.</p>'
+    + '<p><b>ICM</b> (tournament only) is an approximate bubble adjustment, not a full prize-pool solve. The format for pasting your own frequencies is in docs/spot-import.md.</p>';
   $('#info-pop').innerHTML = INFO;
   const setPop = on => { $('#info-pop').hidden = !on; $('#info-btn').setAttribute('aria-expanded', String(on)); };
   $('#info-btn').addEventListener('click', e => { e.stopPropagation(); setPop($('#info-pop').hidden); });
@@ -2652,7 +2758,13 @@ self.onmessage = function (e) {
   function renderChartView() {
     const key = curKey(), s = scOf(key);
     const chart = chartOf(key);
-    $('#edited-pill').hidden = !overrides[key];
+    const src = sourceOf(key);
+    $('#edited-pill').hidden = src !== 'edited';
+    const sp = $('#source-pill');
+    sp.hidden = src === 'edited';
+    sp.className = 'pill src-' + src;
+    sp.textContent = SOURCE_LABEL[src];
+    $('#info-btn .lgtxt').textContent = ' ' + (src === 'solved' ? 'Our model' : src === 'imported' ? 'Imported' : src === 'edited' ? 'Edited' : 'Heuristic');
     $('#headline').innerHTML = `<span class="hgame ${s.g}">${esc(s.game)}</span> <span class="hsep h1">&middot;</span> <span class="hp-l">${esc(s.players)}</span><span class="hp-s">${esc(s.table)}</span> <span class="hsep">&middot;</span> ${esc(s.stackLabel)} <span class="hsep">&middot;</span> <span class="hspot">${esc(s.name)}</span>`;
     $('#subline').textContent = s.desc;
     const g = $('#grid');
@@ -2685,7 +2797,7 @@ self.onmessage = function (e) {
     let html = '';
     for (const a of s.actions) {
       const v = t[a] || 0;
-      html += `<div class="stat"><i class="sw" style="background:${A[a].color}"></i><span>${A[a].label}</span><span><b>${pct(v / 1326)}</b> <span class="muted small">${fmtN(v, 1)} combos</span></span><div class="bar"><i style="width:${(v / 1326 * 100).toFixed(2)}%;background:${A[a].color}"></i></div></div>`;
+      html += `<div class="stat"><i class="sw" style="background:${A[a].color}"></i><span>${labOf(s, a)}</span><span><b>${pct(v / 1326)}</b> <span class="muted small">${fmtN(v, 1)} combos</span></span><div class="bar"><i style="width:${(v / 1326 * 100).toFixed(2)}%;background:${A[a].color}"></i></div></div>`;
     }
     html += `<div class="small muted" style="margin-top:8px">${s.rfi ? 'Playing' : 'Continuing'}: <b style="color:var(--text)">${pct(play / 1326)}</b> &middot; ${fmtN(play, 1)} / 1326 combos &middot; ${cells} of 169 hands</div>`;
     if (md) html += `<div class="small muted mdf-row" id="mdf-detail">Min. defence (MDF): <b style="color:var(--text)">${pct(md.mdf)}</b> &middot; pot ${fmtN(md.pot, 2)}bb, ${fmtN(md.toCall, 2)}bb to call &rarr; pot / (pot + call) &middot; continuing ${pct(cont)} = <b class="mdf-${mdfVerdict(cont, md.mdf)[0]}">${mdfVerdict(cont, md.mdf)[1]}</b></div>`;
@@ -2693,7 +2805,7 @@ self.onmessage = function (e) {
     $('#stats-sum').textContent = `${s.rfi ? 'play' : 'continue'} ${pct(play / 1326)}`;
     // compact legend: action + % of all hands, then the total
     $('#legend').classList.toggle('has-mdf', !!md);
-    $('#legend').innerHTML = s.actions.filter(a => a !== 'fold').map(a => `<span class="lg-i"><i class="sw" style="background:${A[a].color}"></i>${A[a].label} <b>${pct((t[a] || 0) / 1326)}</b></span>`).join('')
+    $('#legend').innerHTML = s.actions.filter(a => a !== 'fold').map(a => `<span class="lg-i"><i class="sw" style="background:${A[a].color}"></i>${labOf(s, a)} <b>${pct((t[a] || 0) / 1326)}</b></span>`).join('')
       + `<span class="lg-i lg-fold"><i class="sw sw-fold"></i>Fold <b>${pct((t.fold || 0) / 1326)}</b></span>`
       + `<span class="lg-i lg-mix" title="Split cells are mixed: the hand plays each action part of the time"><i class="sw" style="background:linear-gradient(90deg,${A[s.actions[0]].color} 50%,${A.fold.color} 50%)"></i>Mixed</span>`
       + `<span class="lg-tot" id="summary">${s.rfi ? 'Play' : '<span class="lg-lbl" data-short="Cont">Continue</span>'} <b>${pct(play / 1326)}</b></span>`
@@ -2701,7 +2813,7 @@ self.onmessage = function (e) {
   }
   // MDF (minimum defence frequency) is only shown on cash facing-open charts while a side game is on
   function mdfInfo(s) {
-    if (!s || s.rfi || s.g !== 'cash' || !sideGames().length) return null;
+    if (!s || s.rfi || s.g !== 'cash' || !sideGames().length || DEEP.includes(s.type)) return null;
     return M.mdf(s.g, s.n, s.stack, s.hero, s.villain);
   }
   // within 1.5 points counts as "at MDF"
@@ -2785,8 +2897,11 @@ self.onmessage = function (e) {
   const grid = $('#grid');
   const INFO0 = '<span class="muted">Tap a hand to see its frequencies.</span>';
   function showInfo(k) {
-    const cell = chartOf(curKey())[k];
-    $('#cell-info').innerHTML = `${selKey === k && !editing ? '<span class="selpill">Selected</span>' : ''}<b class="ik">${k}</b> <span class="muted">${H.classCount(k)} combos</span> <span class="isep">&middot;</span> ${mixText(cell)}`;
+    const key = curKey(), s = scOf(key), cell = chartOf(key)[k];
+    const spot = spotRecord(key);
+    const ev = sourceOf(key) === 'solved' && spot && spot.hands[k] && spot.hands[k].ev != null ? spot.hands[k].ev : null;
+    const evTxt = ev == null ? '' : ` <span class="isep">&middot;</span> <span class="muted">EV ${ev > 0 ? '+' : ''}${Number(ev).toFixed(2)}bb</span>`;
+    $('#cell-info').innerHTML = `${selKey === k && !editing ? '<span class="selpill">Selected</span>' : ''}<b class="ik">${k}</b> <span class="muted">${H.classCount(k)} combos</span> <span class="isep">&middot;</span> ${mixText(cell, s && s.labels)}${evTxt}`;
   }
   function paintKey(k, el) {
     const ch = ensureEditable(curKey());
@@ -2811,17 +2926,17 @@ self.onmessage = function (e) {
   });
   grid.addEventListener('pointerleave', () => { if (!painting && selKey && !editing) showInfo(selKey); });
   window.addEventListener('pointerup', () => {
-    if (painting) { painting = false; if (dirty) { dirty = false; saveCharts(); renderStats(); $('#edited-pill').hidden = false; } }
+    if (painting) { painting = false; if (dirty) { dirty = false; saveCharts(); renderChartView(); } }
   });
   $('#reset-sc').addEventListener('click', () => {
     const key = curKey(), s = scOf(key);
-    if (!overrides[key]) { toast('This chart is already at its default.'); return; }
-    if (!confirm(`Reset "${s.name} (${s.short})" to the default range?`)) return;
-    delete overrides[key]; saveCharts(); renderChartView(); toast('Chart reset to default');
+    if (!overrides[key] && !imports[key]) { toast('This chart is already at its default.'); return; }
+    if (!confirm(`Reset "${s.name} (${s.short})" to the built-in chart? Edits and an imported reference for this spot will be dropped.`)) return;
+    delete overrides[key]; delete imports[key]; saveCharts(); saveImports(); renderChartView(); toast('Chart reset');
   });
   $('#reset-all').addEventListener('click', () => {
-    if (!confirm('Reset ALL charts (cash and tournament, every table size and stack) to the defaults? Your edits will be lost.')) return;
-    overrides = {}; saveCharts(); renderChartView(); toast('All charts reset');
+    if (!confirm('Reset ALL charts (cash and tournament, every table size and stack) to the defaults? Your edits and imported references will be lost.')) return;
+    overrides = {}; imports = {}; saveCharts(); saveImports(); renderChartView(); toast('All charts reset');
   });
   function exportJSON() {
     const charts = {};
@@ -2843,17 +2958,44 @@ self.onmessage = function (e) {
     $('#m-dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' })); a.download = 'holdem-ranges.json'; document.body.appendChild(a); a.click(); a.remove(); };
     $('#m-close').onclick = closeModal;
   });
+  function importReference(text) {
+    if (!window.HoldemSpots) throw new Error('Spot importer failed to load');
+    const parsed = window.HoldemSpots.parseSpotImport(text, H.CLASSES);
+    if (parsed.type === 'charts') return false;
+    let n = 0;
+    for (const s of parsed.spots) {
+      const key = normKey(s.id) || s.id;
+      if (!scOf(key)) throw new Error('Unknown spot id ' + s.id + '. Use a chart key such as cash|6|100|rfi:BTN, or v3:/v4:/vj: on 6-max 100bb.');
+      imports[key] = chartFromHands(s.hands);
+      delete overrides[key];
+      n++;
+    }
+    if (!n) throw new Error('No spots in that paste');
+    saveImports();
+    return n;
+  }
   $('#import-btn').addEventListener('click', () => {
-    const m = openModal(`<h2>Import ranges</h2><p class="small muted">Paste JSON exported from this app, or choose a file. Only charts in the file are replaced. Older files are read as cash (version 1 = 6-max 100bb); cash charts below 50bb from version 2 are skipped.</p><input type="file" accept=".json,application/json" id="m-file"><textarea class="json" placeholder='{"charts": {"mtt|9|25|rfi:BTN": {"AA": {"raise": 1}, ...}}}' style="margin-top:10px"></textarea><div class="modal-foot"><span class="small" id="m-err" style="color:var(--bad);margin-right:auto"></span><button class="btn" id="m-close">Cancel</button><button class="btn primary" id="m-apply">Import</button></div>`);
+    const m = openModal(`<h2>Import ranges</h2><p class="small muted">Paste a chart export, a spot database (<span style="font-family:var(--mono)">holdem-lab.spots</span> v1), a CSV, or a range block. A reference paste is labelled <b>Imported reference</b> and does not have to come from anywhere in particular. Full rules: docs/spot-import.md.</p><input type="file" accept=".json,.csv,.txt,application/json,text/plain" id="m-file"><textarea class="json" placeholder="# id: cash|6|100|rfi:BTN&#10;# action: raise&#10;AA:1, AKs:0.65, 76s:0.4" style="margin-top:10px"></textarea><div class="modal-foot"><span class="small" id="m-err" style="color:var(--bad);margin-right:auto"></span><button class="btn" id="m-close">Cancel</button><button class="btn primary" id="m-apply">Import</button></div>`);
     $('#m-file').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { $('textarea', m).value = t; }); };
     $('#m-close').onclick = closeModal;
     $('#m-apply').onclick = () => {
+      const text = $('textarea', m).value;
       try {
-        const obj = JSON.parse($('textarea', m).value);
+        const trimmed = text.trim();
+        const firstData = trimmed.split(/\n/).map(l => l.trim()).find(l => l && l[0] !== '#') || '';
+        const asSpot = trimmed[0] === '#' || /"format"\s*:\s*"holdem-lab\.spots"/.test(trimmed) || /^hand\s*,/i.test(firstData) || (/^[2-9TJQKA]{2}/i.test(firstData) && firstData.indexOf(':') >= 0);
+        if (asSpot) {
+          const n = importReference(text);
+          if (n) { closeModal(); renderChartView(); toast('Imported reference · ' + n + ' spot' + (n > 1 ? 's' : '')); return; }
+        }
+        const obj = JSON.parse(text);
+        if (obj && (obj.format === 'holdem-lab.spots' || (obj.id && obj.hands) || Array.isArray(obj))) {
+          const n = importReference(text);
+          closeModal(); renderChartView(); toast('Imported reference · ' + n + ' spot' + (n > 1 ? 's' : '')); return;
+        }
         const src = obj.charts || obj;
         const edited = Array.isArray(obj.edited) ? new Set(obj.edited.map(k => normKey(k) || k)) : null;
         const clean = sanitizeCharts(src) || {};
-        // files list which charts were edited; unedited defaults are not stored as overrides
         for (const k of Object.keys(clean)) if (!edited || !edited.has(k)) { if (JSON.stringify(clean[k]) === JSON.stringify(sanitizeCharts({ [k]: defaultOf(k) })[k])) delete clean[k]; }
         const n = Object.keys(clean).length, total = Object.keys(src).filter(k => M.parseKey(k)).length;
         if (!total) throw new Error('No known chart keys found (expected e.g. "cash|6|100|rfi:BTN", "mtt|9|25|rfi:BTN" or "rfi_btn").');
@@ -2896,7 +3038,7 @@ self.onmessage = function (e) {
     cur = { id, k: pick.k, cards, answered: false, border: pick.b };
     renderTrainer();
   }
-  const KEYHINT = { fold: 'F', call: 'C', raise: 'R', '3bet': '3', jam: 'J', limp: 'L' };
+  const KEYHINT = { fold: 'F', call: 'C', raise: 'R', '3bet': '3', '4bet': '4', jam: 'J', limp: 'L' };
   const btnText = a => a === 'fold' ? '#e6eaf2' : '#fff';
   function renderTrainer() {
     if (!cur || !scOf(cur.id)) { deal(); return; }
@@ -2938,7 +3080,7 @@ self.onmessage = function (e) {
     const mixed = mixEntries(cell).length > 1;
     const fb = $('#tr-feedback');
     fb.className = 'feedback ' + (correct ? 'good' : 'bad');
-    fb.innerHTML = `<span>${correct ? '&#10003; Correct' : '&#10007; Not quite'} &mdash; you: <b>${A[a].label}</b> &middot; chart <b>${cur.k}</b>: ${mixText(cell)}${mixed ? ' <span class="small">(mixed)</span>' : ''}</span>`;
+    fb.innerHTML = `<span>${correct ? '&#10003; Correct' : '&#10007; Not quite'} &mdash; you: <b>${A[a].label}</b> &middot; chart <b>${cur.k}</b>: ${mixText(cell, s.labels)}${mixed ? ' <span class="small">(mixed)</span>' : ''}</span>`;
     $$('#tr-actions .act').forEach(b => { b.disabled = true; if (b.dataset.a === a) b.classList.add('picked'); });
     $('#tr-chart-empty').hidden = true;
     $('#tr-chart-title').textContent = s.name + (overrides[cur.id] ? ' (edited)' : '');
@@ -2974,6 +3116,7 @@ self.onmessage = function (e) {
     const s = scOf(cur.id);
     let a = null;
     if (key === 'f') a = 'fold'; else if (key === 'c') a = 'call'; else if (key === 'l') a = 'limp';
+    else if (key === '4') a = '4bet';
     else if (key === '3') a = s.actions.includes('3bet') ? '3bet' : 'jam';
     else if (key === 'j' || key === 'a') a = 'jam';
     else if (key === 'r') a = s.actions[0] === 'call' ? null : s.actions[0];
