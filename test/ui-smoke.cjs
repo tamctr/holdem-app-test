@@ -235,6 +235,109 @@ const sideOn = await page.$eval('#cfg-side [data-sg="squid"]', el => el.classLis
 expect(sideOn, 'squid toggle did not turn on');
 await page.click('#cfg-side [data-sg="squid"]');
 await page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-charts-390.png', fullPage: true });
+await page.click('#setup-sum');
+await page.waitForFunction(() => !document.querySelector('#toast').classList.contains('show') && document.querySelector('#setup').classList.contains('collapsed'));
+
+const gtoBar = await page.evaluate(() => {
+  const gto = document.querySelector('#cfg-chartmode [data-cmode="gto"]');
+  const heur = document.querySelector('#cfg-chartmode [data-cmode="heuristic"]');
+  const bar = document.querySelector('#srcbar').getBoundingClientRect();
+  const header = document.querySelector('header.top').getBoundingClientRect();
+  return {
+    gto: gto.classList.contains('active') && gto.getAttribute('aria-pressed') === 'true',
+    heurOff: heur.getAttribute('aria-pressed') === 'false',
+    pill: document.querySelector('#source-pill').textContent,
+    note: document.querySelector('#srcbar-note').textContent,
+    importShown: !document.querySelector('#import-gto-link').hidden,
+    belowHeader: bar.top >= header.bottom - 1,
+    legend: document.querySelector('#legend').textContent,
+    scroll: document.documentElement.scrollWidth,
+    client: document.documentElement.clientWidth
+  };
+});
+expect(gtoBar.gto && gtoBar.heurOff, 'default is GTO ' + JSON.stringify(gtoBar));
+expect(gtoBar.pill === 'Solved (our model)', 'gto pill ' + gtoBar.pill);
+expect(/Not GTO Wizard/.test(gtoBar.note), 'gto note ' + gtoBar.note);
+expect(gtoBar.importShown, 'import link missing in GTO mode');
+expect(gtoBar.belowHeader, 'switch is not under the header');
+expect(gtoBar.scroll <= gtoBar.client + 1, 'gto mode overflow ' + gtoBar.scroll + '>' + gtoBar.client);
+await page.click('#grid .cell[data-key="AKs"]');
+const gtoMix = await page.$eval('#cell-info', el => el.textContent);
+expect(/AKs/.test(gtoMix) && /%/.test(gtoMix), 'gto frequencies ' + gtoMix);
+await page.screenshot({ path: '/opt/cursor/artifacts/charts-gto-mobile-390.png', fullPage: false });
+
+await page.click('#cfg-chartmode [data-cmode="heuristic"]');
+await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Heuristic');
+const heurBar = await page.evaluate(() => {
+  const b = document.querySelector('#cfg-chartmode [data-cmode="heuristic"]');
+  const cell = document.querySelector('#grid .cell[data-key="AKs"]');
+  return {
+    on: b.classList.contains('active') && b.getAttribute('aria-pressed') === 'true',
+    pill: document.querySelector('#source-pill').textContent,
+    note: document.querySelector('#srcbar-note').textContent,
+    importHidden: document.querySelector('#import-gto-link').hidden,
+    legend: document.querySelector('#legend').textContent,
+    stored: JSON.parse(localStorage.getItem('holdem.ui.v1') || '{}').chartMode,
+    cells: document.querySelectorAll('#grid .cell').length,
+    bg: cell.style.background,
+    scroll: document.documentElement.scrollWidth,
+    client: document.documentElement.clientWidth
+  };
+});
+expect(heurBar.on, 'heuristic toggle did not activate');
+expect(heurBar.pill === 'Heuristic', 'heuristic pill ' + heurBar.pill);
+expect(/heuristic/i.test(heurBar.note), 'heuristic note ' + heurBar.note);
+expect(heurBar.importHidden, 'import link should hide in heuristic mode');
+expect(heurBar.stored === 'heuristic', 'chart mode not saved ' + heurBar.stored);
+expect(heurBar.legend !== gtoBar.legend, 'heuristic ranges match the solved chart');
+expect(heurBar.cells === 169, 'heuristic cells ' + heurBar.cells);
+expect(heurBar.scroll <= heurBar.client + 1, 'heuristic overflow ' + heurBar.scroll + '>' + heurBar.client);
+await page.click('#grid .cell[data-key="KQo"]');
+const heurMix = await page.$eval('#cell-info', el => el.textContent);
+expect(/KQo/.test(heurMix) && /%/.test(heurMix), 'heuristic frequencies ' + heurMix);
+await page.screenshot({ path: '/opt/cursor/artifacts/charts-heuristic-mobile-390.png', fullPage: false });
+
+await page.reload({ waitUntil: 'networkidle0' });
+await page.waitForSelector('#grid .cell');
+const kept = await page.evaluate(() => document.querySelector('#cfg-chartmode [data-cmode="heuristic"]').classList.contains('active') && document.querySelector('#source-pill').textContent === 'Heuristic');
+expect(kept, 'heuristic choice did not survive reload');
+
+await page.click('#cfg-chartmode [data-cmode="gto"]');
+await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Solved (our model)');
+await page.click('#cfg-g button[data-g="mtt"]');
+await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Heuristic');
+const fallback = await page.evaluate(() => ({
+  gtoOn: document.querySelector('#cfg-chartmode [data-cmode="gto"]').classList.contains('active'),
+  pill: document.querySelector('#source-pill').textContent,
+  note: document.querySelector('#srcbar-note').textContent
+}));
+expect(fallback.gtoOn && fallback.pill === 'Heuristic' && /showing the heuristic/i.test(fallback.note), 'mtt fallback ' + JSON.stringify(fallback));
+
+await page.click('#cfg-g button[data-g="cash"]');
+await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Solved (our model)');
+await page.click('#import-gto-link');
+await page.waitForSelector('#modal h2');
+const importTitle = await page.$eval('#modal h2', el => el.textContent);
+expect(/Import/.test(importTitle), 'import modal ' + importTitle);
+await page.$eval('#modal textarea', el => { el.value = '# id: cash|6|100|rfi:BTN\n# action: raise\nAA:1, 72o:1\n'; });
+await page.click('#m-apply');
+await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Imported reference');
+const imported = await page.evaluate(() => ({
+  pill: document.querySelector('#source-pill').textContent,
+  note: document.querySelector('#srcbar-note').textContent,
+  offsuit: document.querySelector('#grid .cell[data-key="72o"]').classList.contains('isfold'),
+  scroll: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1
+}));
+expect(imported.pill === 'Imported reference', 'import pill ' + imported.pill);
+expect(/Imported reference/.test(imported.note), 'import note ' + imported.note);
+expect(!imported.offsuit, 'imported 72o should be a raise');
+expect(imported.scroll, 'import overflow');
+await page.click('#cfg-chartmode [data-cmode="heuristic"]');
+await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Heuristic');
+const heurIgnoresImport = await page.evaluate(() => document.querySelector('#grid .cell[data-key="72o"]').classList.contains('isfold'));
+expect(heurIgnoresImport, 'heuristic mode still showed the import');
+await page.click('#cfg-chartmode [data-cmode="gto"]');
+await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Imported reference');
 
 const desktop = await boot(1280, 900);
 await desktop.page.click('#tabs button[data-tab="equity"]');
@@ -256,6 +359,19 @@ await desktop.page.waitForFunction(() => /19,600/.test(document.querySelector('.
 const deskOverflow = await desktop.page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
 expect(deskOverflow, 'desktop flop overflow');
 await desktop.page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-desktop-flop.png', fullPage: true });
+
+await desktop.page.click('#tabs button[data-tab="charts"]');
+await desktop.page.waitForSelector('#cfg-chartmode [data-cmode="gto"].active');
+const deskGto = await desktop.page.evaluate(() => ({
+  pill: document.querySelector('#source-pill').textContent,
+  scroll: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+  wide: document.querySelector('#srcbar').getBoundingClientRect().width > 400
+}));
+expect(deskGto.pill === 'Solved (our model)' && deskGto.scroll && deskGto.wide, 'desktop GTO toggle ' + JSON.stringify(deskGto));
+await desktop.page.click('#cfg-chartmode [data-cmode="heuristic"]');
+await desktop.page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Heuristic');
+const deskHeur = await desktop.page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1 && document.querySelector('#import-gto-link').hidden);
+expect(deskHeur, 'desktop heuristic toggle overflow or import link still visible');
 
 const errors = mobile.errors.concat(desktop.errors);
 expect(errors.length === 0, 'page errors ' + errors.join(' | '));

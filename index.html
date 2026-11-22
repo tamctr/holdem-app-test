@@ -51,7 +51,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--accent)}
 .pill.src-solved{color:#9ff0c3;border-color:#1e6b45;background:#10281c}
 .pill.src-imported{color:#d7c4ff;border-color:#5a3d8a;background:#221838}
 .pill.src-heuristic{color:#f8c471;border-color:#5a4520;background:#2a2112}
-.subline .pill{margin-left:6px;vertical-align:1px}
+.subline .pill{margin-right:6px;vertical-align:1px}
 .muted{color:var(--muted)}.dim{color:var(--dim)}.small{font-size:12px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
@@ -886,6 +886,22 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
   .pick-tools{gap:6px}
 }
 
+/* GTO / Heuristic switch: under the app header, top of Charts */
+.srcbar{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin:0 0 10px;padding:8px 10px;background:var(--panel);border:1px solid var(--border);border-radius:12px}
+.srcbar .seg{flex:0 0 auto}
+.srcbar .seg button{min-width:96px;padding:0 16px}
+.seg.srcseg button[data-cmode="gto"].active{background:#178a4e}
+.seg.srcseg button[data-cmode="heuristic"].active{background:#b87a1a}
+.srcbar-note{flex:1 1 180px;margin:0;min-width:0;font-size:12.5px;line-height:1.35;color:var(--muted)}
+.srcbar-import{margin-left:auto;border:0;background:transparent;color:var(--accent);font-size:12.5px;font-weight:650;padding:4px 2px;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.srcbar-import:hover{color:#9ec1ff}
+@media (max-width:640px){
+  .srcbar{margin:0 0 4px;padding:4px 6px;border-radius:10px;gap:4px 8px}
+  .srcbar .seg{flex:1 1 auto}
+  .srcbar .seg button{min-width:0;flex:1;padding:0 8px}
+  .srcbar-note{flex:1 1 100%;font-size:11.5px}
+  .srcbar-import{margin-left:0;padding:2px;font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -902,6 +918,14 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
 <main>
   <!-- ============ CHARTS + TRAINER ============ -->
   <section class="tab active" id="tab-ranges">
+    <div class="srcbar chart-only" id="srcbar">
+      <div class="seg srcseg" id="cfg-chartmode" role="group" aria-label="Chart source">
+        <button type="button" data-cmode="gto" class="active" aria-pressed="true">GTO</button>
+        <button type="button" data-cmode="heuristic" aria-pressed="false">Heuristic</button>
+      </div>
+      <p class="srcbar-note" id="srcbar-note">Solved (our model). Not GTO Wizard.</p>
+      <button type="button" class="srcbar-import" id="import-gto-link" title="Paste frequencies you copied yourself. Nothing is downloaded from GTO Wizard.">Import GTO Wizard data</button>
+    </div>
     <div class="rlayout">
       <aside class="ctrl">
         <div class="panel setup" id="setup">
@@ -974,7 +998,7 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
       <div class="stage">
         <div id="chart-view" class="panel gridpanel">
           <div class="chead">
-            <div class="ctitle"><h1 id="headline"></h1><div class="subline"><span id="subline"></span> <span class="pill src-solved" id="source-pill">Solved (our model)</span></div></div>
+            <div class="ctitle"><h1 id="headline"></h1><div class="subline"><span class="pill src-solved" id="source-pill">Solved (our model)</span> <span id="subline"></span></div></div>
             <div class="cact">
               <span class="pill edited" id="edited-pill" hidden>Edited</span>
               <span class="popwrap"><button class="chip" id="info-btn" aria-expanded="false" aria-controls="info-pop">&#9432;<span class="lgtxt"> Approximate</span></button>
@@ -2275,7 +2299,7 @@ self.onmessage = function (e) {
 (function () {
   'use strict';
   const H = window.HoldemCore, R = window.HoldemRanges, A = R.ACTIONS;
-  const LS = { charts: 'holdem.charts.v1', stats: 'holdem.trainer.v1', eq: 'holdem.equity.v1', ui: 'holdem.ui.v1', imports: 'holdem.imports.v1' };
+  const LS = { charts: 'holdem.charts.v1', heur: 'holdem.charts.heuristic.v1', stats: 'holdem.trainer.v1', eq: 'holdem.equity.v1', ui: 'holdem.ui.v1', imports: 'holdem.imports.v1' };
   const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } };
   const $ = (s, r) => (r || document).querySelector(s);
@@ -2334,7 +2358,8 @@ self.onmessage = function (e) {
     folds[d.dataset.fold] = d.open; save(LS_FOLDS, folds);
   }, true);
   const foldAttr = id => (folds[id] ? ' open' : '');
-  const ui = Object.assign({ tab: 'ranges', rmode: 'chart', g: 'cash', type: 'rfi', hero: 'BTN', vill: 'BTN', trType: 'all', trHero: 'any', brush: 'raise', freq: 1, rest: 'fold', trWeight: 'border', trAutoChart: false, setupOpen: false }, load(LS.ui, {}));
+  const ui = Object.assign({ tab: 'ranges', rmode: 'chart', g: 'cash', type: 'rfi', hero: 'BTN', vill: 'BTN', trType: 'all', trHero: 'any', brush: 'raise', freq: 1, rest: 'fold', trWeight: 'border', trAutoChart: false, setupOpen: false, chartMode: 'gto' }, load(LS.ui, {}));
+  if (ui.chartMode !== 'heuristic') ui.chartMode = 'gto';
   const saveUI = () => save(LS.ui, ui);
 
   // top-level sections: Charts | Trainer | Equity (Charts and Trainer share the ranges view)
@@ -2432,6 +2457,7 @@ self.onmessage = function (e) {
   if (!ui.stacks || typeof ui.stacks !== 'object') ui.stacks = { cash: ui.stack >= 50 ? M.snapStack('cash', ui.stack) : 100, mtt: 25 };
   delete ui.sc; delete ui.stack; delete ui.trSc;
   let overrides = sanitizeCharts(load(LS.charts, {})) || {};
+  let hOverrides = sanitizeCharts(load(LS.heur, {})) || {};
   let imports = {};
   (function () {
     const raw = load(LS.imports, {});
@@ -2446,6 +2472,7 @@ self.onmessage = function (e) {
     }
   })();
   saveChartsRaw();
+  saveHCharts();
   const saveImports = () => { try { localStorage.setItem(LS.imports, JSON.stringify(imports)); } catch (e) { /* ignore */ } };
 
   function normCell(cell, actions) {
@@ -2473,14 +2500,56 @@ self.onmessage = function (e) {
     return out;
   }
   function saveChartsRaw() { try { localStorage.setItem(LS.charts, JSON.stringify(overrides)); } catch (e) { /* ignore */ } }
-  const chartOf = key => overrides[key] || imports[key] || baseChart(key);
-  const saveCharts = () => saveChartsRaw();
-  function ensureEditable(key) { if (!overrides[key]) overrides[key] = JSON.parse(JSON.stringify(imports[key] || baseChart(key))); return overrides[key]; }
+  function saveHCharts() { try { localStorage.setItem(LS.heur, JSON.stringify(hOverrides)); } catch (e) { /* ignore */ } }
+  function solvedHands(key) {
+    const spot = spotRecord(key);
+    return spot && spot.hands ? chartFromHands(spot.hands) : null;
+  }
+  function gtoHands(key) { return imports[key] || solvedHands(key); }
+  // GTO draws an import, else the solved model. Heuristic draws the pre-solver range.
+  // A spot with only one of those falls back to the one that exists.
+  function activeFamily(key) {
+    const wantH = ui.chartMode === 'heuristic';
+    const heur = !!defaultOf(key);
+    const gto = !!gtoHands(key);
+    if (wantH && heur) return 'heuristic';
+    if (!wantH && gto) return 'gto';
+    if (gto) return 'gto';
+    return 'heuristic';
+  }
+  function usingFallback(key) {
+    return (ui.chartMode === 'heuristic') !== (activeFamily(key) === 'heuristic');
+  }
+  function chartOf(key) {
+    if (activeFamily(key) === 'heuristic') return hOverrides[key] || defaultOf(key) || chartFromHands(null);
+    return overrides[key] || gtoHands(key) || defaultOf(key) || chartFromHands(null);
+  }
+  const saveCharts = () => { saveChartsRaw(); saveHCharts(); };
+  function ensureEditable(key) {
+    if (activeFamily(key) === 'heuristic') {
+      if (!hOverrides[key]) hOverrides[key] = JSON.parse(JSON.stringify(defaultOf(key)));
+      return hOverrides[key];
+    }
+    if (!overrides[key]) overrides[key] = JSON.parse(JSON.stringify(gtoHands(key) || defaultOf(key)));
+    return overrides[key];
+  }
   function sourceOf(key) {
+    if (activeFamily(key) === 'heuristic') return hOverrides[key] ? 'edited' : 'heuristic';
     if (overrides[key]) return 'edited';
     if (imports[key]) return 'imported';
-    if (spotRecord(key)) return 'solved';
+    if (solvedHands(key)) return 'solved';
     return 'heuristic';
+  }
+  function srcNote(key, src) {
+    const wantH = ui.chartMode === 'heuristic';
+    if (usingFallback(key)) {
+      if (wantH) return src === 'imported' ? 'No heuristic for this line — showing your imported reference.' : 'No heuristic for this line — showing the solved model.';
+      return 'No GTO data for this spot — showing the heuristic.';
+    }
+    if (src === 'imported') return 'Imported reference for this spot, ahead of the model.';
+    if (src === 'solved') return 'Solved (our model). Not GTO Wizard.';
+    if (src === 'edited') return wantH ? 'Your edits of the heuristic range.' : 'Your edits of this chart.';
+    return 'Original heuristic ranges.';
   }
   const labOf = (s, a) => (s && s.labels && s.labels[a]) || (A[a] && A[a].label) || a;
   const mixEntries = cell => ORDER.filter(a => cell[a] > 0).map(a => [a, cell[a]]);
@@ -2610,9 +2679,11 @@ self.onmessage = function (e) {
     $('#game-note').innerHTML = mtt ? (icmOn()
       ? '<b>Tournament · ICM on</b> (approx. bubble ICM, not a full prize-pool solve): calls much tighter, early opens a little tighter, late jams wider. Equal stacks assumed. 1bb BB ante.'
       : '<b>Tournament · chip-EV:</b> 1bb big-blind ante. Re-raises are all-in below 31bb; opens are jam-or-fold at 12bb and below (Nash push/fold).')
-      : (ui.n === 6 && stackOf() === 100
-        ? '<b>Cash · 6-max 100bb:</b> solved by our preflop model (fold / call / raise / all-in frequencies). It is not a GTO Wizard solve. Other stacks and table sizes stay heuristic.'
-        : '<b>Cash:</b> heuristic charts for this stack. Switch to 6-max 100bb for the solved model.');
+      : (ui.chartMode === 'heuristic'
+        ? '<b>Heuristic:</b> the original pre-solver ranges. GTO shows the solved 6-max 100bb model, or a paste you imported for a spot.'
+        : (ui.n === 6 && stackOf() === 100
+          ? '<b>Cash · 6-max 100bb:</b> solved by our preflop model (fold / call / raise / all-in frequencies). It is not a GTO Wizard solve. Other stacks and table sizes fall back to the heuristic.'
+          : '<b>Cash:</b> no solved chart for this stack, so GTO mode shows the heuristic. 6-max 100bb is the solved model.'));
     const cash = ui.g === 'cash', sg = sideGames();
     $$('#cfg-side [data-sg]').forEach(b => {
       const on = cash && !!ui.side[b.dataset.sg], lab = SIDE_GAMES.find(x => x[0] === b.dataset.sg)[1];
@@ -2735,10 +2806,10 @@ self.onmessage = function (e) {
     saveUI(); renderCfg(); deal();
   });
   // "Approximate" info popover
-  const INFO = '<b>Three kinds of chart.</b> The label under the title says which one you are looking at.'
+  const INFO = '<b>Three kinds of chart.</b> The <b>GTO / Heuristic</b> switch at the top of Charts picks the family. The label under the title says which one is on screen, and the line next to the switch says when a spot had to fall back.'
     + '<p><b>Solved (our model)</b> is 6-max 100bb cash only. External-sampling CFR on a preflop tree (open 2.5bb, SB 3bb, 3-bet, 4-bet, all-in) with a 169-class equity table, card removal when dealing, and a position realisation factor instead of a postflop solve. 5% rake capped at 3bb when a flop is seen; no flop, no drop. It does <b>not</b> match GTO Wizard. Suited connectors are played tighter than a full postflop solver, because this model has no implied-odds tree.</p>'
-    + '<p><b>Imported reference</b> is a range you pasted yourself (JSON, CSV, or a <span style="font-family:var(--mono)"># id:</span> block). Nothing here is downloaded from GTO Wizard.</p>'
-    + '<p><b>Heuristic</b> covers every other cash stack and table size, plus all tournament charts: hand-ordered approximations, not a solve. Tournament jam-or-fold at 12bb and below is a separate push/fold equilibrium.</p>'
+    + '<p><b>Imported reference</b> is a range you pasted yourself (JSON, CSV, or a <span style="font-family:var(--mono)"># id:</span> block). In GTO mode it replaces the model for that spot. Nothing here is downloaded from GTO Wizard.</p>'
+    + '<p><b>Heuristic</b> is the original pre-solver ranges: every other cash stack and table size, plus all tournament charts. Tournament jam-or-fold at 12bb and below is a separate push/fold equilibrium. If GTO is selected and this spot was never solved, the heuristic is shown and labelled as such.</p>'
     + '<p><b>ICM</b> (tournament only) is an approximate bubble adjustment, not a full prize-pool solve. The format for pasting your own frequencies is in docs/spot-import.md.</p>';
   $('#info-pop').innerHTML = INFO;
   const setPop = on => { $('#info-pop').hidden = !on; $('#info-btn').setAttribute('aria-expanded', String(on)); };
@@ -2764,7 +2835,9 @@ self.onmessage = function (e) {
     sp.hidden = src === 'edited';
     sp.className = 'pill src-' + src;
     sp.textContent = SOURCE_LABEL[src];
+    sp.title = srcNote(key, src);
     $('#info-btn .lgtxt').textContent = ' ' + (src === 'solved' ? 'Our model' : src === 'imported' ? 'Imported' : src === 'edited' ? 'Edited' : 'Heuristic');
+    renderSrcBar(key, src);
     $('#headline').innerHTML = `<span class="hgame ${s.g}">${esc(s.game)}</span> <span class="hsep h1">&middot;</span> <span class="hp-l">${esc(s.players)}</span><span class="hp-s">${esc(s.table)}</span> <span class="hsep">&middot;</span> ${esc(s.stackLabel)} <span class="hsep">&middot;</span> <span class="hspot">${esc(s.name)}</span>`;
     $('#subline').textContent = s.desc;
     const g = $('#grid');
@@ -2789,6 +2862,28 @@ self.onmessage = function (e) {
     $('#edit-toggle').setAttribute('aria-pressed', String(editing));
     fitGrid();
   }
+  function renderSrcBar(key, src) {
+    const mode = ui.chartMode === 'heuristic' ? 'heuristic' : 'gto';
+    $$('#cfg-chartmode button').forEach(b => {
+      const on = b.dataset.cmode === mode;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    $('#srcbar-note').textContent = srcNote(key, src);
+    $('#import-gto-link').hidden = mode !== 'gto';
+  }
+  $('#cfg-chartmode').addEventListener('click', e => {
+    const b = e.target.closest('[data-cmode]');
+    if (!b) return;
+    const next = b.dataset.cmode === 'heuristic' ? 'heuristic' : 'gto';
+    if (next === ui.chartMode) return;
+    ui.chartMode = next;
+    if (editing) editing = false;
+    saveUI();
+    renderCfg();
+    renderChartView();
+    fitGrid(true);
+  });
   function renderStats() {
     const key = curKey(), s = scOf(key), chart = chartOf(key), t = chartStats(chart);
     const play = 1326 - (t.fold || 0);
@@ -2930,19 +3025,25 @@ self.onmessage = function (e) {
   });
   $('#reset-sc').addEventListener('click', () => {
     const key = curKey(), s = scOf(key);
+    if (activeFamily(key) === 'heuristic') {
+      if (!hOverrides[key]) { toast('This chart is already the original heuristic.'); return; }
+      if (!confirm(`Reset "${s.name} (${s.short})" to the original heuristic? Your edits of this range will be dropped.`)) return;
+      delete hOverrides[key]; saveHCharts(); renderChartView(); toast('Heuristic chart reset');
+      return;
+    }
     if (!overrides[key] && !imports[key]) { toast('This chart is already at its default.'); return; }
     if (!confirm(`Reset "${s.name} (${s.short})" to the built-in chart? Edits and an imported reference for this spot will be dropped.`)) return;
     delete overrides[key]; delete imports[key]; saveCharts(); saveImports(); renderChartView(); toast('Chart reset');
   });
   $('#reset-all').addEventListener('click', () => {
     if (!confirm('Reset ALL charts (cash and tournament, every table size and stack) to the defaults? Your edits and imported references will be lost.')) return;
-    overrides = {}; imports = {}; saveCharts(); saveImports(); renderChartView(); toast('All charts reset');
+    overrides = {}; hOverrides = {}; imports = {}; saveCharts(); saveImports(); renderChartView(); toast('All charts reset');
   });
   function exportJSON() {
     const charts = {};
     const keys = new Set(M.scenarioIds(ui.n).map(id => keyFor(id)).concat(Object.keys(overrides)));
     for (const key of keys) {
-      const ch = chartOf(key), out = {};
+      const ch = overrides[key] || imports[key] || baseChart(key), out = {};
       for (const k of H.CLASSES) { const c = ch[k]; if (!((c.fold || 0) >= 0.999)) out[k] = c; }
       charts[key] = out;
     }
@@ -2974,8 +3075,8 @@ self.onmessage = function (e) {
     saveImports();
     return n;
   }
-  $('#import-btn').addEventListener('click', () => {
-    const m = openModal(`<h2>Import ranges</h2><p class="small muted">Paste a chart export, a spot database (<span style="font-family:var(--mono)">holdem-lab.spots</span> v1), a CSV, or a range block. A reference paste is labelled <b>Imported reference</b> and does not have to come from anywhere in particular. Full rules: docs/spot-import.md.</p><input type="file" accept=".json,.csv,.txt,application/json,text/plain" id="m-file"><textarea class="json" placeholder="# id: cash|6|100|rfi:BTN&#10;# action: raise&#10;AA:1, AKs:0.65, 76s:0.4" style="margin-top:10px"></textarea><div class="modal-foot"><span class="small" id="m-err" style="color:var(--bad);margin-right:auto"></span><button class="btn" id="m-close">Cancel</button><button class="btn primary" id="m-apply">Import</button></div>`);
+  function openImportModal() {
+    const m = openModal(`<h2>Import ranges</h2><p class="small muted">Paste a chart export, a spot database (<span style="font-family:var(--mono)">holdem-lab.spots</span> v1), a CSV, or a range block. A reference paste is labelled <b>Imported reference</b> and replaces the model for that spot in GTO mode. Nothing is downloaded from GTO Wizard. Full rules: docs/spot-import.md.</p><input type="file" accept=".json,.csv,.txt,application/json,text/plain" id="m-file"><textarea class="json" placeholder="# id: cash|6|100|rfi:BTN&#10;# action: raise&#10;AA:1, AKs:0.65, 76s:0.4" style="margin-top:10px"></textarea><div class="modal-foot"><span class="small" id="m-err" style="color:var(--bad);margin-right:auto"></span><button class="btn" id="m-close">Cancel</button><button class="btn primary" id="m-apply">Import</button></div>`);
     $('#m-file').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { $('textarea', m).value = t; }); };
     $('#m-close').onclick = closeModal;
     $('#m-apply').onclick = () => {
@@ -2986,12 +3087,12 @@ self.onmessage = function (e) {
         const asSpot = trimmed[0] === '#' || /"format"\s*:\s*"holdem-lab\.spots"/.test(trimmed) || /^hand\s*,/i.test(firstData) || (/^[2-9TJQKA]{2}/i.test(firstData) && firstData.indexOf(':') >= 0);
         if (asSpot) {
           const n = importReference(text);
-          if (n) { closeModal(); renderChartView(); toast('Imported reference · ' + n + ' spot' + (n > 1 ? 's' : '')); return; }
+          if (n) { ui.chartMode = 'gto'; saveUI(); closeModal(); renderCfg(); renderChartView(); toast('Imported reference · ' + n + ' spot' + (n > 1 ? 's' : '')); return; }
         }
         const obj = JSON.parse(text);
         if (obj && (obj.format === 'holdem-lab.spots' || (obj.id && obj.hands) || Array.isArray(obj))) {
           const n = importReference(text);
-          closeModal(); renderChartView(); toast('Imported reference · ' + n + ' spot' + (n > 1 ? 's' : '')); return;
+          ui.chartMode = 'gto'; saveUI(); closeModal(); renderCfg(); renderChartView(); toast('Imported reference · ' + n + ' spot' + (n > 1 ? 's' : '')); return;
         }
         const src = obj.charts || obj;
         const edited = Array.isArray(obj.edited) ? new Set(obj.edited.map(k => normKey(k) || k)) : null;
@@ -2999,10 +3100,12 @@ self.onmessage = function (e) {
         for (const k of Object.keys(clean)) if (!edited || !edited.has(k)) { if (JSON.stringify(clean[k]) === JSON.stringify(sanitizeCharts({ [k]: defaultOf(k) })[k])) delete clean[k]; }
         const n = Object.keys(clean).length, total = Object.keys(src).filter(k => M.parseKey(k)).length;
         if (!total) throw new Error('No known chart keys found (expected e.g. "cash|6|100|rfi:BTN", "mtt|9|25|rfi:BTN" or "rfi_btn").');
-        Object.assign(overrides, clean); saveCharts(); closeModal(); renderChartView(); toast(`Imported ${total} chart${total > 1 ? 's' : ''} (${n} differ from defaults)`);
+        Object.assign(overrides, clean); saveCharts(); ui.chartMode = 'gto'; saveUI(); closeModal(); renderCfg(); renderChartView(); toast(`Imported ${total} chart${total > 1 ? 's' : ''} (${n} differ from defaults)`);
       } catch (err) { $('#m-err').textContent = err.message; }
     };
-  });
+  }
+  $('#import-btn').addEventListener('click', openImportModal);
+  $('#import-gto-link').addEventListener('click', openImportModal);
 
   /* ================= TRAINER ================= */
   let stats = Object.assign({ total: 0, correct: 0, streak: 0, best: 0, per: {}, recent: [] }, load(LS.stats, {}));
@@ -3083,7 +3186,7 @@ self.onmessage = function (e) {
     fb.innerHTML = `<span>${correct ? '&#10003; Correct' : '&#10007; Not quite'} &mdash; you: <b>${A[a].label}</b> &middot; chart <b>${cur.k}</b>: ${mixText(cell, s.labels)}${mixed ? ' <span class="small">(mixed)</span>' : ''}</span>`;
     $$('#tr-actions .act').forEach(b => { b.disabled = true; if (b.dataset.a === a) b.classList.add('picked'); });
     $('#tr-chart-empty').hidden = true;
-    $('#tr-chart-title').textContent = s.name + (overrides[cur.id] ? ' (edited)' : '');
+    $('#tr-chart-title').textContent = s.name + ((activeFamily(cur.id) === 'heuristic' ? hOverrides[cur.id] : overrides[cur.id]) ? ' (edited)' : '');
     renderGrid($('#tr-grid'), chartOf(cur.id), { highlight: cur.k });
     $('#tr-grid').classList.add('has-sel');
     if (ui.trAutoChart) $('#tr-chart-fold').open = true;
