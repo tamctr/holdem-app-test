@@ -7,13 +7,17 @@ paste them here. The chart is then labelled **Imported reference**.
 
 ## Where a chart comes from
 
+The **GTO / Heuristic** switch at the top of Charts picks which family is drawn. The choice is saved in this browser and starts on **GTO**.
+
 | Label | Meaning |
 | --- | --- |
-| Solved (our model) | 6-max 100bb cash, computed by `solver/solve.js`. Not GTO Wizard. |
-| Imported reference | A file or paste you imported. Stored only in this browser. |
-| Heuristic | Every other cash stack and table size, and all tournament charts. |
+| Solved (our model) | GTO mode, 6-max 100bb cash, computed by `solver/solve.js`. Not GTO Wizard. |
+| Imported reference | GTO mode, when you have pasted this spot. It replaces the model for that spot only. Stored only in this browser. |
+| Heuristic | Heuristic mode (the original pre-solver ranges), or GTO mode on a spot that has no solve and no import. The note under the switch says when that is a fallback. |
 
-Resetting a chart drops both your edits and an imported reference for that spot.
+Lines that exist only in the solved set (3-bet, 4-bet, all-in) have no heuristic chart. Heuristic mode keeps showing the solved or imported chart for those and says so.
+
+Resetting a chart drops your edits of the family you are viewing. In GTO mode it also drops an imported reference for that spot.
 
 ## Spot id
 
