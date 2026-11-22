@@ -51,6 +51,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--accent)}
 .pill.src-solved{color:#9ff0c3;border-color:#1e6b45;background:#10281c}
 .pill.src-imported{color:#d7c4ff;border-color:#5a3d8a;background:#221838}
 .pill.src-heuristic{color:#f8c471;border-color:#5a4520;background:#2a2112}
+.pill.src-reference{color:#9fd7ff;border-color:#245a86;background:#102433}
 .subline .pill{margin-right:6px;vertical-align:1px}
 .muted{color:var(--muted)}.dim{color:var(--dim)}.small{font-size:12px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -626,7 +627,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* fixed-height lines around the grid, so the grid size can be computed once */
 .chead{height:46px;overflow:hidden;align-items:center}
 #headline{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.subline{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.subline{display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden}
+.subline > #source-pill{flex:0 0 auto;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.subline > #subline{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .editbar{box-sizing:border-box;height:46px;margin:0 0 6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;white-space:nowrap}
 .editbar::-webkit-scrollbar{display:none}
 .editbar > *,.editbar .brushes{flex:0 0 auto}
@@ -1875,7 +1878,7 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
   var GAME_LABEL = { cash: 'Cash', mtt: 'Tournament' };
   var PLAYERS = [2, 3, 4, 5, 6, 7, 8, 9];
   var STACKS = {
-    cash: [50, 60, 80, 100, 125, 150, 200, 250, 300, 400, 500],
+    cash: [50, 60, 75, 80, 100, 125, 150, 200, 250, 300, 400, 500],
     mtt: (function () { var a = []; for (var i = 5; i <= 100; i++) a.push(i); return a; })() // every 1bb
   };
   var DEFAULT_STACK = { cash: 100, mtt: 25 };
@@ -2295,6 +2298,7 @@ self.onmessage = function (e) {
 </script>
 <script src="solver/spots.js"></script>
 <script src="data/cash-spots.js"></script>
+<script src="data/reference-gtow-cash.js"></script>
 <script>
 (function () {
   'use strict';
@@ -2384,8 +2388,25 @@ self.onmessage = function (e) {
   const spotById = {};
   if (SPOT_DB && Array.isArray(SPOT_DB.spots)) SPOT_DB.spots.forEach(s => { spotById[s.id] = s; });
   const spotRecord = key => spotById[key] || null;
+  const REF_DB = window.HOLDEM_REFERENCE || null;
+  const refById = {};
+  if (REF_DB && Array.isArray(REF_DB.spots)) REF_DB.spots.forEach(s => { refById[s.id] = s; });
+  const referenceRecord = key => refById[key] || null;
+  const REF_LABEL = (REF_DB && REF_DB.model && REF_DB.model.label) || 'GTO Wizard reference (NL50, General)';
   const DEEP = ['v3', 'v4', 'vj'];
-  const SOURCE_LABEL = { solved: 'Solved (our model)', imported: 'Imported reference', heuristic: 'Heuristic', edited: 'Edited' };
+  const SOURCE_LABEL = { solved: 'Solved (our model)', imported: 'Imported reference', reference: REF_LABEL, heuristic: 'Heuristic', edited: 'Edited' };
+  function keptActions(key, base, stored) {
+    const acts = (base || ['fold']).slice();
+    const ref = referenceRecord(key);
+    if (ref && ref.actions) ref.actions.forEach(a => { if (acts.indexOf(a) < 0 && A[a]) acts.push(a); });
+    if (stored) for (const h of Object.keys(stored)) {
+      const cell = stored[h];
+      if (!cell || typeof cell !== 'object') continue;
+      for (const a of Object.keys(cell)) if (a !== 'ev' && A[a] && acts.indexOf(a) < 0) acts.push(a);
+    }
+    if (acts.indexOf('fold') < 0) acts.push('fold');
+    return acts;
+  }
   function pairsFor(kind) {
     if (!SPOT_DB) return [];
     return SPOT_DB.spots.filter(s => s.kind === kind && s.tableSize === 6 && s.stackBb === 100).map(s => ({ hero: s.hero, villain: s.villain }));
@@ -2418,16 +2439,19 @@ self.onmessage = function (e) {
       desc: desc, actions: actions.length ? actions : ['fold'], labels: spot.labels || null
     };
   }
+  // Filled in once chartOf exists. Until then a chart is the plain model scenario
+  // (the import loader runs during startup and must not depend on the GTO family).
+  let decorateScenario = s => s;
   const scOf = key => {
     const p = M.parseKey(key);
     if (p) {
       const s = M.scenario(p.g, p.n, p.s, p.id, p.icm);
       const spot = spotRecord(key);
-      if (s && spot && spot.labels) s.labels = spot.labels;
-      return s;
+      if (s && spot && spot.labels) s.labels = Object.assign({}, spot.labels);
+      return s ? decorateScenario(s, key) : s;
     }
     const spot = spotRecord(key);
-    return spot ? scenarioFromSpot(spot) : null;
+    return spot ? decorateScenario(scenarioFromSpot(spot), key) : null;
   };
   const normKey = key => { const p = M.parseKey(key); return p ? M.makeKey(p.g, p.n, p.s, p.id, p.icm) : (spotRecord(key) ? key : null); };
   const defaultOf = key => { const p = M.parseKey(key); return p ? M.generate(p.g, p.n, p.s, p.id, p.icm) : null; };
@@ -2467,7 +2491,8 @@ self.onmessage = function (e) {
       const sc = scOf(key);
       if (!sc) continue;
       const ch = {};
-      for (const k of H.CLASSES) ch[k] = normCell(raw[key][k] || { fold: 1 }, sc.actions);
+      const acts = keptActions(key, sc.actions, raw[key]);
+      for (const k of H.CLASSES) ch[k] = normCell(raw[key][k] || { fold: 1 }, acts);
       imports[key] = ch;
     }
   })();
@@ -2493,8 +2518,9 @@ self.onmessage = function (e) {
       const p = M.parseKey(key);
       if (!p || !obj[key] || typeof obj[key] !== 'object') continue;
       const nk = M.makeKey(p.g, p.n, p.s, p.id, p.icm), sc = M.scenario(p.g, p.n, p.s, p.id, p.icm);
+      const acts = keptActions(nk, sc.actions, obj[key]);
       const ch = {};
-      for (const k of H.CLASSES) ch[k] = normCell(obj[key][k] || { fold: 1 }, sc.actions);
+      for (const k of H.CLASSES) ch[k] = normCell(obj[key][k] || { fold: 1 }, acts);
       out[nk] = ch;
     }
     return out;
@@ -2505,9 +2531,14 @@ self.onmessage = function (e) {
     const spot = spotRecord(key);
     return spot && spot.hands ? chartFromHands(spot.hands) : null;
   }
-  function gtoHands(key) { return imports[key] || solvedHands(key); }
-  // GTO draws an import, else the solved model. Heuristic draws the pre-solver range.
-  // A spot with only one of those falls back to the one that exists.
+  function referenceHands(key) {
+    const spot = referenceRecord(key);
+    return spot && spot.hands ? chartFromHands(spot.hands) : null;
+  }
+  // A paste wins, then the built-in GTO Wizard reference, then the solved model.
+  function gtoHands(key) { return imports[key] || referenceHands(key) || solvedHands(key); }
+  // GTO draws that chain. Heuristic draws the pre-solver range.
+  // A spot with only one family falls back to the one that exists.
   function activeFamily(key) {
     const wantH = ui.chartMode === 'heuristic';
     const heur = !!defaultOf(key);
@@ -2537,20 +2568,54 @@ self.onmessage = function (e) {
     if (activeFamily(key) === 'heuristic') return hOverrides[key] ? 'edited' : 'heuristic';
     if (overrides[key]) return 'edited';
     if (imports[key]) return 'imported';
+    if (referenceHands(key)) return 'reference';
     if (solvedHands(key)) return 'solved';
     return 'heuristic';
   }
   function srcNote(key, src) {
     const wantH = ui.chartMode === 'heuristic';
     if (usingFallback(key)) {
-      if (wantH) return src === 'imported' ? 'No heuristic for this line — showing your imported reference.' : 'No heuristic for this line — showing the solved model.';
+      if (wantH) return src === 'imported' ? 'No heuristic for this line — showing your imported reference.' : (src === 'reference' ? 'No heuristic for this line — showing the ' + REF_LABEL + '.' : 'No heuristic for this line — showing the solved model.');
       return 'No GTO data for this spot — showing the heuristic.';
     }
-    if (src === 'imported') return 'Imported reference for this spot, ahead of the model.';
+    if (src === 'imported') return 'Imported reference for this spot, ahead of the built-in charts.';
+    if (src === 'reference') {
+      const ref = referenceRecord(key);
+      let note = REF_LABEL + '. It replaces our model for this spot.';
+      if (ref && ref.sizeUnconfirmed) note += ' SB raise size assumed 3bb.';
+      return note;
+    }
     if (src === 'solved') return 'Solved (our model). Not GTO Wizard.';
     if (src === 'edited') return wantH ? 'Your edits of the heuristic range.' : 'Your edits of this chart.';
     return 'Original heuristic ranges.';
   }
+  decorateScenario = (s, key) => {
+    if (!s) return s;
+    const copy = Object.assign({}, s, { actions: s.actions.slice(), labels: Object.assign({}, s.labels || {}) });
+    const ref = referenceRecord(key);
+    if (activeFamily(key) === 'gto' && ref && !imports[key]) {
+      if (ref.labels) copy.labels = Object.assign({}, copy.labels, ref.labels);
+      if (ref.actions && ref.actions.length) copy.actions = ref.actions.filter(a => A[a]);
+      if (s.rfi && ref.sizes && ref.sizes.raise != null) {
+        const sz = String(ref.sizes.raise);
+        if (copy.actions.indexOf('limp') >= 0) copy.desc = 'Folded to you in the SB. Raise to ' + (ref.sizeUnconfirmed ? '~' : '') + sz + 'bb, limp, or fold?';
+        else copy.desc = 'Folded to you in the ' + (s.heroLabel || s.hero) + '. Open to ' + sz + 'bb or fold?';
+      }
+    }
+    const chart = chartOf(key);
+    if (chart && copy.actions.indexOf('limp') < 0) {
+      let limp = 0;
+      for (const k of H.CLASSES) limp += chart[k].limp || 0;
+      if (limp > 0) {
+        const acts = copy.actions.slice();
+        const at = acts.indexOf('fold');
+        acts.splice(at < 0 ? acts.length : at, 0, 'limp');
+        copy.actions = acts;
+        if (!copy.labels.limp) copy.labels.limp = 'Limp';
+      }
+    }
+    return copy;
+  };
   const labOf = (s, a) => (s && s.labels && s.labels[a]) || (A[a] && A[a].label) || a;
   const mixEntries = cell => ORDER.filter(a => cell[a] > 0).map(a => [a, cell[a]]);
   function dominant(cell) { let best = 'fold', bv = -1; for (const a of ORDER) { const v = cell[a] || 0; if (v > bv + 1e-9) { bv = v; best = a; } } return best; }
@@ -2636,7 +2701,7 @@ self.onmessage = function (e) {
   if (PHONE.addEventListener) PHONE.addEventListener('change', () => onPhoneChange()); else if (PHONE.addListener) PHONE.addListener(() => onPhoneChange());
   const segBtns = (items, active, attr) => items.map(([v, l, t]) => `<button data-${attr}="${esc(v)}" class="${v === active ? 'active' : ''}"${t ? ` title="${esc(t)}"` : ''} aria-pressed="${v === active}">${l}</button>`).join('');
   // labelled ticks; tournament draws a minor tick every 5bb (the slider itself moves in 1bb steps)
-  const TICKS = { cash: [50, 100, 200, 300, 500], mtt: [5, 20, 40, 60, 80, 100] };
+  const TICKS = { cash: [50, 75, 100, 200, 300, 500], mtt: [5, 20, 40, 60, 80, 100] };
   const tickList = g => g === 'mtt' ? M.STACKS.mtt.filter(s => s === 5 || s % 5 === 0) : M.STACKS[g];
   const stackTxt = (g, s) => (g === 'cash' && s >= 500 ? '500+' : s) + ' bb';
   function setupSummary() {
@@ -2680,10 +2745,12 @@ self.onmessage = function (e) {
       ? '<b>Tournament · ICM on</b> (approx. bubble ICM, not a full prize-pool solve): calls much tighter, early opens a little tighter, late jams wider. Equal stacks assumed. 1bb BB ante.'
       : '<b>Tournament · chip-EV:</b> 1bb big-blind ante. Re-raises are all-in below 31bb; opens are jam-or-fold at 12bb and below (Nash push/fold).')
       : (ui.chartMode === 'heuristic'
-        ? '<b>Heuristic:</b> the original pre-solver ranges. GTO shows the solved 6-max 100bb model, or a paste you imported for a spot.'
-        : (ui.n === 6 && stackOf() === 100
-          ? '<b>Cash · 6-max 100bb:</b> solved by our preflop model (fold / call / raise / all-in frequencies). It is not a GTO Wizard solve. Other stacks and table sizes fall back to the heuristic.'
-          : '<b>Cash:</b> no solved chart for this stack, so GTO mode shows the heuristic. 6-max 100bb is the solved model.'));
+        ? '<b>Heuristic:</b> the original pre-solver ranges. GTO shows the GTO Wizard first-in reference at 50, 75 and 100bb, then our solved 6-max 100bb model.'
+        : (ui.n === 6 && (stackOf() === 50 || stackOf() === 75 || stackOf() === 100)
+          ? (stackOf() === 100
+            ? '<b>Cash · 6-max 100bb:</b> first-in charts are a GTO Wizard reference (NL50, General). Other lines are our solved model. A paste you import replaces both for that spot.'
+            : '<b>Cash · 6-max ' + stackOf() + 'bb:</b> first-in charts are a GTO Wizard reference (NL50, General). Spots without one, such as facing an open, show the heuristic.')
+          : '<b>Cash:</b> no reference or solved chart for this stack, so GTO mode shows the heuristic. 6-max first-in at 50, 75 and 100bb has the GTO Wizard reference.'));
     const cash = ui.g === 'cash', sg = sideGames();
     $$('#cfg-side [data-sg]').forEach(b => {
       const on = cash && !!ui.side[b.dataset.sg], lab = SIDE_GAMES.find(x => x[0] === b.dataset.sg)[1];
@@ -2808,8 +2875,9 @@ self.onmessage = function (e) {
   // "Approximate" info popover
   const INFO = '<b>Three kinds of chart.</b> The <b>GTO / Heuristic</b> switch at the top of Charts picks the family. The label under the title says which one is on screen, and the line next to the switch says when a spot had to fall back.'
     + '<p><b>Solved (our model)</b> is 6-max 100bb cash only. External-sampling CFR on a preflop tree (open 2.5bb, SB 3bb, 3-bet, 4-bet, all-in) with a 169-class equity table, card removal when dealing, and a position realisation factor instead of a postflop solve. 5% rake capped at 3bb when a flop is seen; no flop, no drop. It does <b>not</b> match GTO Wizard. Suited connectors are played tighter than a full postflop solver, because this model has no implied-odds tree.</p>'
-    + '<p><b>Imported reference</b> is a range you pasted yourself (JSON, CSV, or a <span style="font-family:var(--mono)"># id:</span> block). In GTO mode it replaces the model for that spot. Nothing here is downloaded from GTO Wizard.</p>'
-    + '<p><b>Heuristic</b> is the original pre-solver ranges: every other cash stack and table size, plus all tournament charts. Tournament jam-or-fold at 12bb and below is a separate push/fold equilibrium. If GTO is selected and this spot was never solved, the heuristic is shown and labelled as such.</p>'
+    + '<p><b>GTO Wizard reference (NL50, General)</b> is a hand-read of the 6-max cash first-in charts at 50bb, 75bb and 100bb (NL50 rake, General pool). In GTO mode it replaces our model for those spots, and the small blind chart includes a limp. This app does not download it. A paste you import still replaces it.</p>'
+    + '<p><b>Imported reference</b> is a range you pasted yourself (JSON, CSV, or a <span style="font-family:var(--mono)"># id:</span> block). In GTO mode it replaces both the built-in reference and the model for that spot. Nothing here is downloaded from GTO Wizard.</p>'
+    + '<p><b>Heuristic</b> is the original pre-solver ranges: every other cash stack and table size, plus all tournament charts. Tournament jam-or-fold at 12bb and below is a separate push/fold equilibrium. If GTO is selected and this spot has no reference and was never solved, the heuristic is shown and labelled as such.</p>'
     + '<p><b>ICM</b> (tournament only) is an approximate bubble adjustment, not a full prize-pool solve. The format for pasting your own frequencies is in docs/spot-import.md.</p>';
   $('#info-pop').innerHTML = INFO;
   const setPop = on => { $('#info-pop').hidden = !on; $('#info-btn').setAttribute('aria-expanded', String(on)); };
@@ -2836,7 +2904,7 @@ self.onmessage = function (e) {
     sp.className = 'pill src-' + src;
     sp.textContent = SOURCE_LABEL[src];
     sp.title = srcNote(key, src);
-    $('#info-btn .lgtxt').textContent = ' ' + (src === 'solved' ? 'Our model' : src === 'imported' ? 'Imported' : src === 'edited' ? 'Edited' : 'Heuristic');
+    $('#info-btn .lgtxt').textContent = ' ' + (src === 'solved' ? 'Our model' : src === 'reference' ? 'GTO Wizard' : src === 'imported' ? 'Imported' : src === 'edited' ? 'Edited' : 'Heuristic');
     renderSrcBar(key, src);
     $('#headline').innerHTML = `<span class="hgame ${s.g}">${esc(s.game)}</span> <span class="hsep h1">&middot;</span> <span class="hp-l">${esc(s.players)}</span><span class="hp-s">${esc(s.table)}</span> <span class="hsep">&middot;</span> ${esc(s.stackLabel)} <span class="hsep">&middot;</span> <span class="hspot">${esc(s.name)}</span>`;
     $('#subline').textContent = s.desc;
@@ -3043,7 +3111,7 @@ self.onmessage = function (e) {
     const charts = {};
     const keys = new Set(M.scenarioIds(ui.n).map(id => keyFor(id)).concat(Object.keys(overrides)));
     for (const key of keys) {
-      const ch = overrides[key] || imports[key] || baseChart(key), out = {};
+      const ch = overrides[key] || gtoHands(key) || defaultOf(key), out = {};
       for (const k of H.CLASSES) { const c = ch[k]; if (!((c.fold || 0) >= 0.999)) out[k] = c; }
       charts[key] = out;
     }
