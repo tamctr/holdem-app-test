@@ -256,8 +256,9 @@ const gtoBar = await page.evaluate(() => {
   };
 });
 expect(gtoBar.gto && gtoBar.heurOff, 'default is GTO ' + JSON.stringify(gtoBar));
-expect(gtoBar.pill === 'Solved (our model)', 'gto pill ' + gtoBar.pill);
-expect(/Not GTO Wizard/.test(gtoBar.note), 'gto note ' + gtoBar.note);
+expect(gtoBar.pill === 'GTO Wizard reference (NL50, General)', 'gto pill ' + gtoBar.pill);
+expect(/GTO Wizard reference/.test(gtoBar.note) && /replaces our model/.test(gtoBar.note), 'gto note ' + gtoBar.note);
+expect(/Raise 2\.5bb/.test(gtoBar.legend), 'btn 100 size ' + gtoBar.legend);
 expect(gtoBar.importShown, 'import link missing in GTO mode');
 expect(gtoBar.belowHeader, 'switch is not under the header');
 expect(gtoBar.scroll <= gtoBar.client + 1, 'gto mode overflow ' + gtoBar.scroll + '>' + gtoBar.client);
@@ -265,6 +266,7 @@ await page.click('#grid .cell[data-key="AKs"]');
 const gtoMix = await page.$eval('#cell-info', el => el.textContent);
 expect(/AKs/.test(gtoMix) && /%/.test(gtoMix), 'gto frequencies ' + gtoMix);
 await page.screenshot({ path: '/opt/cursor/artifacts/charts-gto-mobile-390.png', fullPage: false });
+await page.screenshot({ path: '/opt/cursor/artifacts/charts-gto-btn-100bb-mobile.png', fullPage: false });
 
 await page.click('#cfg-chartmode [data-cmode="heuristic"]');
 await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Heuristic');
@@ -303,7 +305,7 @@ const kept = await page.evaluate(() => document.querySelector('#cfg-chartmode [d
 expect(kept, 'heuristic choice did not survive reload');
 
 await page.click('#cfg-chartmode [data-cmode="gto"]');
-await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Solved (our model)');
+await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'GTO Wizard reference (NL50, General)');
 await page.click('#cfg-g button[data-g="mtt"]');
 await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Heuristic');
 const fallback = await page.evaluate(() => ({
@@ -314,7 +316,83 @@ const fallback = await page.evaluate(() => ({
 expect(fallback.gtoOn && fallback.pill === 'Heuristic' && /showing the heuristic/i.test(fallback.note), 'mtt fallback ' + JSON.stringify(fallback));
 
 await page.click('#cfg-g button[data-g="cash"]');
-await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Solved (our model)');
+await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'GTO Wizard reference (NL50, General)');
+
+async function setSetup(open) {
+  const isOpen = await page.$eval('#setup-sum', el => el.getAttribute('aria-expanded') === 'true');
+  if (isOpen !== open) await page.click('#setup-sum');
+}
+async function pickStack(bb) {
+  await setSetup(true);
+  await page.click('#cfg-ticks .tk[data-s="' + bb + '"]');
+  await page.waitForFunction(n => new RegExp('(?:^|\\D)' + n + 'bb').test(document.querySelector('#headline').textContent), {}, String(bb));
+}
+await pickStack(75);
+const bb75 = await page.evaluate(() => ({
+  pill: document.querySelector('#source-pill').textContent,
+  note: document.querySelector('#srcbar-note').textContent,
+  head: document.querySelector('#headline').textContent,
+  legend: document.querySelector('#legend').textContent,
+  gto: document.querySelector('#cfg-chartmode [data-cmode="gto"]').classList.contains('active'),
+  scroll: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1
+}));
+expect(bb75.gto && /75bb/.test(bb75.head) && bb75.pill === 'GTO Wizard reference (NL50, General)', '75bb rfi ' + JSON.stringify(bb75));
+expect(/replaces our model/.test(bb75.note), '75 note ' + bb75.note);
+expect(/Raise 2\.5bb/.test(bb75.legend), '75 btn size ' + bb75.legend);
+expect(bb75.scroll, '75bb overflow');
+await page.click('#sitbar [data-hero="UTG"]');
+await page.waitForFunction(() => /UTG open/.test(document.querySelector('#headline').textContent));
+const utg75 = await page.$eval('#legend', el => el.textContent);
+expect(/Raise 2bb/.test(utg75), '75 utg size ' + utg75);
+await page.click('#sitbar [data-hero="SB"]');
+await page.waitForFunction(() => /SB open/.test(document.querySelector('#headline').textContent));
+const sb75 = await page.evaluate(() => ({
+  legend: document.querySelector('#legend').textContent,
+  note: document.querySelector('#srcbar-note').textContent,
+  limp: [...document.querySelectorAll('#grid .cell')].filter(c => /22b8cf|34,\s*184,\s*207/i.test(c.style.background)).length
+}));
+expect(/Limp/.test(sb75.legend) && /Raise/.test(sb75.legend), '75 sb legend ' + sb75.legend);
+expect(sb75.limp > 10, '75 sb limp colour ' + sb75.limp);
+expect(/assumed 3bb/.test(sb75.note), '75 sb size note ' + sb75.note);
+
+await pickStack(50);
+await page.click('#sit-slot [data-type="rfi"]');
+await page.click('#sitbar [data-hero="SB"]');
+await page.waitForFunction(() => /SB open/.test(document.querySelector('#headline').textContent) && /50bb/.test(document.querySelector('#headline').textContent));
+await setSetup(false);
+const sb50 = await page.evaluate(() => ({
+  pill: document.querySelector('#source-pill').textContent,
+  note: document.querySelector('#srcbar-note').textContent,
+  legend: document.querySelector('#legend').textContent,
+  head: document.querySelector('#headline').textContent,
+  limp: [...document.querySelectorAll('#grid .cell')].filter(c => /22b8cf|34,\s*184,\s*207/i.test(c.style.background)).length,
+  scroll: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1
+}));
+expect(sb50.pill === 'GTO Wizard reference (NL50, General)', '50 sb pill ' + sb50.pill);
+expect(/50bb/.test(sb50.head), '50 sb head ' + sb50.head);
+expect(/Limp/.test(sb50.legend) && /Raise 3bb/.test(sb50.legend), '50 sb legend ' + sb50.legend);
+expect(sb50.limp > 10, '50 sb limp cells ' + sb50.limp);
+expect(!/assumed 3bb/.test(sb50.note), '50 sb size is confirmed ' + sb50.note);
+expect(sb50.scroll, '50 sb overflow');
+await page.screenshot({ path: '/opt/cursor/artifacts/charts-gto-sb-50bb-mobile.png', fullPage: false });
+
+await setSetup(true);
+await page.click('#sit-slot [data-type="vs"]');
+await page.waitForFunction(() => /showing the heuristic/i.test(document.querySelector('#srcbar-note').textContent));
+const vs50 = await page.evaluate(() => ({
+  gto: document.querySelector('#cfg-chartmode [data-cmode="gto"]').classList.contains('active'),
+  pill: document.querySelector('#source-pill').textContent,
+  note: document.querySelector('#srcbar-note').textContent,
+  head: document.querySelector('#headline').textContent
+}));
+expect(vs50.gto && vs50.pill === 'Heuristic' && /50bb/.test(vs50.head) && /showing the heuristic/i.test(vs50.note), '50 vs fallback ' + JSON.stringify(vs50));
+
+await page.click('#sit-slot [data-type="rfi"]');
+await page.click('#sitbar [data-hero="BTN"]');
+await pickStack(100);
+await setSetup(false);
+await page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'GTO Wizard reference (NL50, General)' && /BTN open/.test(document.querySelector('#headline').textContent));
+
 await page.click('#import-gto-link');
 await page.waitForSelector('#modal h2');
 const importTitle = await page.$eval('#modal h2', el => el.textContent);
@@ -367,7 +445,7 @@ const deskGto = await desktop.page.evaluate(() => ({
   scroll: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
   wide: document.querySelector('#srcbar').getBoundingClientRect().width > 400
 }));
-expect(deskGto.pill === 'Solved (our model)' && deskGto.scroll && deskGto.wide, 'desktop GTO toggle ' + JSON.stringify(deskGto));
+expect(deskGto.pill === 'GTO Wizard reference (NL50, General)' && deskGto.scroll && deskGto.wide, 'desktop GTO toggle ' + JSON.stringify(deskGto));
 await desktop.page.click('#cfg-chartmode [data-cmode="heuristic"]');
 await desktop.page.waitForFunction(() => document.querySelector('#source-pill').textContent === 'Heuristic');
 const deskHeur = await desktop.page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1 && document.querySelector('#import-gto-link').hidden);

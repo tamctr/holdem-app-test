@@ -1,21 +1,31 @@
 # Cash spot database and import format
 
 This is the format Hold'em Lab uses for a solved or pasted preflop strategy.
-The app does not download or copy GTO Wizard. If you are looking at a spot in
-GTO Wizard (or any other solver), export or copy the frequencies yourself and
+The app does not download anything from GTO Wizard. If you are looking at a spot
+in GTO Wizard (or any other solver), export or copy the frequencies yourself and
 paste them here. The chart is then labelled **Imported reference**.
+
+A hand-read of the 6-max cash first-in charts (NL50 rake, General pool) at
+50bb, 75bb and 100bb ships with the app as `data/reference-gtow-cash.json`.
+It was typed from a matrix, not fetched. Regenerate it with
+`node tools/parse-gtow-rfi.js` after editing `data/raw/`. In GTO mode that
+reference replaces our model for those spots. The small blind lines include a
+limp. Your own paste still replaces it.
 
 ## Where a chart comes from
 
 The **GTO / Heuristic** switch at the top of Charts picks which family is drawn. The choice is saved in this browser and starts on **GTO**.
 
+In GTO mode the chart for a spot is chosen in this order: your edits, then a paste (**Imported reference**), then the built-in **GTO Wizard reference (NL50, General)** when this spot is one of those first-in charts, then **Solved (our model)** when this spot was solved, then the heuristic.
+
 | Label | Meaning |
 | --- | --- |
-| Solved (our model) | GTO mode, 6-max 100bb cash, computed by `solver/solve.js`. Not GTO Wizard. |
-| Imported reference | GTO mode, when you have pasted this spot. It replaces the model for that spot only. Stored only in this browser. |
-| Heuristic | Heuristic mode (the original pre-solver ranges), or GTO mode on a spot that has no solve and no import. The note under the switch says when that is a fallback. |
+| GTO Wizard reference (NL50, General) | GTO mode, 6-max cash first-in at 50, 75 or 100bb. Replaces our model for that spot. |
+| Solved (our model) | GTO mode, other 6-max 100bb cash spots, computed by `solver/solve.js`. Not GTO Wizard. |
+| Imported reference | GTO mode, when you have pasted this spot. It replaces the reference and the model for that spot only. Stored only in this browser. |
+| Heuristic | Heuristic mode (the original pre-solver ranges), or GTO mode on a spot that has no reference, no solve and no import. The note under the switch says when that is a fallback. |
 
-Lines that exist only in the solved set (3-bet, 4-bet, all-in) have no heuristic chart. Heuristic mode keeps showing the solved or imported chart for those and says so.
+At 50bb and 75bb, facing an open has no reference, so GTO mode shows the heuristic and says so. Lines that exist only in the solved set (3-bet, 4-bet, all-in) have no heuristic chart. Heuristic mode keeps showing the solved or imported chart for those and says so. The 75bb small-blind raise size was not on the matrix and is stored as 3bb.
 
 Resetting a chart drops your edits of the family you are viewing. In GTO mode it also drops an imported reference for that spot.
 
@@ -68,6 +78,7 @@ than 1, they are scaled down to 1.
 
 `ev` is optional, in big blinds. One spot object, or an array of spots, is
 accepted too. The solved file shipped with the app is `data/cash-spots.json`.
+The built-in first-in reference is `data/reference-gtow-cash.json`.
 
 ## 2. CSV
 
