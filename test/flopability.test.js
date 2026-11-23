@@ -351,13 +351,49 @@ check('a backdoor flush draw is about 4.16%', () => {
 
 check('a set improves to a full house or better about 33.4% of the time', () => {
   const o = H.streetOutlook([pc('9h'), pc('9d')], [pc('9c'), pc('Ks'), pc('2d')]);
-  const row = o.rows.find(r => r.id === 'boat');
-  assert.equal(row.outs, 7);
-  assert.equal(row.hit, 361);
-  assert.ok(Math.abs(row.hit / row.n - 0.334) < 0.001);
+  const quads = o.rows.find(r => r.id === 'to-quads');
+  const fh = o.rows.find(r => r.id === 'to-fh');
+  assert.ok(quads && fh);
+  assert.equal(quads.outs, 1);
+  assert.equal(fh.outs, 6);
+  assert.equal(quads.hit + fh.hit, 361);
+  assert.ok(Math.abs((quads.hit + fh.hit) / o.n - 0.334) < 0.001);
+  assert.equal(o.final.find(r => r.key === 'quads').count, quads.hit);
+  assert.equal(o.final.find(r => r.key === 'fh').count, fh.hit);
+  assert.ok(!o.rows.some(r => r.id === 'boat'));
   const made = o.rows.find(r => r.id === 'made');
   assert.equal(made.label, 'Set');
+  assert.equal(made.hit, o.n);
   assert.equal(made.sub, 'pocket pair + board card');
+});
+
+check('trips on the turn split into quads and a full house', () => {
+  const hero = [pc('Td'), pc('9d')];
+  const board = [pc('Kd'), pc('4d'), pc('7d'), pc('7h')];
+  const o = H.streetOutlook([pc('Tc'), pc('7c')], board, hero);
+  assert.equal(o.street, 'turn');
+  assert.equal(o.n, 44);
+  assert.equal(o.madeKey, 'trips');
+  const made = o.rows.find(r => r.id === 'made');
+  assert.equal(made.hit, 44);
+  const quads = o.rows.find(r => r.id === 'to-quads');
+  const fh = o.rows.find(r => r.id === 'to-fh');
+  assert.equal(quads.outs, 1);
+  assert.equal(quads.hit, 1);
+  assert.ok(Math.abs(quads.hit / quads.n - 0.0227) < 0.0001);
+  assert.equal(fh.outs, 8);
+  assert.equal(fh.hit, 8);
+  assert.ok(Math.abs(fh.hit / fh.n - 0.1818) < 0.0001);
+  assert.equal(o.final.find(r => r.key === 'quads').count, quads.hit);
+  assert.equal(o.final.find(r => r.key === 'fh').count, fh.hit);
+  assert.ok(o.rows.indexOf(quads) < o.rows.indexOf(fh));
+  assert.ok(/100%/.test(o.summary) && /Quads/.test(o.summary));
+  const heroO = H.streetOutlook(hero, board, [pc('Tc'), pc('7c')]);
+  assert.equal(heroO.madeKey, 'fl');
+  assert.equal(heroO.rows.find(r => r.id === 'made').hit, heroO.n);
+  assert.equal(heroO.final.length, 1);
+  assert.equal(heroO.final[0].count, heroO.n);
+  assert.equal(heroO.summary, 'Flush · 100%');
 });
 
 check('the turn uses one-card odds and the river is the made hand only', () => {
