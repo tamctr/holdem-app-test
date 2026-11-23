@@ -135,6 +135,8 @@ def library_meta(gametype, lib, spots):
         "depths": depths,
         "n": len(spots),
     }
+    if lib.get("game"):
+        meta["game"] = lib["game"]
     meta.update(eight_fields(gametype, lib))
     if gametype.startswith("Cash8m") and not meta.get("opening") and meta.get("open"):
         meta["opening"] = meta["open"] + "x"

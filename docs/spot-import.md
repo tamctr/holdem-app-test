@@ -8,7 +8,8 @@ paste them here. The chart is then labelled **Imported reference**.
 A hand-read of the GTO Wizard cash preflop library ships in `data/gtow/`
 (raw charts, `build.py`, and a compact bundle under `data/gtow/app/`). It
 covers 6-max NL50 General, heads-up NL500 Complex and Simple, 9-max NL50,
-and the 8-max live/cEV opening trees. The Charts tab loads one gametype at
+the 8-max live/cEV opening trees, and MTT ChipEV 8-max (1bb BB ante) at
+20, 40 and 100bb. MTT spot ids start with `mtt|8|`. The Charts tab loads one gametype at
 a time. In GTO mode that reference replaces our model wherever a spot
 exists. The small blind lines include a limp. Your own paste still replaces
 it. The older 6-max first-in file `data/reference-gtow-cash.json` is the
