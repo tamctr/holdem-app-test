@@ -86,32 +86,41 @@ expect(/Nut flush draw/.test(flopText) && /Flush draw/.test(flopText) && /Open-e
 expect(/pocket pair \+ flop card/.test(flopText) && /or double gutshot/.test(flopText), 'sub-labels missing');
 expect(/Exact over all 19,600 flops/.test(flopText), 'footnote missing');
 expect(!/Wrap/.test(flopText), 'wrap row should not be in Hold\'em');
+await page.evaluate(() => {
+  const app = window.__holdemApp, pc = window.HoldemCore.parseCard;
+  app.eq.board = [pc('Kd'), pc('4d'), pc('7d'), null, null];
+  app.eq.boardOn = true;
+  app.eq.players[0].flopOpen = true;
+  app.noteCardsChanged();
+});
+await page.waitForFunction(() => /by river|on the flop/i.test(document.querySelector('.fob').textContent) && !/19,600/.test(document.querySelector('.fob').textContent), { timeout: 5000 });
+await page.evaluate(() => { window.__holdemApp.eq.boardOn = false; window.__holdemApp.noteCardsChanged(); });
+await page.waitForFunction(() => /19,600/.test(document.querySelector('.fob').textContent), { timeout: 5000 });
+await page.evaluate(() => { const app = window.__holdemApp; app.eq.boardOn = true; app.eq.board = [null, null, null, null, null]; app.noteCardsChanged(); });
 const flopOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
 expect(flopOverflow, 'flopability horizontal overflow');
 await page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-mobile-flop.png', fullPage: true });
 
 await page.evaluate(() => {
   const app = window.__holdemApp;
+  app.eq.deadOn = true;
   app.eq.dead[0] = window.HoldemCore.parseCard('2c');
   app.eq.players[0].flopOpen = true;
   app.noteCardsChanged();
-  document.querySelector('details[data-fold="e-dead"]').open = true;
 });
-await page.waitForFunction(() => /19,600/.test(document.querySelector('.fob').textContent), { timeout: 5000 });
+await page.waitForFunction(() => /Exact over all/.test(document.querySelector('.fob').textContent) && document.querySelector('#dead-slots .slot'), { timeout: 5000 });
 const sizes = await page.evaluate(() => {
   const box = sel => { const r = document.querySelector(sel).getBoundingClientRect(); return [Math.round(r.width * 10) / 10, Math.round(r.height * 10) / 10]; };
   return {
     hole: box('#players .slot'),
     board: box('#board-slots .slot'),
     dead: box('#dead-slots .slot'),
-    sum: box('#dead-sum .pcard'),
     svg: !!document.querySelector('#players .pcard svg'),
     colors: [...document.querySelectorAll('#players .pcard')].map(el => el.className)
   };
 });
 expect(JSON.stringify(sizes.hole) === JSON.stringify(sizes.board), 'hole/board size ' + JSON.stringify(sizes));
 expect(JSON.stringify(sizes.hole) === JSON.stringify(sizes.dead), 'hole/dead slot size ' + JSON.stringify(sizes));
-expect(JSON.stringify(sizes.hole) === JSON.stringify(sizes.sum), 'hole/dead-sum size ' + JSON.stringify(sizes));
 expect(sizes.svg, 'svg faces missing');
 expect(sizes.hole[0] > 28 && sizes.hole[1] > 40, 'card box collapsed ' + JSON.stringify(sizes.hole));
 

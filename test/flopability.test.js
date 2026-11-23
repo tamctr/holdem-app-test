@@ -412,4 +412,15 @@ check('the turn uses one-card odds and the river is the made hand only', () => {
   assert.equal(river.final.length, 0);
 });
 
+check('a dead case card removes the quads out', () => {
+  const hero = [pc('Td'), pc('9d')];
+  const board = [pc('Kd'), pc('4d'), pc('7d'), pc('7h')];
+  const open = H.streetOutlook([pc('Tc'), pc('7c')], board, hero);
+  const blocked = H.streetOutlook([pc('Tc'), pc('7c')], board, hero.concat([pc('7s')]));
+  assert.equal(open.rows.find(r => r.id === 'to-quads').outs, 1);
+  assert.equal(blocked.n, 43);
+  assert.ok(!blocked.rows.some(r => r.id === 'to-quads'));
+  assert.equal(blocked.final.find(r => r.key === 'quads'), undefined);
+});
+
 console.log('PASSED', passed);
