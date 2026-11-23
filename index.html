@@ -854,12 +854,26 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   #tab-equity .foh{gap:6px;font-size:12px}
   #tab-equity .frw{font-size:13px}
 }
+#tab-equity.active{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+#tab-equity .eq-toggles{display:flex;gap:6px;margin:0;flex:0 0 auto}
+#tab-equity .eqtog{min-height:32px;padding:0 10px;border-radius:999px;border:1px solid #3a4860;background:#121a2c;color:#c5d2e6;font-weight:750;font-size:12px;white-space:nowrap}
+#tab-equity .eqtog.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#tab-equity .board-pin{position:sticky;top:var(--hdr);z-index:6;background:var(--panel);margin:0 -4px 8px;padding:6px 4px 8px;border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 10px 16px -8px rgba(0,0,0,.65)}
+#tab-equity .board-pin[hidden],#tab-equity .deadrow[hidden]{display:none}
+#tab-equity .deadrow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+#tab-equity .deadrow .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8b98ae}
+#tab-equity .dead-sum{display:inline-flex;gap:4px;min-height:0}
+#tab-equity .calcbar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;align-items:center;flex-wrap:nowrap;gap:8px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(12,15,21,.94);backdrop-filter:blur(12px);border-top:1px solid var(--border);box-shadow:0 -10px 28px rgba(0,0,0,.4)}
+#tab-equity .calcbar .btn.primary{flex:1 1 auto;min-width:0;min-height:40px;border-radius:12px;font-size:14px;padding:0 10px}
+#tab-equity .calcbar .btn:not(.primary){min-height:32px;padding:0 10px;background:transparent;flex:0 0 auto}
+#tab-equity .calcbar .progress{flex:0 1 72px;margin:0}
 #tab-equity .eq-add{display:flex;align-items:center;gap:10px;margin:0 0 14px;flex-wrap:wrap}
 #tab-equity .eq-add .eqhint{flex:1 1 160px;line-height:1.35}
-#tab-equity .boardrow{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;margin:0;padding:12px 0 4px;border:0;border-top:1px solid rgba(255,255,255,.06)}
-#tab-equity .boardrow .lbl{min-width:0;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8b98ae}
-#tab-equity #board-slots{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap}
-#tab-equity .board-actions{display:inline-flex;gap:6px;margin-left:auto;flex:0 0 auto}
+#tab-equity .boardrow{display:flex;align-items:center;flex-wrap:nowrap;gap:8px;margin:0;padding:4px 0 2px;border:0}
+#tab-equity #board-slots{display:flex;align-items:center;gap:4px;flex:1 1 auto;flex-wrap:nowrap;min-width:0}
+#tab-equity #board-slots > span{flex:0 0 8px;width:8px!important}
+#tab-equity .board-actions{display:flex;flex-direction:column;align-items:stretch;gap:4px;margin-left:auto;flex:0 0 auto}
+#tab-equity .board-actions .btn{min-height:26px;padding:2px 8px;font-size:11px;line-height:1.15;white-space:nowrap}
 #tab-equity .calcrow{display:flex;align-items:center;gap:8px;padding:12px 0 0;border:0}
 #tab-equity .calcrow .btn{min-height:40px;border-radius:10px}
 #tab-equity .calcrow .btn:not(.primary){background:transparent}
@@ -871,6 +885,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #tab-equity details.fold > summary::before{margin-right:2px}
 #tab-equity .fold-body{padding:0 0 10px}
 #tab-equity #dead-slots{display:flex;flex-wrap:wrap;gap:5px}
+#tab-equity #dead-slots .slot.filled{position:relative}
+#tab-equity #dead-slots .deadx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 #tab-equity #results .dim{color:#93a0b6;font-size:13px;line-height:1.45}
 #tab-equity .res-note{margin:0;font-size:12.5px;line-height:1.45;color:#9aabb8}
 #tab-equity .res-board{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:8px 0}
@@ -890,8 +906,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .modal-foot{margin-top:12px}
 .picker{gap:3px}
 #eq-dock{max-height:calc(100dvh - 24px);overflow:auto}
-/* hole, board, dead, and results cards stay one size; that size steps down as seats are added */
+/* hole, dead, and results cards stay one size; that size steps down as seats are added.
+   Board cards take the row that the BOARD label used to occupy. */
 #tab-equity .slot,#tab-equity .boardrow .slot,#tab-equity #dead-sum .pcard,#tab-equity #dead-slots .slot,#tab-equity #results .pcard,#modal .slot{font-size:var(--eqfs, 23px)!important;width:1.93em!important;height:2.7em!important}
+#tab-equity #board-slots .slot{flex:1 1 0;width:auto!important;height:auto!important;aspect-ratio:1.93/2.7;min-width:0;max-width:calc(var(--eqfs, 23px) * 2.45);font-size:inherit!important}
+#tab-equity #board-slots .slot .pcard{width:100%!important;height:100%!important}
 @media (max-width:640px){
   #tab-equity .panel{padding:10px 10px 8px;border-radius:12px}
   #tab-equity .player{padding:10px 10px 2px;margin-bottom:8px}
@@ -903,7 +922,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   .eqmini span{font-size:8px;letter-spacing:0}
   .eqmini div{padding:0 1px}
   #tab-equity .eqfolds{grid-template-columns:1fr 1fr;gap:0 8px}
-  #tab-equity .board-actions .btn{min-height:36px}
+  #tab-equity .calcbar{gap:6px;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+  #tab-equity .calcbar .btn.primary{min-height:36px;font-size:12.5px;padding:0 8px}
+  #tab-equity .calcbar .eqtog{min-height:30px;padding:0 8px;font-size:11px}
+  #tab-equity .calcbar .btn:not(.primary){min-height:30px;padding:0 8px;font-size:12px}
+  #tab-equity .calcbar .progress{flex:0 1 28px}
   .pick-tools{gap:6px}
 }
 
@@ -1081,32 +1104,39 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
       <div class="panel eqin">
         <h3>Hands <span class="eqver" title="Equity version 2">v2</span></h3>
         <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="nutg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcc00"/><stop offset=".55" stop-color="#ff7a00"/><stop offset="1" stop-color="#ff2d00"/></linearGradient><linearGradient id="iceg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8fbff"/><stop offset=".5" stop-color="#9fe3ff"/><stop offset="1" stop-color="#4fb8ff"/></linearGradient></defs></svg>
+        <div class="board-pin" id="board-pin">
+          <div class="boardrow">
+            <span id="board-slots"></span>
+            <span class="board-actions"><button class="btn small" id="clear-board">Clear</button><button class="btn small" id="rand-flop">RND flop</button></span>
+          </div>
+        </div>
+        <div class="deadrow" id="dead-row" hidden>
+          <span class="lbl">Dead</span>
+          <span id="dead-slots"></span>
+          <button type="button" class="btn small" id="clear-dead">Clear</button>
+        </div>
         <div id="players"></div>
         <div class="eq-add">
           <button class="btn small" id="add-player">+ Player</button>
           <span class="small dim eqhint">Up to 6. Empty cards deal at random. Range is inside Pick a card.</span>
         </div>
-        <div class="boardrow">
-          <span class="lbl">Board</span>
-          <span id="board-slots"></span>
-          <span class="board-actions"><button class="btn small" id="clear-board">Clear</button><button class="btn small" id="rand-flop">Random flop</button></span>
-        </div>
-        <div class="calcrow">
-          <button class="btn primary" id="calc">&#9654; Calculate equity</button>
-          <button class="btn" id="stop" disabled>Stop</button>
-          <div class="progress"><i id="prog"></i></div>
-        </div>
         <div class="small muted" id="eq-status">Ready.</div>
-        <div class="eqfolds"><details class="fold" data-fold="e-dead"><summary>Dead cards <span class="sumval" id="dead-sum"></span></summary>
-          <div class="fold-body"><div id="dead-slots"></div>
-          <div class="row" style="margin-top:8px"><button class="btn small" id="clear-dead">Clear dead cards</button></div></div>
-        </details>
+        <div class="eqfolds">
         <details class="fold" data-fold="e-settings"><summary>Method &amp; trials <span class="sumval" id="set-sum"></span></summary>
           <div class="fold-body"><div class="row">
             <select id="eq-mode"><option value="auto">Auto (exact if feasible)</option><option value="exact">Force exact</option><option value="mc">Monte Carlo</option></select>
             <select id="eq-trials"><option value="100000">100k trials</option><option value="300000">300k trials</option><option value="1000000">1M trials</option><option value="3000000">3M trials</option><option value="10000000">10M trials</option></select>
           </div></div>
         </details></div>
+        <div class="calcbar" id="calcbar">
+          <button class="btn primary" id="calc">&#9654; Calculate equity</button>
+          <div class="eq-toggles" role="group" aria-label="Board and dead cards">
+            <button type="button" class="eqtog on" id="tog-board" aria-pressed="true">Board</button>
+            <button type="button" class="eqtog" id="tog-dead" aria-pressed="false">Dead cards</button>
+          </div>
+          <button class="btn" id="stop" disabled>Stop</button>
+          <div class="progress"><i id="prog"></i></div>
+        </div>
       </div>
       <div class="panel" id="results-panel">
         <h3>Results</h3>
@@ -4345,9 +4375,11 @@ self.onmessage = function (e) {
     if (p[0] === 'b') return [0, 1, 2, 3, 4].map(i => 'b:' + i);
     return eq.dead.map((_, i) => 'd:' + i);
   }
+  const DEAD_X = '<svg class="deadx" viewBox="0 0 100 140" aria-hidden="true"><path d="M16 16L84 124M84 16L16 124" fill="none" stroke="#e0232a" stroke-width="9" stroke-linecap="round" opacity="0.6"/></svg>';
   function slotHTML(t, extra) {
     const c = getSlot(t);
-    return `<button class="slot ${c != null ? 'filled' : ''} ${extra || ''}" data-t="${t}" title="${c != null ? 'Change card' : 'Pick card'}">${c != null ? cardHTML(c) : '+'}</button>`;
+    const mark = t.charAt(0) === 'd' && c != null ? DEAD_X : '';
+    return `<button class="slot ${c != null ? 'filled' : ''} ${extra || ''}" data-t="${t}" title="${c != null ? 'Change card' : 'Pick card'}">${c != null ? cardHTML(c) + mark : '+'}</button>`;
   }
   function markTarget(t) { $$('#tab-equity .eqin .slot').forEach(b => b.classList.toggle('target', b.dataset.t === t)); }
   function chartOptions() {
@@ -4373,8 +4405,12 @@ self.onmessage = function (e) {
   function detachRangePointer() {
     if (rangePointerUp) { window.removeEventListener('pointerup', rangePointerUp); rangePointerUp = null; }
   }
+  function boardOn() { return eq.boardOn !== false; }
+  function deadOn() { return eq.deadOn === true; }
+  function liveBoard() { return boardOn() ? eq.board.slice() : [null, null, null, null, null]; }
+  function liveDead() { return deadOn() ? eq.dead.filter(c => c != null) : []; }
   function currentSig() {
-    return JSON.stringify({ p: eq.players.map(pl => [pl.mode, pl.cards, pl.range]), b: eq.board, d: eq.dead, m: eq.mode, t: eq.trials });
+    return JSON.stringify({ p: eq.players.map(pl => [pl.mode, pl.cards, pl.range]), b: liveBoard(), d: liveDead(), bo: boardOn(), do: deadOn(), m: eq.mode, t: eq.trials });
   }
   function invalidateEquity() {
     eqRunToken++;
@@ -4432,15 +4468,14 @@ self.onmessage = function (e) {
     if (!p || p.mode === 'range' || p.cards[0] == null || p.cards[1] == null) return null;
     const blockers = [];
     eq.players.forEach((q, j) => { if (j !== i && q.mode !== 'range') q.cards.forEach(c => { if (c != null) blockers.push(c); }); });
-    eq.dead.forEach(c => { if (c != null) blockers.push(c); });
+    liveDead().forEach(c => blockers.push(c));
     blockers.sort((a, b) => a - b);
-    return p.cards[0] + ',' + p.cards[1] + '|' + eq.board.map(c => c == null ? '' : c).join(',') + '|' + blockers.join(',');
+    return p.cards[0] + ',' + p.cards[1] + '|' + liveBoard().map(c => c == null ? '' : c).join(',') + '|' + blockers.join(',');
   }
   function flopSpec(i) {
-    const dead = [];
-    eq.dead.forEach(c => { if (c != null) dead.push(c); });
+    const dead = liveDead();
     eq.players.forEach((q, j) => { if (j !== i && q.mode !== 'range') q.cards.forEach(c => { if (c != null) dead.push(c); }); });
-    return { hole: eq.players[i].cards.slice(), board: eq.board.slice(), dead: dead };
+    return { hole: eq.players[i].cards.slice(), board: liveBoard(), dead: dead };
   }
   function flopNeedHTML(p) {
     if (p.mode === 'range' && (p.range || '').trim()) {
@@ -4471,15 +4506,16 @@ self.onmessage = function (e) {
     const a = +cards[0], b = +cards[1];
     return (a < b ? a : b) + ',' + (a < b ? b : a);
   }
-  function boardEntered() { return eq.board.some(c => c != null); }
+  function boardEntered() { return boardOn() && eq.board.some(c => c != null); }
+  function deadKey() { return liveDead().slice().sort((a, b) => a - b).join(','); }
   function chancesFor(hole) {
-    const k = holeKey(hole);
-    if (!flopOddsCache.has(k)) flopOddsCache.set(k, H.flopChances(hole));
+    const k = holeKey(hole) + '|' + deadKey();
+    if (!flopOddsCache.has(k)) flopOddsCache.set(k, H.flopChances(hole, { dead: liveDead() }));
     return flopOddsCache.get(k);
   }
   function advFor(hole) {
-    const k = holeKey(hole);
-    if (!flopAdvCache.has(k)) flopAdvCache.set(k, H.flopAdvanced(hole));
+    const k = holeKey(hole) + '|' + deadKey();
+    if (!flopAdvCache.has(k)) flopAdvCache.set(k, H.flopAdvanced(hole, { dead: liveDead() }));
     return flopAdvCache.get(k);
   }
   function foPc(c, n) {
@@ -4871,6 +4907,12 @@ self.onmessage = function (e) {
     document.documentElement.style.setProperty('--eqfs', fs + 'px');
     $('#tab-equity').dataset.n = String(n);
     $('#add-player').disabled = eq.players.length >= 6;
+    if (eq.deadOn && eq.dead.length < 12 && (eq.dead.length === 0 || eq.dead[eq.dead.length - 1] != null)) eq.dead.push(null);
+    const bBtn = $('#tog-board'), dBtn = $('#tog-dead');
+    if (bBtn) { bBtn.classList.toggle('on', boardOn()); bBtn.setAttribute('aria-pressed', boardOn() ? 'true' : 'false'); }
+    if (dBtn) { dBtn.classList.toggle('on', deadOn()); dBtn.setAttribute('aria-pressed', deadOn() ? 'true' : 'false'); }
+    const pin = $('#board-pin'); if (pin) pin.hidden = !boardOn();
+    const drow = $('#dead-row'); if (drow) drow.hidden = !deadOn();
     $('#board-slots').innerHTML = eq.board.map((_, j) => slotHTML('b:' + j) + (j === 2 || j === 3 ? '<span style="display:inline-block;width:8px"></span>' : '')).join('');
     $('#dead-slots').innerHTML = eq.dead.map((_, j) => slotHTML('d:' + j)).join('');
     $('#eq-mode').value = eq.mode; $('#eq-trials').value = String(eq.trials);
@@ -4879,7 +4921,8 @@ self.onmessage = function (e) {
   }
   function updateEqSums() {
     const nd = eq.dead.filter(c => c != null).length;
-    $('#dead-sum').innerHTML = nd ? eq.dead.filter(c => c != null).map(c => cardHTML(c)).join('') : 'none';
+    const deadSum = $('#dead-sum');
+    if (deadSum) deadSum.innerHTML = nd ? eq.dead.filter(c => c != null).map(c => cardHTML(c)).join('') : 'none';
     $('#set-sum').textContent = (eq.mode === 'auto' ? 'Auto' : eq.mode === 'exact' ? 'Exact' : 'Monte Carlo') + ' · ' + (eq.trials >= 1e6 ? eq.trials / 1e6 + 'M' : eq.trials / 1e3 + 'k') + ' trials';
   }
   $('#tab-equity').addEventListener('click', e => {
@@ -4903,7 +4946,9 @@ self.onmessage = function (e) {
   });
   $('#add-player').addEventListener('click', () => { if (eq.players.length >= 6) return; eq.players.push({ mode: 'cards', cards: [null, null], range: '' }); noteCardsChanged(); });
   $('#clear-board').addEventListener('click', () => { eq.board = [null, null, null, null, null]; noteCardsChanged(); });
-  $('#clear-dead').addEventListener('click', () => { eq.dead = eq.dead.map(() => null); noteCardsChanged(); });
+  $('#clear-dead').addEventListener('click', () => { eq.dead = [null, null, null, null]; noteCardsChanged(); });
+  $('#tog-board').addEventListener('click', () => { eq.boardOn = !boardOn(); noteCardsChanged(); });
+  $('#tog-dead').addEventListener('click', () => { eq.deadOn = !deadOn(); noteCardsChanged(); });
   $('#rand-flop').addEventListener('click', () => {
     eq.board = [null, null, null, null, null]; const used = usedCards();
     for (let j = 0; j < 3; j++) { let c; do { c = (Math.random() * 52) | 0; } while (used.has(c)); used.set(c, 'b:' + j); eq.board[j] = c; }
@@ -4933,7 +4978,7 @@ self.onmessage = function (e) {
         players.push(r.combos); descs.push({ text: p.range });
       }
     });
-    const board = eq.board.filter(c => c != null), dead = eq.dead.filter(c => c != null);
+    const board = boardOn() ? eq.board.filter(c => c != null) : [], dead = liveDead();
     return { spec: { players: players, board: board, dead: dead, mode: eq.mode, trials: eq.trials }, descs: descs, board: board };
   }
   function setRunning(on) {
