@@ -312,4 +312,68 @@ check('advanced mixes add up, and a dealt straight keeps its flush draw', () => 
   assert.equal(now.any, 1);
 });
 
+check('nut flush draw on the flop is 9 outs and 34.97% by the river', () => {
+  const o = H.streetOutlook([pc('Ah'), pc('Kh')], [pc('Qh'), pc('7h'), pc('2c')]);
+  assert.equal(o.status, 'ok');
+  assert.equal(o.street, 'flop');
+  assert.equal(o.n, C(47, 2));
+  const row = o.rows.find(r => r.id === 'fd');
+  assert.ok(row);
+  assert.equal(row.label, 'Nut flush draw');
+  assert.equal(row.outs, 9);
+  assert.equal(row.hit, 378);
+  assert.ok(Math.abs(row.hit / row.n - 0.3497) < 0.0001);
+  assert.ok(!o.rows.some(r => r.id === 'oesd' || r.id === 'gs'));
+  const sum = o.final.reduce((s, r) => s + r.count, 0);
+  assert.equal(sum, o.n);
+});
+
+check('open-ended straight draw is 8 outs and 31.45% by the river', () => {
+  const o = H.streetOutlook([pc('8c'), pc('9c')], [pc('7d'), pc('6s'), pc('2h')]);
+  const row = o.rows.find(r => r.id === 'oesd');
+  assert.equal(row.outs, 8);
+  assert.equal(row.hit, 340);
+  assert.ok(Math.abs(row.hit / row.n - 0.3145) < 0.0001);
+  assert.equal(row.label, 'Open-ended straight draw');
+});
+
+check('a backdoor flush draw is about 4.16%', () => {
+  const o = H.streetOutlook([pc('Ah'), pc('Kh')], [pc('Qh'), pc('7c'), pc('2d')]);
+  const row = o.rows.find(r => r.id === 'bdf');
+  assert.ok(row);
+  assert.equal(row.runner, true);
+  assert.equal(row.outs, null);
+  assert.equal(row.hit, 45);
+  assert.equal(row.n, C(47, 2));
+  assert.ok(Math.abs(row.hit / row.n - 0.0416) < 0.0001);
+  assert.ok(!o.rows.some(r => r.id === 'fd'));
+});
+
+check('a set improves to a full house or better about 33.4% of the time', () => {
+  const o = H.streetOutlook([pc('9h'), pc('9d')], [pc('9c'), pc('Ks'), pc('2d')]);
+  const row = o.rows.find(r => r.id === 'boat');
+  assert.equal(row.outs, 7);
+  assert.equal(row.hit, 361);
+  assert.ok(Math.abs(row.hit / row.n - 0.334) < 0.001);
+  const made = o.rows.find(r => r.id === 'made');
+  assert.equal(made.label, 'Set');
+  assert.equal(made.sub, 'pocket pair + board card');
+});
+
+check('the turn uses one-card odds and the river is the made hand only', () => {
+  const turn = H.streetOutlook([pc('Ah'), pc('Kh')], [pc('Qh'), pc('7h'), pc('2c'), pc('3d')]);
+  assert.equal(turn.street, 'turn');
+  assert.equal(turn.n, 46);
+  const fd = turn.rows.find(r => r.id === 'fd');
+  assert.equal(fd.outs, 9);
+  assert.equal(fd.hit, 9);
+  assert.ok(!turn.rows.some(r => r.id === 'bdf' || r.id === 'bds' || r.id === 'rrfh' || r.id === 'rrq'));
+  const river = H.streetOutlook([pc('Ah'), pc('Kh')], [pc('Qh'), pc('7h'), pc('2c'), pc('3d'), pc('4s')]);
+  assert.equal(river.street, 'river');
+  assert.equal(river.rows.length, 1);
+  assert.equal(river.rows[0].id, 'made');
+  assert.equal(river.rows[0].label, 'High card');
+  assert.equal(river.final.length, 0);
+});
+
 console.log('PASSED', passed);
