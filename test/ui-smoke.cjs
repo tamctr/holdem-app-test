@@ -93,7 +93,7 @@ await page.evaluate(() => {
   app.eq.players[0].flopOpen = true;
   app.noteCardsChanged();
 });
-await page.waitForFunction(() => /by river|on the flop/i.test(document.querySelector('.fob').textContent) && !/19,600/.test(document.querySelector('.fob').textContent), { timeout: 5000 });
+await page.waitForFunction(() => /by the turn|% on turn|next card/i.test(document.querySelector('.fob').textContent) && !/19,600/.test(document.querySelector('.fob').textContent), { timeout: 5000 });
 await page.evaluate(() => { window.__holdemApp.eq.boardOn = false; window.__holdemApp.noteCardsChanged(); });
 await page.waitForFunction(() => /19,600/.test(document.querySelector('.fob').textContent), { timeout: 5000 });
 await page.evaluate(() => { const app = window.__holdemApp; app.eq.boardOn = true; app.eq.board = [null, null, null, null, null]; app.noteCardsChanged(); });

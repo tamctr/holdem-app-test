@@ -423,4 +423,40 @@ check('a dead case card removes the quads out', () => {
   assert.equal(blocked.final.find(r => r.key === 'quads'), undefined);
 });
 
+check('preflop flop stats still sum to every flop', () => {
+  const s = H.streetOdds([pc('As'), pc('Ad')], [], [], { all: true });
+  assert.equal(s.status, 'ok');
+  assert.equal(s.flop.kind, 'pre');
+  assert.equal(s.flop.n, C(50, 3));
+  assert.equal(sumMade(s.flop), s.flop.n);
+  assert.equal(s.turn.exact, true);
+  assert.equal(s.turn.universe, C(50, 4));
+  assert.equal(s.turn.hands.reduce((a, r) => a + r.hit, 0), s.turn.n);
+  assert.equal(s.river.exact, false);
+  assert.equal(s.river.universe, C(50, 5));
+  assert.equal(s.river.hands.reduce((a, r) => a + r.hit, 0), s.river.n);
+});
+
+check('on the flop a flush draw is 9/47 on the turn and 34.97% by the river', () => {
+  const s = H.streetOdds([pc('Ah'), pc('Kh')], [pc('Qh'), pc('7h'), pc('2c')], [], { all: true });
+  assert.equal(s.flop.kind, 'now');
+  assert.equal(s.flop.row.label, 'High card');
+  const turn = s.turn.rows.find(r => r.id === 'fd');
+  assert.equal(turn.label, 'Nut flush draw');
+  assert.equal(turn.outs, 9);
+  assert.equal(turn.hit, 9);
+  assert.equal(turn.n, 47);
+  assert.ok(Math.abs(turn.hit / turn.n - 9 / 47) < 1e-12);
+  assert.equal(s.turn.hands.reduce((a, r) => a + r.hit, 0), 47);
+  const river = s.river.rows.find(r => r.id === 'fd');
+  assert.equal(river.outs, 9);
+  assert.equal(river.hit, 378);
+  assert.ok(Math.abs(river.hit / river.n - 0.3497) < 0.0001);
+  assert.equal(s.river.hands.reduce((a, r) => a + r.count, 0), s.river.n);
+  const blocked = H.streetOdds([pc('Ah'), pc('Kh')], [pc('Qh'), pc('7h'), pc('2c')], [pc('2h')], { all: true });
+  const less = blocked.turn.rows.find(r => r.id === 'fd');
+  assert.equal(less.outs, 8);
+  assert.equal(less.n, 46);
+});
+
 console.log('PASSED', passed);
