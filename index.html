@@ -813,19 +813,22 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .range-line{display:flex;align-items:center;width:100%;margin:8px 0 0;padding:0;border:0;background:transparent;border-radius:0;font-family:var(--font);font-size:12.5px;font-weight:600;color:#c5d2e6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
 .range-line:hover{color:#fff}
 /* Flopability, in the PLO5 row format: one collapsed line, then made hands and draws. */
-#tab-equity .fo{display:grid;grid-template-columns:minmax(0,1fr) 34px 34px;align-items:center;margin:8px 0 2px}
-#tab-equity .foh{grid-column:1;grid-row:1;display:flex;align-items:center;gap:8px;min-width:0;background:none;border:none;padding:4px 0;color:#aaa;font:inherit;font-size:13px;text-align:left;cursor:pointer;min-height:32px}
-#tab-equity .foh b{color:#ff9500;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;white-space:nowrap}
-#tab-equity .foh .fos{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#eee;min-width:0}
-#tab-equity .stogs{grid-column:1 / -1;grid-row:2;display:flex;gap:4px;padding:0 0 4px}
-#tab-equity .stog{min-height:26px;padding:0 8px;border-radius:999px;border:1px solid #3a4860;background:#121a2c;color:#c5d2e6;font-size:11px;font-weight:750;line-height:1}
-#tab-equity .stog.on{background:#ff9500;border-color:#ff9500;color:#1a1206}
+#tab-equity .fo{display:grid;grid-template-columns:auto minmax(0,1fr) 34px 34px;align-items:center;column-gap:6px;margin:8px 0 2px}
+#tab-equity .foh{grid-column:1;grid-row:1;display:flex;align-items:center;gap:8px;min-width:0;background:none;border:none;padding:4px 0;color:#aaa;font:inherit;font-size:13px;text-align:left;cursor:pointer;min-height:28px}
+#tab-equity .foh b{color:#ff9500;font-size:12px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;white-space:nowrap}
+#tab-equity .foh .fos{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#eee;min-width:0;max-width:160px}
+#tab-equity .stogs{grid-column:2;grid-row:1;display:flex;align-items:center;gap:4px;min-width:0;flex-wrap:nowrap}
+#tab-equity .stog,#tab-equity .eqtog{display:inline-flex;align-items:center;gap:4px;min-height:22px;padding:2px 3px 2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:#2c2c2e;color:#f4f4f6;font-size:10.5px;font-weight:650;line-height:1;white-space:nowrap}
+#tab-equity .ios{position:relative;flex:0 0 auto;width:22px;height:13px;border-radius:999px;background:#636366}
+#tab-equity .ios b{position:absolute;top:1px;left:1px;width:11px;height:11px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.4)}
+#tab-equity .stog.on .ios,#tab-equity .eqtog.on .ios{background:#34C759}
+#tab-equity .stog.on .ios b,#tab-equity .eqtog.on .ios b{transform:translateX(9px)}
 #tab-equity .stsec + .stsec{margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)}
 #tab-equity .stlab{margin:2px 0 0;font-size:11px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:#ff9500}
-#tab-equity .fo>.ib{grid-column:2;grid-row:1;width:34px;height:32px;border:none;background:none;color:#8e8e93;font:inherit;font-size:15px;font-weight:700;font-style:italic;cursor:pointer;padding:0}
-#tab-equity .fo>.chev{grid-column:3;grid-row:1;width:34px;height:32px;border:none;background:none;color:#8e8e93;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#tab-equity .fo>.ib{grid-column:3;grid-row:1;width:34px;height:32px;border:none;background:none;color:#8e8e93;font:inherit;font-size:15px;font-weight:700;font-style:italic;cursor:pointer;padding:0}
+#tab-equity .fo>.chev{grid-column:4;grid-row:1;width:34px;height:32px;border:none;background:none;color:#8e8e93;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
 #tab-equity .fo.open>.chev svg{transform:rotate(180deg)}
-#tab-equity .fob{grid-column:1 / -1;grid-row:3;display:none;padding:2px 0 8px}
+#tab-equity .fob{grid-column:1 / -1;grid-row:2;display:none;padding:2px 0 8px}
 #tab-equity .fo.open .fob{display:block}
 #tab-equity .frw,#tab-equity .fag,#tab-equity .frh{display:grid;grid-template-columns:minmax(0,1fr) 72px 68px;gap:4px;align-items:center}
 #tab-equity .frw{position:relative;font-size:14px;color:#eee;padding:4px 0 5px}
@@ -856,13 +859,20 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #tab-equity .nut{display:inline-block;vertical-align:-3px}
 #tab-equity .nut.ice{filter:drop-shadow(0 0 2px rgba(80,190,255,.45))}
 @media (max-width:640px){
-  #tab-equity .foh{gap:6px;font-size:12px}
+  #tab-equity .fo{grid-template-columns:auto minmax(0,1fr) 26px 26px;column-gap:3px}
+  #tab-equity .foh{gap:0;min-height:26px;padding:2px 0}
+  #tab-equity .foh b{font-size:11px;letter-spacing:.2px}
+  #tab-equity .foh .fos{display:none}
+  #tab-equity .stogs{gap:3px}
+  #tab-equity .stog{min-height:20px;padding:1px 2px 1px 6px;gap:3px;font-size:10px}
+  #tab-equity .ios{width:20px;height:12px}
+  #tab-equity .ios b{width:10px;height:10px}
+  #tab-equity .stog.on .ios b,#tab-equity .eqtog.on .ios b{transform:translateX(8px)}
+  #tab-equity .fo>.ib,#tab-equity .fo>.chev{width:26px;height:28px}
   #tab-equity .frw{font-size:13px}
 }
 #tab-equity.active{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 #tab-equity .eq-toggles{display:flex;gap:6px;margin:0;flex:0 0 auto}
-#tab-equity .eqtog{min-height:32px;padding:0 10px;border-radius:999px;border:1px solid #3a4860;background:#121a2c;color:#c5d2e6;font-weight:750;font-size:12px;white-space:nowrap}
-#tab-equity .eqtog.on{background:var(--accent);border-color:var(--accent);color:#fff}
 #tab-equity .board-pin{position:sticky;top:var(--hdr);z-index:6;background:var(--panel);margin:0 -4px 8px;padding:6px 4px 8px;border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 10px 16px -8px rgba(0,0,0,.65)}
 #tab-equity .board-pin[hidden],#tab-equity .deadrow[hidden]{display:none}
 #tab-equity .deadrow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 12px}
@@ -929,7 +939,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   #tab-equity .eqfolds{grid-template-columns:1fr 1fr;gap:0 8px}
   #tab-equity .calcbar{gap:6px;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
   #tab-equity .calcbar .btn.primary{min-height:36px;font-size:12.5px;padding:0 8px}
-  #tab-equity .calcbar .eqtog{min-height:30px;padding:0 8px;font-size:11px}
+  #tab-equity .calcbar .eqtog{min-height:22px;padding:1px 2px 1px 6px;font-size:10px;gap:3px}
   #tab-equity .calcbar .btn:not(.primary){min-height:30px;padding:0 8px;font-size:12px}
   #tab-equity .calcbar .progress{flex:0 1 28px}
   .pick-tools{gap:6px}
@@ -1136,8 +1146,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
         <div class="calcbar" id="calcbar">
           <button class="btn primary" id="calc">&#9654; Calculate equity</button>
           <div class="eq-toggles" role="group" aria-label="Board and dead cards">
-            <button type="button" class="eqtog on" id="tog-board" aria-pressed="true">Board</button>
-            <button type="button" class="eqtog" id="tog-dead" aria-pressed="false">Dead cards</button>
+            <button type="button" class="eqtog on" id="tog-board" aria-pressed="true">Board<span class="ios" aria-hidden="true"><b></b></span></button>
+            <button type="button" class="eqtog" id="tog-dead" aria-pressed="false">Dead cards<span class="ios" aria-hidden="true"><b></b></span></button>
           </div>
           <button class="btn" id="stop" disabled>Stop</button>
           <div class="progress"><i id="prog"></i></div>
@@ -4957,7 +4967,7 @@ self.onmessage = function (e) {
     if (!p || p.mode === 'range' || p.cards[0] == null || p.cards[1] == null) return '';
     const open = !!p.flopOpen;
     const st = streetsFor(p);
-    const sw = (key, label) => '<button type="button" class="stog' + (st[key] ? ' on' : '') + '" data-act="st" data-st="' + key + '" data-i="' + i + '" aria-pressed="' + (st[key] ? 'true' : 'false') + '">' + label + '</button>';
+    const sw = (key, label) => '<button type="button" class="stog' + (st[key] ? ' on' : '') + '" data-act="st" data-st="' + key + '" data-i="' + i + '" aria-pressed="' + (st[key] ? 'true' : 'false') + '">' + label + '<span class="ios" aria-hidden="true"><b></b></span></button>';
     return '<div class="fo' + (open ? ' open' : '') + '" id="fo' + i + '">' +
       '<button type="button" class="foh" data-act="flop" data-i="' + i + '" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="flop-body-' + i + '"><b>Flopability</b><span class="fos" id="fos-' + i + '">' + headerSummary(i) + '</span></button>' +
       '<span class="stogs">' + sw('flop', 'Flop') + sw('turn', 'Turn') + sw('river', 'River') + '</span>' +
