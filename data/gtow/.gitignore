@@ -1,0 +1,3 @@
+# Full JSON and per-spot CSV from build.py. Regenerate locally; the site
+# ships the compact bundle in app/ instead.
+dataset/
