@@ -274,4 +274,42 @@ check('a later street upgrades a set, and a different hand does not reuse those 
   assert.notEqual(other.made.set, set.made.set);
 });
 
+check('flop chances sum to 19,600 and match known hands', () => {
+  const aa = H.flopChances([pc('As'), pc('Ad')]);
+  assert.equal(aa.status, 'ok');
+  assert.equal(aa.n, C(50, 3));
+  assert.equal(sumMade(aa), aa.n);
+  assert.equal(aa.made.set, 2112);
+  assert.equal(aa.made.hc, 0);
+  const withSetCard = aa.n - C(48, 3);
+  assert.ok(Math.abs(withSetCard / aa.n - 0.1176) < 0.001, 'pocket pair sees a set card on about 11.8% of flops');
+  const suited = H.flopChances([pc('7h'), pc('6h')]);
+  assert.equal(sumMade(suited), suited.n);
+  assert.equal(suited.made.fl + suited.made.sf, C(11, 3));
+  assert.ok(Math.abs((suited.made.fl + suited.made.sf) / suited.n - 0.0084) < 0.0003, 'suited connector flush about 0.84%');
+  assert.ok(suited.draw.oe > 0 && suited.draw.gs > 0 && suited.draw.combo > 0);
+  assert.ok(suited.draw.any <= suited.draw.nfd + suited.draw.fd + suited.draw.oe + suited.draw.gs);
+  assert.equal(suited.draw.nfd + suited.draw.fd > 0, true);
+  const ak = H.flopChances([pc('Ah'), pc('Kh')]);
+  assert.equal(ak.draw.fd, 0);
+  assert.equal(ak.draw.nfd, C(11, 2) * 39);
+});
+
+check('advanced mixes add up, and a dealt straight keeps its flush draw', () => {
+  const adv = H.flopAdvanced([pc('9h'), pc('8h')]);
+  assert.equal(adv.n, C(50, 3));
+  let covered = adv.fplus;
+  Object.keys(adv.g).forEach(k => {
+    const G = adv.g[k];
+    assert.equal(G.fs.n + G.f.n + G.s.n + G.x.n, G.n, k);
+    covered += G.n;
+  });
+  assert.equal(covered, adv.n);
+  const now = H.boardDraws([pc('Ah'), pc('Kh')], [pc('Qh'), pc('Jd'), pc('2s'), pc('Th')]);
+  assert.equal(now.nfd, 1);
+  assert.equal(now.gs, 0);
+  assert.equal(now.oe, 0);
+  assert.equal(now.any, 1);
+});
+
 console.log('PASSED', passed);
