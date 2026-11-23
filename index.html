@@ -822,7 +822,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #tab-equity .fo.open>.chev svg{transform:rotate(180deg)}
 #tab-equity .fob{grid-column:1 / -1;display:none;padding:2px 0 8px}
 #tab-equity .fo.open .fob{display:block}
-#tab-equity .frw,#tab-equity .fag,#tab-equity .frh{display:grid;grid-template-columns:minmax(0,1fr) 58px 62px;gap:4px;align-items:center}
+#tab-equity .frw,#tab-equity .fag,#tab-equity .frh{display:grid;grid-template-columns:minmax(0,1fr) 72px 68px;gap:4px;align-items:center}
 #tab-equity .frw{position:relative;font-size:14px;color:#eee;padding:4px 0 5px}
 #tab-equity .frw span:nth-child(n+2),#tab-equity .fag span:nth-child(n+2),#tab-equity .frh span:nth-child(n+2){text-align:right;font-variant-numeric:tabular-nums}
 #tab-equity .frw span:nth-child(3),#tab-equity .fag span:nth-child(3){color:#8e8e93;font-size:12px;font-weight:400}
@@ -831,6 +831,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #tab-equity .frw small{color:#8e8e93;font-size:11px}
 #tab-equity .frw i{position:absolute;left:0;bottom:0;height:2px;background:#ff9500;opacity:.55;border-radius:1px;pointer-events:none}
 #tab-equity .frh{font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:.4px;margin:8px 0 1px}
+#tab-equity .frh span{white-space:nowrap}
 #tab-equity .flop-foot,#tab-equity .flop-note{margin:8px 0 0;font-size:12px;line-height:1.45;color:#8e8e93}
 #tab-equity .fa{margin-top:10px;border-top:1px solid #333}
 #tab-equity .fah{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:8px 0 6px;color:#aaa;font:inherit;font-size:12px;text-align:left;cursor:pointer;min-height:36px}
@@ -2157,6 +2158,219 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
     return { status: 'ok', n: base.n, fplus: fplus, g: G };
   }
 
+  /* Once the flop is out: the made hand you have now, the Hold'em draws that improve it,
+     and the exact chance of getting there. Flop = turn+river over C(left,2). Turn = one river card.
+     Backdoors are runner-runner only. A finished board is the made hand alone. */
+  function soMapMade(key) {
+    if (key === 'straightFlush') return 'sf';
+    if (key === 'quads') return 'quads';
+    if (key === 'fullHouse') return 'fh';
+    if (key === 'flush') return 'fl';
+    if (key === 'straight') return 'st';
+    if (key === 'set') return 'set';
+    if (key === 'trips' || key === 'boardTrips') return 'trips';
+    if (key === 'twoPair') return 'tp';
+    if (key === 'onePair' || key === 'boardPair') return 'pair';
+    return 'hc';
+  }
+  function soPairDetail(h0, h1, known, raw) {
+    if (raw === 'boardPair') return 'board pair';
+    var hr0 = h0 >> 2, hr1 = h1 >> 2, i, maxB = known[0] >> 2, minB = maxB;
+    for (i = 1; i < known.length; i++) {
+      var r = known[i] >> 2;
+      if (r > maxB) maxB = r;
+      if (r < minB) minB = r;
+    }
+    if (hr0 === hr1) {
+      if (hr0 > maxB) return 'overpair';
+      if (hr0 < minB) return 'underpair';
+      return 'pocket pair';
+    }
+    var bit = 0, uniq = [];
+    for (i = 0; i < known.length; i++) {
+      r = known[i] >> 2;
+      if (!((bit >>> r) & 1)) { bit |= 1 << r; uniq.push(r); }
+    }
+    uniq.sort(function (a, b) { return b - a; });
+    var match = ((bit >>> hr0) & 1) ? hr0 : hr1;
+    var idx = uniq.indexOf(match);
+    if (idx <= 0) return 'top pair';
+    if (idx === uniq.length - 1) return 'bottom pair';
+    return 'middle pair';
+  }
+  function soStraightPlan(mask, hr0, hr1) {
+    var plan = flStraightRanks(mask), oesdMask = 0, rs, k, uses, ends, w;
+    for (rs = 0; rs <= 8; rs++) {
+      if (((mask >>> rs) & 15) !== 15) continue;
+      uses = false;
+      for (k = 0; k < 4; k++) if (rs + k === hr0 || rs + k === hr1) uses = true;
+      if (!uses) continue;
+      ends = 0;
+      if (rs > 0) ends |= 1 << (rs - 1);
+      if (rs + 4 <= 12) ends |= 1 << (rs + 4);
+      ends &= plan.sm;
+      if (bitCount(ends) >= 2) oesdMask |= ends;
+    }
+    if (oesdMask) return { oesd: oesdMask, dg: 0, gs: plan.sm & ~oesdMask };
+    if (plan.nr >= 2) return { oesd: 0, dg: plan.sm, gs: 0 };
+    if (plan.nr === 1) return { oesd: 0, dg: 0, gs: plan.sm };
+    return { oesd: 0, dg: 0, gs: 0 };
+  }
+  function streetOutlook(hole, board, dead) {
+    var h0 = +hole[0], h1 = +hole[1], i, c;
+    if (!(h0 >= 0) || !(h1 >= 0) || h0 === h1 || h0 > 51 || h1 > 51) return { status: 'need-hand' };
+    var known = [];
+    for (i = 0; i < (board || []).length; i++) if (board[i] != null && board[i] !== '') known.push(+board[i]);
+    if (known.length < 3 || known.length > 5) return { status: 'short' };
+    var seen = new Uint8Array(52);
+    seen[h0] = 1; seen[h1] = 1;
+    for (i = 0; i < known.length; i++) {
+      if (seen[known[i]]) return { status: 'conflict' };
+      seen[known[i]] = 1;
+    }
+    dead = dead || [];
+    for (i = 0; i < dead.length; i++) {
+      c = +dead[i];
+      if (c !== c || seen[c]) return { status: 'conflict' };
+      seen[c] = 1;
+    }
+    var deck = [];
+    for (c = 0; c < 52; c++) if (!seen[c]) deck.push(c);
+    var street = known.length === 3 ? 'flop' : known.length === 4 ? 'turn' : 'river';
+    var raw = classifyShowdown([h0, h1], known);
+    var madeKey = soMapMade(raw);
+    var madeSub = madeKey === 'pair' ? soPairDetail(h0, h1, known, raw)
+      : madeKey === 'set' ? 'pocket pair + board card'
+      : madeKey === 'trips' ? (raw === 'boardTrips' ? 'three of a kind on the board' : 'board pair + hole card')
+      : madeKey === 'sf' ? 'five in a row, one suit'
+      : madeKey === 'quads' ? 'four of a kind'
+      : madeKey === 'fh' ? 'three of a kind plus a pair'
+      : madeKey === 'fl' ? 'five of one suit'
+      : madeKey === 'st' ? 'five in a row'
+      : madeKey === 'tp' ? 'two different pairs'
+      : 'no pair';
+    var madeRank = { hc: 0, pair: 1, tp: 2, trips: 3, set: 3, st: 4, fl: 5, fh: 6, quads: 7, sf: 8 }[madeKey];
+    var hr0 = h0 >> 2, hr1 = h1 >> 2;
+    var mask = (1 << hr0) | (1 << hr1), sc = [0, 0, 0, 0], hs = [0, 0, 0, 0];
+    hs[h0 & 3]++; hs[h1 & 3]++;
+    for (i = 0; i < known.length; i++) { mask |= 1 << (known[i] >> 2); sc[known[i] & 3]++; }
+    var cat = handCategory(evalHand([h0, h1].concat(known), 2 + known.length));
+    var fdSuit = -1, fdNut = false;
+    if (cat < 5) {
+      for (var s = 0; s < 4; s++) if (hs[s] > 0 && hs[s] + sc[s] === 4) {
+        fdSuit = s; fdNut = flFlushNut(h0, h1, known, s); break;
+      }
+    }
+    var sp = cat < 4 ? soStraightPlan(mask, hr0, hr1) : { oesd: 0, dg: 0, gs: 0 };
+    function cardsOf(bits) {
+      var out = [], r, su, card;
+      for (r = 0; r < 13; r++) if ((bits >>> r) & 1) for (su = 0; su < 4; su++) {
+        card = r * 4 + su;
+        if (!seen[card]) out.push(card);
+      }
+      return out;
+    }
+    var fdOuts = [], sfOuts = [], oesdOuts = cardsOf(sp.oesd), dgOuts = cardsOf(sp.dg), gsOuts = cardsOf(sp.gs);
+    if (fdSuit >= 0) {
+      for (i = 0; i < deck.length; i++) if ((deck[i] & 3) === fdSuit) {
+        fdOuts.push(deck[i]);
+        var sk = soMapMade(classifyShowdown([h0, h1], known.concat([deck[i]])));
+        if (sk === 'sf') sfOuts.push(deck[i]);
+      }
+    }
+    var overBits = 0, overOuts = [];
+    if (madeKey === 'hc' && hr0 !== hr1 && hr0 > (known[0] >> 2) && hr1 > (known[0] >> 2)) {
+      var topB = known[0] >> 2;
+      for (i = 1; i < known.length; i++) if ((known[i] >> 2) > topB) topB = known[i] >> 2;
+      if (hr0 > topB && hr1 > topB) { overBits = (1 << hr0) | (1 << hr1); overOuts = cardsOf(overBits); }
+    }
+    var boatOuts = [], impOuts = [];
+    if (madeKey === 'set' || madeKey === 'trips' || madeKey === 'tp' || madeKey === 'pair') {
+      for (i = 0; i < deck.length; i++) {
+        var nk = soMapMade(classifyShowdown([h0, h1], known.concat([deck[i]])));
+        if ((madeKey === 'set' || madeKey === 'trips') && (nk === 'fh' || nk === 'quads' || nk === 'sf')) boatOuts.push(deck[i]);
+        if (madeKey === 'tp' && (nk === 'fh' || nk === 'quads' || nk === 'sf')) boatOuts.push(deck[i]);
+        if (madeKey === 'pair' && (nk === 'tp' || nk === 'trips' || nk === 'set')) impOuts.push(deck[i]);
+      }
+    }
+    var bdSuits = [];
+    if (fdSuit < 0 && cat < 5) for (s = 0; s < 4; s++) if (hs[s] > 0 && hs[s] + sc[s] === 3) bdSuits.push(s);
+    var flag = {};
+    function mark(name, list) { var a = new Uint8Array(52); for (var j = 0; j < list.length; j++) a[list[j]] = 1; flag[name] = a; }
+    mark('fd', fdOuts); mark('sf', sfOuts); mark('oesd', oesdOuts); mark('dg', dgOuts); mark('gs', gsOuts); mark('over', overOuts);
+    var comboList = [];
+    if (fdOuts.length && oesdOuts.length) {
+      var seenC = new Uint8Array(52);
+      fdOuts.concat(oesdOuts).forEach(function (card) { if (!seenC[card]) { seenC[card] = 1; comboList.push(card); } });
+    }
+    mark('combo', comboList);
+    var finalC = { sf: 0, quads: 0, fh: 0, fl: 0, st: 0, set: 0, trips: 0, tp: 0, pair: 0, hc: 0 };
+    var hit = { fd: 0, sf: 0, oesd: 0, dg: 0, gs: 0, combo: 0, over: 0, boat: 0, bdf: 0, bds: 0, improve: 0, rrfh: 0, rrq: 0 };
+    var n = 0;
+    function touch(a, b) {
+      var extra = b == null ? [a] : [a, b];
+      var key = soMapMade(classifyShowdown([h0, h1], known.concat(extra)));
+      finalC[key]++; n++;
+      function has(name) { var f = flag[name]; return f[a] || (b != null && f[b]); }
+      if (has('fd')) hit.fd++;
+      if (has('sf')) hit.sf++;
+      if (has('oesd')) hit.oesd++;
+      if (has('dg')) hit.dg++;
+      if (has('gs')) hit.gs++;
+      if (has('combo')) hit.combo++;
+      if (has('over')) hit.over++;
+      if (key === 'fh' || key === 'quads' || key === 'sf') hit.boat++;
+      if (street === 'flop' && bdSuits.length && b != null) {
+        for (var bi = 0; bi < bdSuits.length; bi++) if ((a & 3) === bdSuits[bi] && (b & 3) === bdSuits[bi]) { hit.bdf++; break; }
+      }
+      if (street === 'flop' && !sp.oesd && !sp.dg && !sp.gs && (key === 'st' || key === 'sf')) hit.bds++;
+      if (madeKey === 'pair' && (key === 'tp' || key === 'trips' || key === 'set')) hit.improve++;
+      if (street === 'flop' && madeKey !== 'set' && madeKey !== 'trips' && madeKey !== 'tp' && key === 'fh') hit.rrfh++;
+      if (street === 'flop' && madeKey !== 'set' && madeKey !== 'trips' && key === 'quads') hit.rrq++;
+    }
+    if (street === 'river') { finalC[madeKey]++; n = 1; }
+    else if (street === 'turn') { for (i = 0; i < deck.length; i++) touch(deck[i], null); }
+    else { for (i = 1; i < deck.length; i++) for (var j = 0; j < i; j++) touch(deck[j], deck[i]); }
+    var rows = [{
+      id: 'made', label: { sf: 'Straight flush', quads: 'Quads', fh: 'Full house', fl: 'Flush', st: 'Straight', set: 'Set', trips: 'Trips', tp: 'Two pair', pair: 'One pair', hc: 'High card' }[madeKey],
+      sub: madeSub, outs: null, hit: n, n: n, now: true,
+      strength: { sf: 98, quads: 88, fh: 78, fl: 68, st: 48, set: 34, trips: 32, tp: 22, pair: 16, hc: 8 }[madeKey]
+    }];
+    function addRow(id, label, sub, outs, h, strength, runner) {
+      if (!h) return;
+      rows.push({ id: id, label: label, sub: sub, outs: runner ? null : outs, hit: h, n: n, now: false, runner: !!runner, strength: strength });
+    }
+    if (sfOuts.length && madeRank < 8) addRow('sfd', 'Straight-flush draw', '', sfOuts.length, hit.sf, 96, false);
+    if (madeKey === 'set' || madeKey === 'trips') addRow('boat', 'Full house or quads', madeKey === 'set' ? 'from a set' : 'from trips', boatOuts.length, hit.boat, 76, false);
+    if (madeKey === 'tp') addRow('tpboat', 'Full house', 'from two pair', boatOuts.length, hit.boat, 74, false);
+    if (street === 'flop' && madeRank < 6 && madeKey !== 'set' && madeKey !== 'trips' && madeKey !== 'tp') addRow('rrq', 'Runner-runner quads', 'runner\u2011runner', null, hit.rrq, 86, true);
+    if (street === 'flop' && madeRank < 6 && madeKey !== 'set' && madeKey !== 'trips' && madeKey !== 'tp') addRow('rrfh', 'Runner-runner full house', 'runner\u2011runner', null, hit.rrfh, 72, true);
+    if (comboList.length && madeRank < 5) addRow('combo', 'Open-ended + flush draw', 'combo', comboList.length, hit.combo, 66, false);
+    if (fdOuts.length && madeRank < 5) addRow('fd', fdNut ? 'Nut flush draw' : 'Flush draw', fdNut ? '' : 'not the nut', fdOuts.length, hit.fd, 64, false);
+      if (street === 'flop' && bdSuits.length && madeRank < 5) addRow('bdf', 'Backdoor flush draw', 'runner\u2011runner', null, hit.bdf, 60, true);
+    if (oesdOuts.length && madeRank < 4) addRow('oesd', 'Open-ended straight draw', '', oesdOuts.length, hit.oesd, 46, false);
+    if (dgOuts.length && madeRank < 4) addRow('dg', 'Double gutshot', 'two completing ranks', dgOuts.length, hit.dg, 44, false);
+    if (gsOuts.length && madeRank < 4) addRow('gs', 'Gutshot', 'one completing rank', gsOuts.length, hit.gs, 42, false);
+    if (street === 'flop' && madeRank < 4 && !sp.oesd && !sp.dg && !sp.gs) addRow('bds', 'Backdoor straight draw', 'runner\u2011runner', null, hit.bds, 38, true);
+    if (madeKey === 'pair') addRow('improve', 'Two pair or trips', 'from a pair', impOuts.length, hit.improve, 24, false);
+    if (overOuts.length) addRow('over', 'Overcards', 'both higher than the board', overOuts.length, hit.over, 12, false);
+    rows.sort(function (a, b) { return b.strength - a.strength; });
+    var order = ['sf', 'quads', 'fh', 'fl', 'st', 'set', 'trips', 'tp', 'pair', 'hc'];
+    var names = { sf: 'Straight flush', quads: 'Quads', fh: 'Full house', fl: 'Flush', st: 'Straight', set: 'Set', trips: 'Trips', tp: 'Two pair', pair: 'One pair', hc: 'High card' };
+    var finalRows = [];
+    if (street !== 'river') order.forEach(function (k) { if (finalC[k]) finalRows.push({ key: k, label: names[k], count: finalC[k] }); });
+    var best = null;
+    for (i = 0; i < rows.length; i++) if (rows[i].id !== 'made') { best = rows[i]; break; }
+    var summary = best
+      ? best.label + (best.outs != null ? ' · ' + best.outs + ' outs' : '') + ' · ' + (100 * best.hit / n).toFixed(2) + '%'
+      : rows[0].label;
+    return {
+      status: 'ok', street: street, n: n, madeKey: madeKey, madeLabel: rows[0] && rows.filter(function (r) { return r.id === 'made'; })[0].label,
+      rows: rows, final: finalRows, summary: summary,
+      pctHead: street === 'turn' ? '% on river' : street === 'river' ? 'hand' : '% by river'
+    };
+  }
+
   var API = {
     RANKS: RANKS, SUITS: SUITS, SUIT_SYM: SUIT_SYM, CAT_NAMES: CAT_NAMES, CLASSES: CLASSES, HAND_ORDER: HAND_ORDER,
     cardStr: cardStr, parseCard: parseCard, parseCards: parseCards, evalHand: evalHand, handCategory: handCategory,
@@ -2164,7 +2378,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
     topPercentClasses: topPercentClasses, parseRange: parseRange, rangeToString: rangeToString,
     mulberry32: mulberry32, nCk: nCk, EquityJob: EquityJob, runEquity: runEquity,
     flopTexture: flopTexture, flopability: flopability, spotStats: spotStats,
-    flopChances: flopChances, flopAdvanced: flopAdvanced, boardDraws: boardDraws
+    flopChances: flopChances, flopAdvanced: flopAdvanced, boardDraws: boardDraws, streetOutlook: streetOutlook
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.HoldemCore = API;
@@ -4275,8 +4489,36 @@ self.onmessage = function (e) {
   }
   function twoPairPlus(M) { return M.sf + M.quads + M.fh + M.fl + M.st + M.set + M.trips + M.tp; }
   function flopSumText(model) {
-    if (!model || model.mode === 'wait' || model.mode === 'err' || !model.n) return '—';
+    if (!model || model.mode === 'wait' || model.mode === 'err') return '—';
+    if (model.summary) return model.summary;
+    if (!model.n || !model.made || model.made.sf == null) return '—';
     return '2 pair+ ' + Math.round(twoPairPlus(model.made) / model.n * 100) + '% · draws ' + Math.round((model.draw.any || 0) / model.n * 100) + '%';
+  }
+  function foPc2(c, n) {
+    if (!n || !c) return '0';
+    return (100 * c / n).toFixed(2) + '%';
+  }
+  function streetRow(row) {
+    const sub = row.outs != null ? ((row.sub ? row.sub + ' · ' : '') + row.outs + ' outs') : (row.sub || '');
+    const name = row.label + (sub ? ' <small>' + sub + '</small>' : '');
+    if (row.now) return '<div class="frw now"><span>' + name + '</span><span>now</span><span>–</span><i style="width:100%"></i></div>';
+    const w = row.n ? Math.min(100, 100 * row.hit / row.n) : 0;
+    return '<div class="frw"><span>' + name + '</span><span>' + foPc2(row.hit, row.n) + '</span><span>' + foIn(row.hit, row.n) + '</span><i style="width:' + w.toFixed(2) + '%"></i></div>';
+  }
+  function streetRowsHTML(model) {
+    const head = model.pctHead || '% by river';
+    const title = model.street === 'turn' ? 'This hand on the turn' : model.street === 'river' ? 'Final hand' : 'This hand on the flop';
+    let html = '<div class="frh"><span>' + title + '</span><span>' + (model.street === 'river' ? 'hand' : head) + '</span><span>odds</span></div>';
+    (model.rows || []).forEach(row => { html += streetRow(row); });
+    if (model.final && model.final.length) {
+      html += '<div class="frh"><span>' + (model.street === 'turn' ? 'Final hand on the river' : 'Final hand by the river') + '</span><span>' + head + '</span><span>odds</span></div>';
+      model.final.forEach(r => {
+        const w = model.n ? Math.min(100, 100 * r.count / model.n) : 0;
+        html += '<div class="frw"><span>' + r.label + '</span><span>' + foPc2(r.count, model.n) + '</span><span>' + foIn(r.count, model.n) + '</span><i style="width:' + w.toFixed(2) + '%"></i></div>';
+      });
+    }
+    html += '<div class="flop-foot">' + model.foot + '</div>';
+    return html;
   }
   function foRow(name, c, n, sub) {
     const w = n ? Math.min(100, 100 * c / n) : 0;
@@ -4335,6 +4577,7 @@ self.onmessage = function (e) {
   function flopRowsHTML(model) {
     if (!model || model.mode === 'wait') return '<p class="flop-note">Press Calculate equity to update made-hand and draw stats for this board.</p>';
     if (model.mode === 'err') return '<p class="flop-note">' + esc(model.message || 'Could not compute flopability.') + '</p>';
+    if (model.mode === 'street' || model.mode === 'river') return streetRowsHTML(model);
     const n = model.n, M = model.made, D = model.draw;
     const pctHead = model.pctHead || '% flops';
     let html = '<div class="frh"><span>' + (model.madeHead || 'Made hand on the flop') + '</span><span>' + pctHead + '</span><span>odds</span></div>';
@@ -4380,37 +4623,28 @@ self.onmessage = function (e) {
         };
       } catch (e) { return { mode: 'err', seat: i, message: e.message }; }
     }
-    let st;
-    try { st = H.spotStats(spec); } catch (e) { return { mode: 'err', seat: i, message: e.message }; }
-    if (!st || st.status !== 'ok') return { mode: 'err', seat: i, message: (st && st.message) || 'Could not compute flopability.' };
-    const S = st.made, n = st.denominator;
-    const made = {
-      sf: S.straightFlush, quads: S.quads, fh: S.fullHouse, fl: S.flush, st: S.straight, set: S.set,
-      trips: (S.trips || 0) + (S.boardTrips || 0), tp: S.twoPair, pair: (S.onePair || 0) + (S.boardPair || 0), hc: S.noPair
-    };
-    const known = b.filter(c => c != null);
-    const D = H.boardDraws(spec.hole, known);
-    const on = f => f ? n : 0;
-    const realized = st.kind === 'realized';
+    const known = [b[0], b[1], b[2]];
+    if (b[3] != null) known.push(b[3]);
+    if (b[4] != null) known.push(b[4]);
+    let o;
+    try { o = H.streetOutlook(spec.hole, known, spec.dead); }
+    catch (e) { return { mode: 'err', seat: i, message: e.message }; }
+    if (!o || o.status !== 'ok') return { mode: 'err', seat: i, message: 'Those cards conflict.' };
+    const foot = o.street === 'river'
+      ? 'The river is out, so this is the hand you hold now.'
+      : o.street === 'turn'
+        ? 'Exact over all ' + fmtInt(o.n) + ' river cards. Outs are the cards that get there on the river. No backdoor once the turn is out.'
+        : 'Exact over all ' + fmtInt(o.n) + ' turn-and-river runouts. Outs are the turn cards; the percentage is how often you get there by the river. Backdoors need both cards.';
     return {
-      mode: 'post', seat: i, hole: spec.hole.slice(), n: n, made: made,
-      draw: { nfd: on(D.nfd), fd: on(D.fd), oe: on(D.oe), gs: on(D.gs), combo: on(D.combo), any: on(D.any) },
-      oh: { oe: D.oe ? { [D.outs]: n } : {}, gs: D.gs ? { [D.outs]: n } : {} },
-      showAdv: false, pctHead: realized ? 'hand' : '% boards',
-      madeHead: realized ? 'Made hand' : 'Made hand at showdown',
-      drawHead: 'Draws (on the cards out)',
-      foot: realized
-        ? 'The board is complete, so this is the hand you hold now.'
-        : 'Exact over all ' + fmtInt(n) + ' remaining boards. Made hands are your hand when the board is finished. Draws are what you hold on the cards already out.'
+      mode: o.street === 'river' ? 'river' : 'street', street: o.street, seat: i, hole: spec.hole.slice(),
+      n: o.n, rows: o.rows, final: o.final, summary: o.summary, pctHead: o.pctHead, showAdv: false, foot: foot
     };
   }
   function flopModel(i) {
     const p = eq.players[i];
     if (!p || p.mode === 'range' || p.cards[0] == null || p.cards[1] == null) return null;
     if (!boardEntered()) return preModel(p.cards, i);
-    const key = flopKey(i);
-    if (key && flopCache.has(key)) { const m = flopCache.get(key); m.seat = i; return m; }
-    return { mode: 'wait', seat: i };
+    return postModel(i);
   }
   function recomputeFlopStats() {
     eq.players.forEach((p, i) => {
@@ -4444,7 +4678,7 @@ self.onmessage = function (e) {
       '<p><b>Hold’em.</b> The flop hand is your 2 hole cards plus the 3 flop cards. <b>2 pair+</b> is two pair or better. A draw is listed only when it would improve the made hand, and draws can overlap a made hand and each other.</p>' +
       '<p><b>Set</b> is a pocket pair plus one matching flop card. <b>Trips</b> is a paired flop plus one matching hole card. Made rows add up to 100%.</p>' +
       '<p>The nut flush draw means you hold the highest card of that suit that is not on the flop. Open-ended (or a double gutshot) is two completing ranks, usually 8 outs. A gutshot is one rank, 4 outs. Two hole cards do not make a wrap. A combo draw is a flush draw plus an open-ended straight draw.</p>' +
-      '<p>When a flop or turn is on the board, press <b>Calculate equity</b>. Made hands are then your hand over the cards still to come, and draws are what you hold on the cards already out. Changing the hand or the board clears those numbers until the next calculation.</p>' +
+      '<p>Once the flop is out, the list is Hold’em: the hand you have now, then only the draws that improve it, strongest first. Each draw shows its outs and the exact chance you get there. On the flop that chance runs to the river; on the turn it is the river card alone. A finished board shows the made hand only. The second block is every possible final hand, and those rows add up to 100%. Changing the cards or pressing Calculate equity rebuilds the list.</p>' +
       '<div class="modal-foot"><button type="button" class="btn primary" id="m-done">Done</button></div>');
     const done = document.getElementById('m-done');
     if (done) done.onclick = closeModal;
