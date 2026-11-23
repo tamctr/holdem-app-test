@@ -434,7 +434,7 @@ footer{display:none}
   #edit-toggle{min-height:36px;padding:0 10px}
   .grid13.main{width:min(100%,calc(100dvh - 410px))}
   .grid13{gap:1px}.grid13 .cell{border-radius:2px;font-size:clamp(8px,2.5vw,11.5px)}
-  .legend{font-size:12px;gap:4px 10px;margin-top:6px}
+  .legend{font-size:11.5px;gap:2px 6px;margin-top:6px}
   .legend .lg-mix{display:none}
   .lg-tot{padding-left:8px}
   .lg-mdf{padding-left:8px}
@@ -635,7 +635,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .editbar > *,.editbar .brushes{flex:0 0 auto}
 .editbar .brushes{display:flex;flex-wrap:nowrap}
 #chart-view.editing .chead{display:none}
-.legend{flex-wrap:nowrap;overflow:hidden;white-space:nowrap;height:20px;line-height:20px;max-width:100%}
+.legend{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;white-space:nowrap;height:20px;line-height:20px;max-width:100%}
+.legend::-webkit-scrollbar{display:none}
 .info,#cell-info{box-sizing:border-box;height:30px;line-height:18px;padding-top:5px;padding-bottom:5px}
 #cell-info *{line-height:18px}
 /* seat buttons: one size for every player count (columns fixed to the 9-max count) */
@@ -665,7 +666,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   .editbar{height:32px;margin-bottom:4px;padding:2px 4px}
   .editbar .brush,.editbar .btn{min-height:26px;height:26px}
   .editbar select{padding:2px 4px}
-  .legend{height:16px;line-height:16px}
+  .legend{height:16px;line-height:16px;gap:2px 5px;font-size:11px}
   /* MDF on, phones: "Cont" + tighter gaps so the one-line legend still fits */
   .legend.has-mdf{gap:2px 8px}
   #legend.has-mdf .lg-tot .lg-lbl{font-size:0}
@@ -898,6 +899,18 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
 .srcbar-note{flex:1 1 180px;margin:0;min-width:0;font-size:12.5px;line-height:1.35;color:var(--muted)}
 .srcbar-import{margin-left:auto;border:0;background:transparent;color:var(--accent);font-size:12.5px;font-weight:650;padding:4px 2px;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .srcbar-import:hover{color:#9ec1ff}
+.libbar{display:flex;flex-direction:column;gap:6px;min-width:0;max-width:100%;padding:8px;background:var(--panel);border:1px solid var(--border);border-radius:12px}
+.libbar[hidden]{display:none!important}
+.librow{display:flex;gap:4px;min-width:0;max-width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.librow::-webkit-scrollbar{display:none}
+.librow .seg{flex:0 0 auto}
+.librow .seg button{white-space:nowrap}
+.libnote{margin:0;font-size:11.5px;line-height:1.35;color:var(--muted)}
+@media (max-width:900px){.libbar{order:1}}
+@media (max-width:640px){
+  .libbar{padding:4px;gap:4px;border-radius:10px}
+  .librow .seg button{min-height:28px;padding:0 8px;font-size:12px}
+}
 @media (max-width:640px){
   .srcbar{margin:0 0 4px;padding:4px 6px;border-radius:10px;gap:4px 8px}
   .srcbar .seg{flex:1 1 auto}
@@ -929,6 +942,7 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
       <p class="srcbar-note" id="srcbar-note">Solved (our model). Not GTO Wizard.</p>
       <button type="button" class="srcbar-import" id="import-gto-link" title="Paste frequencies you copied yourself. Nothing is downloaded from GTO Wizard.">Import GTO Wizard data</button>
     </div>
+    <div class="libbar chart-only" id="libbar" hidden></div>
     <div class="rlayout">
       <aside class="ctrl">
         <div class="panel setup" id="setup">
@@ -1810,7 +1824,9 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
     '3bet': { label: '3-Bet', color: '#a06bff', key: '3' },
     call: { label: 'Call', color: '#2fbf71', key: 'c' },
     limp: { label: 'Limp', color: '#22b8cf', key: 'l' },
-    fold: { label: 'Fold', color: '#2b3445', key: 'f' }
+    fold: { label: 'Fold', color: '#2b3445', key: 'f' },
+    raise2: { label: 'Raise', color: '#e6b325', key: '2' },
+    raise3: { label: 'Raise', color: '#c084fc', key: 'q' }
   };
   /* Build chart {classKey: {action: freq}} from layers. Needs HoldemCore.parseRange. */
   function buildChart(sc, core) {
@@ -2299,6 +2315,7 @@ self.onmessage = function (e) {
 <script src="solver/spots.js"></script>
 <script src="data/cash-spots.js"></script>
 <script src="data/reference-gtow-cash.js"></script>
+<script src="data/gtow/gtowlib.js"></script>
 <script>
 (function () {
   'use strict';
@@ -2364,6 +2381,10 @@ self.onmessage = function (e) {
   const foldAttr = id => (folds[id] ? ' open' : '');
   const ui = Object.assign({ tab: 'ranges', rmode: 'chart', g: 'cash', type: 'rfi', hero: 'BTN', vill: 'BTN', trType: 'all', trHero: 'any', brush: 'raise', freq: 1, rest: 'fold', trWeight: 'border', trAutoChart: false, setupOpen: false, chartMode: 'gto' }, load(LS.ui, {}));
   if (ui.chartMode !== 'heuristic') ui.chartMode = 'gto';
+  if (!ui.lib || typeof ui.lib !== 'object') ui.lib = {};
+  if (ui.lib.depth == null) ui.lib.depth = 100;
+  if (ui.lib.node == null) ui.lib.node = '';
+  if (!ui.lib.v8 || typeof ui.lib.v8 !== 'object') ui.lib.v8 = { pool: 'General', rake: 'cEV', open: '2', cold: true };
   const saveUI = () => save(LS.ui, ui);
 
   // top-level sections: Charts | Trainer | Equity (Charts and Trainer share the ranges view)
@@ -2416,7 +2437,7 @@ self.onmessage = function (e) {
     for (const k of H.CLASSES) {
       const src = (hands && hands[k]) || { fold: 1 };
       const cell = {};
-      for (const a of ['jam', '4bet', 'raise', '3bet', 'limp', 'call', 'fold']) if (+src[a] > 0) cell[a] = +src[a];
+      for (const a of ['jam', 'raise3', 'raise2', '4bet', 'raise', '3bet', 'limp', 'call', 'fold']) if (+src[a] > 0) cell[a] = +src[a];
       if (!Object.keys(cell).length) cell.fold = 1;
       ch[k] = cell;
     }
@@ -2471,7 +2492,7 @@ self.onmessage = function (e) {
   // active side games (cash only); later range/rules work should read this
   const sideGames = () => ui.g === 'cash' ? SIDE_GAMES.filter(([k]) => ui.side[k]).map(([k]) => k) : [];
   const sideLabels = () => sideGames().map(k => SIDE_GAMES.find(x => x[0] === k)[1]);
-  const ORDER = ['jam', '4bet', 'raise', '3bet', 'limp', 'call', 'fold'];
+  const ORDER = ['jam', 'raise3', 'raise2', '4bet', 'raise', '3bet', 'limp', 'call', 'fold'];
   // migrate older UI state: single 6-max scenario id (v1) or one shared stack (v2)
   if (ui.n == null) {
     const p = ui.sc && M.parseKey(ui.sc);
@@ -2532,6 +2553,8 @@ self.onmessage = function (e) {
     return spot && spot.hands ? chartFromHands(spot.hands) : null;
   }
   function referenceHands(key) {
+    const lib = libraryRecord(key);
+    if (lib) return GtoLib.chartFromSpot(lib);
     const spot = referenceRecord(key);
     return spot && spot.hands ? chartFromHands(spot.hands) : null;
   }
@@ -2567,10 +2590,7 @@ self.onmessage = function (e) {
   function sourceOf(key) {
     if (activeFamily(key) === 'heuristic') return hOverrides[key] ? 'edited' : 'heuristic';
     if (overrides[key]) return 'edited';
-    if (imports[key]) return 'imported';
-    if (referenceHands(key)) return 'reference';
-    if (solvedHands(key)) return 'solved';
-    return 'heuristic';
+    return GtoLib.pickSource(!!imports[key], !!referenceHands(key), !!solvedHands(key));
   }
   function srcNote(key, src) {
     const wantH = ui.chartMode === 'heuristic';
@@ -2580,9 +2600,13 @@ self.onmessage = function (e) {
     }
     if (src === 'imported') return 'Imported reference for this spot, ahead of the built-in charts.';
     if (src === 'reference') {
-      const ref = referenceRecord(key);
-      let note = REF_LABEL + '. It replaces our model for this spot.';
-      if (ref && ref.sizeUnconfirmed) note += ' SB raise size assumed 3bb.';
+      const lib = libraryRecord(key);
+      let note = 'Hand-read from the matrix, not downloaded. It replaces our model for this spot.';
+      if (lib && GtoLib.caveat(lib)) note += ' ' + GtoLib.caveat(lib);
+      else if (!lib) {
+        const ref = referenceRecord(key);
+        if (ref && ref.sizeUnconfirmed) note += ' SB raise size assumed 3bb.';
+      }
       return note;
     }
     if (src === 'solved') return 'Solved (our model). Not GTO Wizard.';
@@ -2592,6 +2616,13 @@ self.onmessage = function (e) {
   decorateScenario = (s, key) => {
     if (!s) return s;
     const copy = Object.assign({}, s, { actions: s.actions.slice(), labels: Object.assign({}, s.labels || {}) });
+    const libSpot = libraryRecord(key);
+    if (activeFamily(key) === 'gto' && libSpot && !imports[key]) {
+      copy.labels = Object.assign({}, copy.labels, GtoLib.labelsFor(libSpot));
+      copy.actions = GtoLib.actionsFor(libSpot).filter(a => A[a]);
+      copy.desc = GtoLib.desc(libSpot);
+      copy.name = GtoLib.title(libSpot);
+    } else {
     const ref = referenceRecord(key);
     if (activeFamily(key) === 'gto' && ref && !imports[key]) {
       if (ref.labels) copy.labels = Object.assign({}, copy.labels, ref.labels);
@@ -2601,6 +2632,7 @@ self.onmessage = function (e) {
         if (copy.actions.indexOf('limp') >= 0) copy.desc = 'Folded to you in the SB. Raise to ' + (ref.sizeUnconfirmed ? '~' : '') + sz + 'bb, limp, or fold?';
         else copy.desc = 'Folded to you in the ' + (s.heroLabel || s.hero) + '. Open to ' + sz + 'bb or fold?';
       }
+    }
     }
     const chart = chartOf(key);
     if (chart && copy.actions.indexOf('limp') < 0) {
@@ -2671,10 +2703,187 @@ self.onmessage = function (e) {
 
   /* ---- setup (game / players / stack) + situation buttons ---- */
   const stackOf = () => ui.stacks[ui.g];
+  let gtoIndex = null;
+  const gtoFiles = {};
+  function gtoBrowse() {
+    return ui.chartMode !== 'heuristic' && ui.g === 'cash' && (ui.n === 2 || ui.n === 6 || ui.n === 8 || ui.n === 9);
+  }
+  function eightList() {
+    if (!gtoIndex) return [];
+    return Object.keys(gtoIndex.libraries).filter(gt => gtoIndex.libraries[gt].players === 8).map(gt => {
+      const lib = gtoIndex.libraries[gt];
+      return { gametype: gt, pool: lib.pool, rake: lib.rake, open: String(lib.open), cold: !!lib.coldCalls, depths: lib.depths };
+    });
+  }
+  function resolve8() {
+    const want = ui.lib.v8;
+    const all = eightList();
+    function score(x) {
+      let s = 0;
+      if (x.pool === want.pool) s += 8;
+      if (x.rake === want.rake) s += 4;
+      if (x.open === String(want.open)) s += 2;
+      if (x.cold === !!want.cold) s += 1;
+      return s;
+    }
+    let best = all[0], bs = -1;
+    all.forEach(x => { const s = score(x); if (s > bs) { bs = s; best = x; } });
+    return best ? best.gametype : null;
+  }
+  function selectedGametype() {
+    if (!gtoIndex) return null;
+    if (ui.n === 6) return 'Cash6m50zGeneral';
+    if (ui.n === 9) return 'Cash9m50zGeneral';
+    if (ui.n === 8) return resolve8();
+    if (ui.n === 2) {
+      const d = ui.lib.depth;
+      const simple = gtoIndex.libraries.CashHu500zSimple;
+      const complex = gtoIndex.libraries.CashHu500zComplex;
+      if (simple && simple.depths.indexOf(d) >= 0) return 'CashHu500zSimple';
+      if (complex && complex.depths.indexOf(d) >= 0) return 'CashHu500zComplex';
+      return 'CashHu500zComplex';
+    }
+    return null;
+  }
+  function depthChoices() {
+    if (!gtoIndex) return [];
+    if (ui.n === 2) {
+      const a = (gtoIndex.libraries.CashHu500zComplex || {}).depths || [];
+      const b = (gtoIndex.libraries.CashHu500zSimple || {}).depths || [];
+      return a.concat(b).filter((d, i, arr) => arr.indexOf(d) === i).sort((x, y) => x - y);
+    }
+    const gt = selectedGametype();
+    const lib = gt && gtoIndex.libraries[gt];
+    return lib ? lib.depths.slice() : [];
+  }
+  function ensureDepth() {
+    const ds = depthChoices();
+    if (!ds.length) return;
+    if (ds.indexOf(ui.lib.depth) < 0) {
+      const s = ui.stacks.cash;
+      let best = ds[0];
+      ds.forEach(d => { if (Math.abs(d - s) < Math.abs(best - s)) best = d; });
+      ui.lib.depth = best;
+    }
+  }
+  function spotsNow() {
+    if (!gtoIndex || !window.GtoLib) return [];
+    const gt = selectedGametype();
+    if (!gt || !gtoIndex.catalog[gt]) return [];
+    const depth = ui.lib.depth;
+    return gtoIndex.catalog[gt].map(GtoLib.parseId).filter(s => s && s.depth === depth);
+  }
+  function syncGtoSel() {
+    if (!gtoBrowse() || !gtoIndex || ui.type === 'vj') return;
+    ensureDepth();
+    if (ui.n === 8) {
+      const gt = resolve8();
+      const lib = gt && gtoIndex.libraries[gt];
+      if (lib) ui.lib.v8 = { pool: lib.pool, rake: lib.rake, open: String(lib.open), cold: !!lib.coldCalls };
+    }
+    const spots = spotsNow().filter(s => GtoLib.matchType(s, ui.type));
+    if (!spots.length) return;
+    if (!spots.some(s => s.hero === ui.hero)) {
+      spots.sort((a, b) => GtoLib.posRank(a.hero) - GtoLib.posRank(b.hero));
+      ui.hero = spots[0].hero;
+    }
+    const heroes = spotsNow().filter(s => GtoLib.matchType(s, ui.type) && s.hero === ui.hero);
+    if (heroes[0] && heroes[0].villain && !heroes.some(s => s.villain === ui.vill)) {
+      heroes.sort((a, b) => GtoLib.posRank(a.villain) - GtoLib.posRank(b.villain));
+      ui.vill = heroes[0].villain;
+    }
+    const nodes = heroes.filter(s => !s.villain || s.villain === ui.vill);
+    if (nodes.length && !nodes.some(s => s.node === (ui.lib.node || ''))) {
+      nodes.sort((a, b) => {
+        const ra = GtoLib.nodeRank(a.node), rb = GtoLib.nodeRank(b.node);
+        return ra[0] - rb[0] || ra[1] - rb[1];
+      });
+      ui.lib.node = nodes[0].node;
+    }
+  }
+  function selectionId() {
+    if (!gtoBrowse() || !gtoIndex || ui.type === 'vj') return null;
+    const spots = spotsNow().filter(s => GtoLib.matchType(s, ui.type) && s.hero === ui.hero && (!s.villain || s.villain === ui.vill));
+    if (!spots.length) return null;
+    const node = ui.lib.node || '';
+    const hit = spots.find(s => s.node === node) || spots[0];
+    return hit.id;
+  }
+  function libraryRecord(key) {
+    if (!gtoIndex || !key || !window.GtoLib) return null;
+    const parts = String(key).split('|');
+    if (parts[0] !== 'cash') return null;
+    const n = +parts[1];
+    let gt = null;
+    if (n === 6) gt = 'Cash6m50zGeneral';
+    else if (n === 9) gt = 'Cash9m50zGeneral';
+    else if (n === 2) gt = parts.indexOf('complex') >= 0 ? 'CashHu500zComplex' : parts.indexOf('simple') >= 0 ? 'CashHu500zSimple' : null;
+    else if (n === 8) gt = selectedGametype();
+    const file = gt && gtoFiles[gt];
+    return file && file[key] || null;
+  }
+  function gtoViewSpot() {
+    const id = selectionId();
+    if (!id) return null;
+    const gt = selectedGametype();
+    const file = gt && gtoFiles[gt];
+    return file && file[id] || null;
+  }
+  function ensureGto(gt) {
+    if (!gt || !gtoIndex) return Promise.resolve(null);
+    if (gtoFiles[gt]) return Promise.resolve(gtoFiles[gt]);
+    if (!ensureGto.inflight) ensureGto.inflight = {};
+    if (ensureGto.inflight[gt]) return ensureGto.inflight[gt];
+    const meta = Object.assign({ gametype: gt }, gtoIndex.libraries[gt]);
+    ensureGto.inflight[gt] = fetch('data/gtow/app/' + meta.file).then(r => {
+      if (!r.ok) throw new Error('gto ' + r.status);
+      return r.json();
+    }).then(doc => {
+      const map = {};
+      doc.spots.forEach(p => { const s = GtoLib.decode(p, meta); map[s.id] = s; });
+      gtoFiles[gt] = map;
+      return map;
+    }).catch(() => { gtoFiles[gt] = gtoFiles[gt] || {}; return gtoFiles[gt]; });
+    return ensureGto.inflight[gt];
+  }
+  function kickGto() {
+    if (!gtoIndex || !gtoBrowse()) return;
+    const gt = selectedGametype();
+    if (!gt || gtoFiles[gt] || kickGto.pending === gt) return;
+    kickGto.pending = gt;
+    ensureGto(gt).then(() => {
+      if (kickGto.pending === gt) kickGto.pending = null;
+      if (selectedGametype() !== gt || ui.rmode === 'train' || ui.tab === 'equity') return;
+      renderCfg();
+      renderChartView();
+      fitGrid(true);
+    });
+  }
+  function viewState() {
+    const lib = gtoViewSpot();
+    if (lib) return { key: lib.id, s: GtoLib.scenario(lib), lib: lib, missing: false, loading: false };
+    const loading = !!(gtoBrowse() && ui.type !== 'vj' && gtoIndex && selectionId() && !lib);
+    const missing = !!(gtoBrowse() && ui.type !== 'vj' && gtoIndex && !selectionId());
+    const key = curKey();
+    let s = scOf(key);
+    if (!s) {
+      const seats = M.SEATS[ui.n] || M.SEATS[6];
+      ui.hero = seats.indexOf('BTN') >= 0 ? 'BTN' : seats[0];
+      ui.type = 'rfi';
+      ui.vill = seats[0];
+      const key2 = curKey();
+      return { key: key2, s: scOf(key2), lib: null, missing: true, loading: false };
+    }
+    return { key: key, s: s, lib: null, missing: missing, loading: loading };
+  }
   function fixSel() {
     ui.g = M.GAMES.includes(ui.g) ? ui.g : 'cash';
     for (const g of M.GAMES) ui.stacks[g] = M.snapStack(g, ui.stacks[g] != null ? ui.stacks[g] : M.DEFAULT_STACK[g]);
     ui.n = M.PLAYERS.includes(+ui.n) ? +ui.n : 6;
+    if (gtoBrowse() && ui.type !== 'vj') {
+      if (['rfi', 'vs', 'v3', 'v4', 'vl'].indexOf(ui.type) < 0) ui.type = 'rfi';
+      return;
+    }
     const seats = M.SEATS[ui.n];
     const solvedSetup = ui.g === 'cash' && ui.n === 6 && ui.stacks.cash === 100;
     if (DEEP.includes(ui.type) && !solvedSetup) ui.type = 'rfi';
@@ -2699,17 +2908,52 @@ self.onmessage = function (e) {
   const PHONE = window.matchMedia('(max-width:640px)');
   const onPhoneChange = () => { renderCfg(); fitGrid(true); };
   if (PHONE.addEventListener) PHONE.addEventListener('change', () => onPhoneChange()); else if (PHONE.addListener) PHONE.addListener(() => onPhoneChange());
-  const segBtns = (items, active, attr) => items.map(([v, l, t]) => `<button data-${attr}="${esc(v)}" class="${v === active ? 'active' : ''}"${t ? ` title="${esc(t)}"` : ''} aria-pressed="${v === active}">${l}</button>`).join('');
+  const segBtns = (items, active, attr) => items.map(([v, l, t]) => `<button data-${attr}="${esc(v)}" class="${String(v) === String(active) ? 'active' : ''}"${t ? ` title="${esc(t)}"` : ''} aria-pressed="${String(v) === String(active)}">${l}</button>`).join('');
+  function renderLibBar() {
+    const bar = $('#libbar');
+    if (!bar) return;
+    const on = gtoBrowse() && ui.rmode !== 'train';
+    bar.hidden = !on;
+    if (!on) { bar.innerHTML = ''; return; }
+    if (!gtoIndex) { bar.innerHTML = '<p class="libnote">Loading the GTO Wizard library…</p>'; return; }
+    const fmt = [['6', '6-max'], ['2', 'HU'], ['9', '9-max'], ['8', '8-max']];
+    let html = '<div class="librow" role="group" aria-label="Format"><div class="seg">' + segBtns(fmt, String(ui.n), 'fmt') + '</div></div>';
+    if (ui.n === 8) {
+      const v = ui.lib.v8;
+      const all = eightList();
+      const uniq = xs => xs.filter((x, i) => xs.indexOf(x) === i);
+      const pools = uniq(all.map(x => x.pool));
+      const rakes = uniq(all.map(x => x.rake));
+      const opens = ['2', '2.5', '3', '4', '5', '7'].filter(o => all.some(x => x.open === o));
+      html += '<div class="librow" aria-label="8-max pool, rake and cold calls">';
+      html += '<div class="seg">' + segBtns(pools.map(p => [p, p === 'General' ? 'General' : 'Simple']), v.pool, 'pool') + '</div>';
+      html += '<div class="seg">' + segBtns(rakes.map(r => [r, r === 'cEV' ? 'cEV' : 'Live']), v.rake, 'rake') + '</div>';
+      html += '<div class="seg">' + segBtns([['1', 'Cold', 'With cold calls'], ['0', 'None', 'No cold calls']], v.cold ? '1' : '0', 'cold') + '</div>';
+      html += '</div>';
+      html += '<div class="librow" aria-label="Opening size"><div class="seg">' + segBtns(opens.map(o => [o, o + 'x']), String(v.open), 'open') + '</div></div>';
+    }
+    if (ui.n === 2) {
+      const gt = selectedGametype();
+      html += '<p class="libnote">Heads-up NL500 ' + (gt && gt.indexOf('Simple') >= 0 ? 'Simple' : 'Complex') + '. Complex is 20–150bb. Simple is 200–500bb.</p>';
+    }
+    const depths = depthChoices();
+    html += '<div class="librow" role="group" aria-label="Stack depth"><div class="seg">' + segBtns(depths.map(d => [String(d), d + 'bb']), String(ui.lib.depth), 'depth') + '</div></div>';
+    bar.innerHTML = html;
+  }
   // labelled ticks; tournament draws a minor tick every 5bb (the slider itself moves in 1bb steps)
   const TICKS = { cash: [50, 75, 100, 200, 300, 500], mtt: [5, 20, 40, 60, 80, 100] };
   const tickList = g => g === 'mtt' ? M.STACKS.mtt.filter(s => s === 5 || s % 5 === 0) : M.STACKS[g];
   const stackTxt = (g, s) => (g === 'cash' && s >= 500 ? '500+' : s) + ' bb';
   function setupSummary() {
-    const s = stackOf();
     const sg = sideLabels();
-    return `${M.GAME_LABEL[ui.g]}${icmOn() ? ' ICM' : ''} · ${ui.n === 2 ? 'Heads-up' : ui.n + ' players'} · ${stackTxt(ui.g, s)}${sg.length ? ' · ' + sg.join(' + ') : ''}`;
+    const depth = gtoBrowse() && ui.lib.depth ? ui.lib.depth + ' bb' : stackTxt(ui.g, stackOf());
+    return `${M.GAME_LABEL[ui.g]}${icmOn() ? ' ICM' : ''} · ${ui.n === 2 ? 'Heads-up' : ui.n + ' players'} · ${depth}${sg.length ? ' · ' + sg.join(' + ') : ''}`;
   }
-  const setupChip = () => { const n = sideGames().length; return `${ui.n === 2 ? 'HU' : ui.n + 'p'} · ${stackTxt(ui.g, stackOf()).replace(' ', '')}${n ? ' · +' + n : ''}`; };
+  const setupChip = () => {
+    const n = sideGames().length;
+    const d = gtoBrowse() && ui.lib.depth ? ui.lib.depth + 'bb' : stackTxt(ui.g, stackOf()).replace(' ', '');
+    return `${ui.n === 2 ? 'HU' : ui.n + 'p'} · ${d}${n ? ' · +' + n : ''}`;
+  };
   // slider: fine-grained 0..RES positions, buckets evenly spaced; snaps to a bucket on release
   const RES = 1000;
   let sliderDrag = null;
@@ -2745,12 +2989,10 @@ self.onmessage = function (e) {
       ? '<b>Tournament · ICM on</b> (approx. bubble ICM, not a full prize-pool solve): calls much tighter, early opens a little tighter, late jams wider. Equal stacks assumed. 1bb BB ante.'
       : '<b>Tournament · chip-EV:</b> 1bb big-blind ante. Re-raises are all-in below 31bb; opens are jam-or-fold at 12bb and below (Nash push/fold).')
       : (ui.chartMode === 'heuristic'
-        ? '<b>Heuristic:</b> the original pre-solver ranges. GTO shows the GTO Wizard first-in reference at 50, 75 and 100bb, then our solved 6-max 100bb model.'
-        : (ui.n === 6 && (stackOf() === 50 || stackOf() === 75 || stackOf() === 100)
-          ? (stackOf() === 100
-            ? '<b>Cash · 6-max 100bb:</b> first-in charts are a GTO Wizard reference (NL50, General). Other lines are our solved model. A paste you import replaces both for that spot.'
-            : '<b>Cash · 6-max ' + stackOf() + 'bb:</b> first-in charts are a GTO Wizard reference (NL50, General). Spots without one, such as facing an open, show the heuristic.')
-          : '<b>Cash:</b> no reference or solved chart for this stack, so GTO mode shows the heuristic. 6-max first-in at 50, 75 and 100bb has the GTO Wizard reference.'));
+        ? '<b>Heuristic:</b> the original pre-solver ranges. GTO shows the hand-read GTO Wizard library when this format and depth have one.'
+        : (gtoBrowse()
+          ? '<b>GTO Wizard library.</b> Pick the format, depth and spot. A paste you import still replaces that chart. Missing spots fall back to the solved model, then the heuristic.'
+          : '<b>Cash:</b> no GTO Wizard library for this table size, so GTO mode shows the heuristic.'));
     const cash = ui.g === 'cash', sg = sideGames();
     $$('#cfg-side [data-sg]').forEach(b => {
       const on = cash && !!ui.side[b.dataset.sg], lab = SIDE_GAMES.find(x => x[0] === b.dataset.sg)[1];
@@ -2767,35 +3009,73 @@ self.onmessage = function (e) {
     $('#tab-ranges').classList.toggle('g-mtt', ui.g === 'mtt');
     $('#tab-ranges').classList.toggle('icm-on', icmOn());
     $('#setup-sum').setAttribute('aria-expanded', String(!!ui.setupOpen));
-    const seats = M.SEATS[ui.n], L = s => esc(M.seatLabel(ui.n, s));
+    const seats = M.SEATS[ui.n], L = s => esc((M.SEATS[ui.n] || []).includes(s) ? M.seatLabel(ui.n, s) : s);
     // chart situation
     const mob = PHONE.matches;
-    const typeItems = [['rfi', 'Open', 'First in: everyone before you folded'], ['vs', mob ? 'vs' : 'vs Open', 'Facing a single open raise']];
-    if (ui.g === 'cash' && ui.n === 6 && stackOf() === 100) {
-      typeItems.push(['v3', '3-Bet', 'You opened, someone 3-bet, folds back to you']);
-      typeItems.push(['v4', '4-Bet', 'You 3-bet and face a 4-bet: call or jam']);
-      typeItems.push(['vj', 'Jam', 'You 4-bet and face a 5-bet all-in']);
+    if (gtoBrowse() && gtoIndex) syncGtoSel();
+    let typeItems;
+    if (gtoBrowse() && gtoIndex) {
+      const have = t => spotsNow().some(s => GtoLib.matchType(s, t));
+      typeItems = [];
+      if (have('rfi')) typeItems.push(['rfi', 'RFI', 'First in: everyone before you folded']);
+      if (have('vs')) typeItems.push(['vs', mob ? 'vs' : 'vs Open', 'Facing an open']);
+      if (have('v3')) typeItems.push(['v3', mob ? '3-bet' : 'vs 3-bet', 'You opened and face a 3-bet']);
+      if (have('v4')) typeItems.push(['v4', mob ? '4-bet' : 'vs 4-bet', 'You 3-bet and face a 4-bet']);
+      if (have('vl')) typeItems.push(['vl', 'Limp', 'Facing a limp, or a raise after you limped']);
+      if (ui.n === 6 && ui.lib.depth === 100) typeItems.push(['vj', 'Jam', 'You 4-bet and face a 5-bet all-in. Solved model, not the library.']);
+      if (!typeItems.length) typeItems.push(['rfi', 'RFI', 'First in']);
+    } else {
+      typeItems = [['rfi', 'Open', 'First in: everyone before you folded'], ['vs', mob ? 'vs' : 'vs Open', 'Facing a single open raise']];
+      if (ui.g === 'cash' && ui.n === 6 && stackOf() === 100) {
+        typeItems.push(['v3', '3-Bet', 'You opened, someone 3-bet, folds back to you']);
+        typeItems.push(['v4', '4-Bet', 'You 3-bet and face a 4-bet: call or jam']);
+        typeItems.push(['vj', 'Jam', 'You 4-bet and face a 5-bet all-in']);
+      }
     }
     const typeSeg = `<div class="seg sit full" role="group" aria-label="Situation">${segBtns(typeItems, ui.type, 'type')}</div>`;
     const trSeg = `<div class="seg sit full" role="group" aria-label="Drill type">${segBtns([['all', mob ? 'Mix' : 'Mixed', 'Mixed: open and vs-open spots'], ['rfi', 'Open'], ['vs', mob ? 'vs' : 'vs Open', 'vs Open']], ui.trType, 'trtype')}</div>`;
     $('#sit-slot').innerHTML = mob ? (ui.rmode === 'train' ? trSeg : typeSeg) : '';
     let h = mob ? '' : typeSeg;
-    const deep = DEEP.includes(ui.type);
-    const heroSeats = ui.type === 'rfi' ? seats.filter(s => s !== 'BB')
-      : deep ? [...new Set(pairsFor(ui.type).map(p => p.hero))]
-      : seats.slice(1);
-    h += `<div class="field"><div class="flabel">${mob ? 'You' : 'Your seat'}</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns(heroSeats.map(s => [s, L(s)]), ui.hero, 'hero')}</div></div>`;
-    if (ui.type === 'rfi') h += `<div class="field vrow"><div class="flabel">Opener</div><div class="seats-btns vill ghost" aria-hidden="true"><span class="ghosttxt">&mdash; none, folded to you</span></div></div>`;
-    if (ui.type === 'vs') {
-      const vs = seats.slice(0, seats.indexOf(ui.hero));
-      h += `<div class="field"><div class="flabel">Opener</div><div class="seats-btns vill" role="group" aria-label="Opener position">${segBtns(vs.map(s => [s, L(s)]), ui.vill, 'vill')}</div></div>`;
-    }
-    if (deep) {
-      const vs = pairsFor(ui.type).filter(p => p.hero === ui.hero).map(p => p.villain);
-      const vlab = ui.type === 'vj' ? 'Jammer' : (ui.type === 'v4' ? 'Opener' : '3-bettor');
-      h += `<div class="field"><div class="flabel">${vlab}</div><div class="seats-btns vill" role="group" aria-label="${vlab}">${segBtns(vs.map(s => [s, L(s)]), ui.vill, 'vill')}</div></div>`;
+    const useLib = gtoBrowse() && gtoIndex && ui.type !== 'vj';
+    if (useLib) {
+      const matched = spotsNow().filter(s => GtoLib.matchType(s, ui.type));
+      const byPos = (a, b) => GtoLib.posRank(a) - GtoLib.posRank(b);
+      const heroes = [...new Set(matched.map(s => s.hero))].sort(byPos);
+      h += `<div class="field"><div class="flabel">${mob ? 'You' : 'Your seat'}</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns(heroes.map(s => [s, L(s)]), ui.hero, 'hero')}</div></div>`;
+      if (ui.type === 'rfi') h += `<div class="field vrow"><div class="flabel">Opener</div><div class="seats-btns vill ghost" aria-hidden="true"><span class="ghosttxt">&mdash; none, folded to you</span></div></div>`;
+      else {
+        const villains = [...new Set(matched.filter(s => s.hero === ui.hero && s.villain).map(s => s.villain))].sort(byPos);
+        const vlab = ui.type === 'v3' ? '3-bettor' : ui.type === 'v4' ? 'Opener' : ui.type === 'vl' ? 'Villain' : 'Opener';
+        if (villains.length) h += `<div class="field"><div class="flabel">${vlab}</div><div class="seats-btns vill" role="group" aria-label="${vlab}">${segBtns(villains.map(s => [s, L(s)]), ui.vill, 'vill')}</div></div>`;
+        const nodes = matched.filter(s => s.hero === ui.hero && (!s.villain || s.villain === ui.vill));
+        const uniq = [];
+        nodes.forEach(s => { if (!uniq.some(n => n === s.node)) uniq.push(s.node); });
+        uniq.sort((a, b) => { const ra = GtoLib.nodeRank(a), rb = GtoLib.nodeRank(b); return ra[0] - rb[0] || ra[1] - rb[1]; });
+        if (uniq.length > 1) {
+          const labs = uniq.map(n => [n, GtoLib.nodeLabel(n) === 'Main' ? 'Raise' : GtoLib.nodeLabel(n)]);
+          h += `<div class="field"><div class="flabel">Size</div><div class="seats-btns" role="group" aria-label="Sizing line">${segBtns(labs, ui.lib.node || '', 'node')}</div></div>`;
+        }
+      }
+    } else {
+      const deep = DEEP.includes(ui.type);
+      const heroSeats = ui.type === 'rfi' ? seats.filter(s => s !== 'BB')
+        : deep ? [...new Set(pairsFor(ui.type).map(p => p.hero))]
+        : seats.slice(1);
+      h += `<div class="field"><div class="flabel">${mob ? 'You' : 'Your seat'}</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns(heroSeats.map(s => [s, L(s)]), ui.hero, 'hero')}</div></div>`;
+      if (ui.type === 'rfi') h += `<div class="field vrow"><div class="flabel">Opener</div><div class="seats-btns vill ghost" aria-hidden="true"><span class="ghosttxt">&mdash; none, folded to you</span></div></div>`;
+      if (ui.type === 'vs') {
+        const vs = seats.slice(0, seats.indexOf(ui.hero));
+        h += `<div class="field"><div class="flabel">Opener</div><div class="seats-btns vill" role="group" aria-label="Opener position">${segBtns(vs.map(s => [s, L(s)]), ui.vill, 'vill')}</div></div>`;
+      }
+      if (deep) {
+        const vs = pairsFor(ui.type).filter(p => p.hero === ui.hero).map(p => p.villain);
+        const vlab = ui.type === 'vj' ? 'Jammer' : (ui.type === 'v4' ? 'Opener' : '3-bettor');
+        h += `<div class="field"><div class="flabel">${vlab}</div><div class="seats-btns vill" role="group" aria-label="${vlab}">${segBtns(vs.map(s => [s, L(s)]), ui.vill, 'vill')}</div></div>`;
+      }
     }
     $('#sitbar').innerHTML = h;
+    renderLibBar();
+    kickGto();
     // trainer situation
     let t = mob ? '' : trSeg;
     t += `<div class="field"><div class="flabel">${mob ? 'You' : 'Your seat'}</div><div class="seats-btns" role="group" aria-label="Hero position">${segBtns([['any', 'Any']].concat(seats.map(s => [s, L(s)])), ui.trHero, 'trhero')}</div></div>`;
@@ -2822,7 +3102,16 @@ self.onmessage = function (e) {
     sliderVis(v);
     const s = M.STACKS[ui.g][sIdx(ui.g, v)];
     if (s === stackOf()) return;
-    ui.stacks[ui.g] = s; stackLabels();
+    ui.stacks[ui.g] = s;
+    if (ui.g === 'cash' && gtoBrowse() && gtoIndex) {
+      const ds = depthChoices();
+      if (ds.length) {
+        let best = ds[0];
+        ds.forEach(d => { if (Math.abs(d - s) < Math.abs(best - s)) best = d; });
+        ui.lib.depth = best;
+      }
+    }
+    stackLabels();
     if (ui.rmode !== 'train' && !sliderRaf) sliderRaf = requestAnimationFrame(() => { sliderRaf = 0; renderChartView(); });
   }
   function sliderRelease() {
@@ -2859,12 +3148,36 @@ self.onmessage = function (e) {
   $('#cfg-ticks').addEventListener('click', e => { const tk = e.target.closest('.tk'); if (!tk) return; ui.stacks[ui.g] = M.snapStack(ui.g, +tk.dataset.s); cfgChanged(); });
   $('#sit-slot').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.type) { ui.type = b.dataset.type; cfgChanged(); }
+    if (b.dataset.type) { ui.type = b.dataset.type; ui.lib.node = ''; cfgChanged(); }
     else if (b.dataset.trtype) { ui.trType = b.dataset.trtype; saveUI(); renderCfg(); deal(); }
   });
   $('#sitbar').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.type) ui.type = b.dataset.type; else if (b.dataset.hero) ui.hero = b.dataset.hero; else if (b.dataset.vill) ui.vill = b.dataset.vill; else return;
+    if (b.dataset.type) { ui.type = b.dataset.type; ui.lib.node = ''; }
+    else if (b.dataset.hero) { ui.hero = b.dataset.hero; ui.lib.node = ''; }
+    else if (b.dataset.vill) { ui.vill = b.dataset.vill; ui.lib.node = ''; }
+    else if (b.dataset.node != null) ui.lib.node = b.dataset.node;
+    else return;
+    cfgChanged();
+  });
+  $('#libbar').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.fmt) { ui.n = +b.dataset.fmt; ui.lib.node = ''; }
+    else if (b.dataset.depth) {
+      ui.lib.depth = +b.dataset.depth;
+      if (M.STACKS.cash.includes(ui.lib.depth)) ui.stacks.cash = ui.lib.depth;
+      else ui.stacks.cash = M.snapStack('cash', ui.lib.depth);
+    } else if (b.dataset.pool || b.dataset.rake || b.dataset.open || b.dataset.cold) {
+      if (b.dataset.pool) ui.lib.v8.pool = b.dataset.pool;
+      if (b.dataset.rake) ui.lib.v8.rake = b.dataset.rake;
+      if (b.dataset.open) ui.lib.v8.open = b.dataset.open;
+      if (b.dataset.cold) ui.lib.v8.cold = b.dataset.cold === '1';
+      const got = gtoIndex && gtoIndex.libraries[resolve8()];
+      const want = ui.lib.v8;
+      if (got && (got.pool !== want.pool || got.rake !== want.rake || String(got.open) !== String(want.open) || !!got.coldCalls !== !!want.cold)) {
+        toast('That 8-max mix is not in the library. Showing the closest chart.');
+      }
+    } else return;
     cfgChanged();
   });
   $('#trsitbar').addEventListener('click', e => {
@@ -2875,9 +3188,9 @@ self.onmessage = function (e) {
   // "Approximate" info popover
   const INFO = '<b>Three kinds of chart.</b> The <b>GTO / Heuristic</b> switch at the top of Charts picks the family. The label under the title says which one is on screen, and the line next to the switch says when a spot had to fall back.'
     + '<p><b>Solved (our model)</b> is 6-max 100bb cash only. External-sampling CFR on a preflop tree (open 2.5bb, SB 3bb, 3-bet, 4-bet, all-in) with a 169-class equity table, card removal when dealing, and a position realisation factor instead of a postflop solve. 5% rake capped at 3bb when a flop is seen; no flop, no drop. It does <b>not</b> match GTO Wizard. Suited connectors are played tighter than a full postflop solver, because this model has no implied-odds tree.</p>'
-    + '<p><b>GTO Wizard reference (NL50, General)</b> is a hand-read of the 6-max cash first-in charts at 50bb, 75bb and 100bb (NL50 rake, General pool). In GTO mode it replaces our model for those spots, and the small blind chart includes a limp. This app does not download it. A paste you import still replaces it.</p>'
+    + '<p><b>GTO Wizard reference</b> is a hand-read of cash preflop charts: 6-max NL50 General (20–200bb), heads-up NL500 Complex and Simple, 9-max NL50 at 100bb, and 8-max live/cEV opens. It replaces our model wherever a chart exists. Nothing is downloaded. Most charts were typed at about 0.5% (some at 0.1%). Limp-raise weights on a few nodes were rescaled so the totals match GTO Wizard\'s overview — the note under the switch says when. 9-max branches under 0.5% were skipped. Heads-up 60bb and 100bb were typed before per-node mismatch tags. The 6-max 75bb small-blind raise size was not on the matrix and is shown as 3bb. There is no small-blind limp at 6-max 150bb or 200bb.</p>'
     + '<p><b>Imported reference</b> is a range you pasted yourself (JSON, CSV, or a <span style="font-family:var(--mono)"># id:</span> block). In GTO mode it replaces both the built-in reference and the model for that spot. Nothing here is downloaded from GTO Wizard.</p>'
-    + '<p><b>Heuristic</b> is the original pre-solver ranges: every other cash stack and table size, plus all tournament charts. Tournament jam-or-fold at 12bb and below is a separate push/fold equilibrium. If GTO is selected and this spot has no reference and was never solved, the heuristic is shown and labelled as such.</p>'
+    + '<p><b>Heuristic</b> is the original pre-solver ranges, including every tournament chart. Tournament jam-or-fold at 12bb and below is a separate push/fold equilibrium. If GTO is selected and this spot is not in the library and was never solved, the heuristic is shown and labelled as such.</p>'
     + '<p><b>ICM</b> (tournament only) is an approximate bubble adjustment, not a full prize-pool solve. The format for pasting your own frequencies is in docs/spot-import.md.</p>';
   $('#info-pop').innerHTML = INFO;
   const setPop = on => { $('#info-pop').hidden = !on; $('#info-btn').setAttribute('aria-expanded', String(on)); };
@@ -2895,17 +3208,22 @@ self.onmessage = function (e) {
     $('#cell-info').classList.toggle('selected', on);
   }
   function renderChartView() {
-    const key = curKey(), s = scOf(key);
+    const view = viewState();
+    const key = view.key, s = view.s;
+    if (!s) return;
     const chart = chartOf(key);
     const src = sourceOf(key);
     $('#edited-pill').hidden = src !== 'edited';
     const sp = $('#source-pill');
     sp.hidden = src === 'edited';
     sp.className = 'pill src-' + src;
-    sp.textContent = SOURCE_LABEL[src];
-    sp.title = srcNote(key, src);
+    let note = srcNote(key, src);
+    if (view.loading) note = 'Loading the GTO Wizard chart…';
+    else if (view.missing && src !== 'imported' && src !== 'edited') note = src === 'solved' ? 'No GTO Wizard chart for this spot — showing the solved model.' : 'No GTO Wizard chart for this spot — showing the heuristic.';
+    sp.textContent = src === 'reference' && view.lib ? GtoLib.sourceLabel(view.lib) : SOURCE_LABEL[src];
+    sp.title = note;
     $('#info-btn .lgtxt').textContent = ' ' + (src === 'solved' ? 'Our model' : src === 'reference' ? 'GTO Wizard' : src === 'imported' ? 'Imported' : src === 'edited' ? 'Edited' : 'Heuristic');
-    renderSrcBar(key, src);
+    renderSrcBar(key, src, note);
     $('#headline').innerHTML = `<span class="hgame ${s.g}">${esc(s.game)}</span> <span class="hsep h1">&middot;</span> <span class="hp-l">${esc(s.players)}</span><span class="hp-s">${esc(s.table)}</span> <span class="hsep">&middot;</span> ${esc(s.stackLabel)} <span class="hsep">&middot;</span> <span class="hspot">${esc(s.name)}</span>`;
     $('#subline').textContent = s.desc;
     const g = $('#grid');
@@ -2918,8 +3236,8 @@ self.onmessage = function (e) {
     // brushes
     if (!s.actions.includes(ui.brush)) ui.brush = s.actions[0];
     if (!s.actions.includes(ui.rest) || ui.rest === ui.brush) ui.rest = 'fold';
-    $('#brushes').innerHTML = s.actions.map(a => `<button class="brush ${a === 'fold' ? 'fold' : ''} ${a === ui.brush ? 'active' : ''}" data-a="${a}" style="background:${A[a].color}" aria-pressed="${a === ui.brush}">${A[a].label}</button>`).join('');
-    $('#brush-rest').innerHTML = s.actions.filter(a => a !== ui.brush).map(a => `<option value="${a}">${A[a].label}</option>`).join('');
+    $('#brushes').innerHTML = s.actions.map(a => `<button class="brush ${a === 'fold' ? 'fold' : ''} ${a === ui.brush ? 'active' : ''}" data-a="${a}" style="background:${A[a].color}" aria-pressed="${a === ui.brush}">${esc(labOf(s, a))}</button>`).join('');
+    $('#brush-rest').innerHTML = s.actions.filter(a => a !== ui.brush).map(a => `<option value="${a}">${esc(labOf(s, a))}</option>`).join('');
     $('#brush-rest').value = ui.rest;
     $('#brush-freq').value = String(ui.freq);
     $('#edit-tools').hidden = !editing;
@@ -2930,14 +3248,14 @@ self.onmessage = function (e) {
     $('#edit-toggle').setAttribute('aria-pressed', String(editing));
     fitGrid();
   }
-  function renderSrcBar(key, src) {
+  function renderSrcBar(key, src, note) {
     const mode = ui.chartMode === 'heuristic' ? 'heuristic' : 'gto';
     $$('#cfg-chartmode button').forEach(b => {
       const on = b.dataset.cmode === mode;
       b.classList.toggle('active', on);
       b.setAttribute('aria-pressed', String(on));
     });
-    $('#srcbar-note').textContent = srcNote(key, src);
+    $('#srcbar-note').textContent = note || srcNote(key, src);
     $('#import-gto-link').hidden = mode !== 'gto';
   }
   $('#cfg-chartmode').addEventListener('click', e => {
@@ -2952,26 +3270,41 @@ self.onmessage = function (e) {
     renderChartView();
     fitGrid(true);
   });
+  function actionFrac(view, chart, a) {
+    if (view.lib) {
+      const name = a === 'jam' ? 'allin' : a === 'limp' ? 'call' : a;
+      return (view.lib.overall[name] || 0) / 100;
+    }
+    const t = chartStats(chart);
+    return (t[a] || 0) / 1326;
+  }
   function renderStats() {
-    const key = curKey(), s = scOf(key), chart = chartOf(key), t = chartStats(chart);
-    const play = 1326 - (t.fold || 0);
+    const view = viewState();
+    const s = view.s, chart = chartOf(view.key);
+    if (!s || !chart) return;
+    const t = chartStats(chart);
+    const play = view.lib ? (1 - actionFrac(view, chart, 'fold')) : (1326 - (t.fold || 0)) / 1326;
+    const playCombos = 1326 - (t.fold || 0);
     const cells = H.CLASSES.filter(k => (chart[k].fold || 0) < 0.999).length;
-    const md = mdfInfo(s), cont = play / 1326;
+    const md = mdfInfo(s), cont = view.lib ? play : playCombos / 1326;
     let html = '';
     for (const a of s.actions) {
+      const f = actionFrac(view, chart, a);
       const v = t[a] || 0;
-      html += `<div class="stat"><i class="sw" style="background:${A[a].color}"></i><span>${labOf(s, a)}</span><span><b>${pct(v / 1326)}</b> <span class="muted small">${fmtN(v, 1)} combos</span></span><div class="bar"><i style="width:${(v / 1326 * 100).toFixed(2)}%;background:${A[a].color}"></i></div></div>`;
+      html += `<div class="stat"><i class="sw" style="background:${A[a].color}"></i><span>${labOf(s, a)}</span><span><b>${pct(f)}</b> <span class="muted small">${view.lib ? '' : fmtN(v, 1) + ' combos'}</span></span><div class="bar"><i style="width:${(f * 100).toFixed(2)}%;background:${A[a].color}"></i></div></div>`;
     }
-    html += `<div class="small muted" style="margin-top:8px">${s.rfi ? 'Playing' : 'Continuing'}: <b style="color:var(--text)">${pct(play / 1326)}</b> &middot; ${fmtN(play, 1)} / 1326 combos &middot; ${cells} of 169 hands</div>`;
+    html += view.lib
+      ? `<div class="small muted" style="margin-top:8px">${s.rfi ? 'Playing' : 'Continuing'}: <b style="color:var(--text)">${pct(play)}</b> ${view.lib.later ? 'of the range that reaches this node' : 'of all hands'} · ${cells} of 169 hands</div>`
+      : `<div class="small muted" style="margin-top:8px">${s.rfi ? 'Playing' : 'Continuing'}: <b style="color:var(--text)">${pct(playCombos / 1326)}</b> &middot; ${fmtN(playCombos, 1)} / 1326 combos &middot; ${cells} of 169 hands</div>`;
     if (md) html += `<div class="small muted mdf-row" id="mdf-detail">Min. defence (MDF): <b style="color:var(--text)">${pct(md.mdf)}</b> &middot; pot ${fmtN(md.pot, 2)}bb, ${fmtN(md.toCall, 2)}bb to call &rarr; pot / (pot + call) &middot; continuing ${pct(cont)} = <b class="mdf-${mdfVerdict(cont, md.mdf)[0]}">${mdfVerdict(cont, md.mdf)[1]}</b></div>`;
     $('#stats').innerHTML = html;
-    $('#stats-sum').textContent = `${s.rfi ? 'play' : 'continue'} ${pct(play / 1326)}`;
-    // compact legend: action + % of all hands, then the total
+    $('#stats-sum').textContent = `${s.rfi ? 'play' : 'continue'} ${pct(view.lib ? play : playCombos / 1326)}`;
+    // compact legend: action + overall frequency, then the total
     $('#legend').classList.toggle('has-mdf', !!md);
-    $('#legend').innerHTML = s.actions.filter(a => a !== 'fold').map(a => `<span class="lg-i"><i class="sw" style="background:${A[a].color}"></i>${labOf(s, a)} <b>${pct((t[a] || 0) / 1326)}</b></span>`).join('')
-      + `<span class="lg-i lg-fold"><i class="sw sw-fold"></i>Fold <b>${pct((t.fold || 0) / 1326)}</b></span>`
+    $('#legend').innerHTML = s.actions.filter(a => a !== 'fold').map(a => `<span class="lg-i"><i class="sw" style="background:${A[a].color}"></i>${labOf(s, a)} <b>${pct(actionFrac(view, chart, a))}</b></span>`).join('')
+      + `<span class="lg-i lg-fold"><i class="sw sw-fold"></i>Fold <b>${pct(actionFrac(view, chart, 'fold'))}</b></span>`
       + `<span class="lg-i lg-mix" title="Split cells are mixed: the hand plays each action part of the time"><i class="sw" style="background:linear-gradient(90deg,${A[s.actions[0]].color} 50%,${A.fold.color} 50%)"></i>Mixed</span>`
-      + `<span class="lg-tot" id="summary">${s.rfi ? 'Play' : '<span class="lg-lbl" data-short="Cont">Continue</span>'} <b>${pct(play / 1326)}</b></span>`
+      + `<span class="lg-tot" id="summary">${s.rfi ? 'Play' : '<span class="lg-lbl" data-short="Cont">Continue</span>'} <b>${pct(view.lib ? play : playCombos / 1326)}</b></span>`
       + (md ? `<span class="lg-mdf mdf-${mdfVerdict(cont, md.mdf)[0]}" id="mdf" title="Minimum defence frequency from pot odds: pot ${fmtN(md.pot, 2)}bb / (pot + ${fmtN(md.toCall, 2)}bb to call). Shown because a cash side game is on.">MDF <b>${pct(md.mdf)}</b> <span class="mdf-v"><span class="lg-lbl" data-short="${mdfVerdict(cont, md.mdf)[0]}">${mdfVerdict(cont, md.mdf)[1]}</span></span></span>` : '');
   }
   // MDF (minimum defence frequency) is only shown on cash facing-open charts while a side game is on
@@ -3060,14 +3393,19 @@ self.onmessage = function (e) {
   const grid = $('#grid');
   const INFO0 = '<span class="muted">Tap a hand to see its frequencies.</span>';
   function showInfo(k) {
-    const key = curKey(), s = scOf(key), cell = chartOf(key)[k];
+    const view = viewState(), key = view.key, s = view.s, cell = chartOf(key)[k];
+    if (!cell) return;
     const spot = spotRecord(key);
     const ev = sourceOf(key) === 'solved' && spot && spot.hands[k] && spot.hands[k].ev != null ? spot.hands[k].ev : null;
     const evTxt = ev == null ? '' : ` <span class="isep">&middot;</span> <span class="muted">EV ${ev > 0 ? '+' : ''}${Number(ev).toFixed(2)}bb</span>`;
-    $('#cell-info').innerHTML = `${selKey === k && !editing ? '<span class="selpill">Selected</span>' : ''}<b class="ik">${k}</b> <span class="muted">${H.classCount(k)} combos</span> <span class="isep">&middot;</span> ${mixText(cell, s && s.labels)}${evTxt}`;
+    const hand = view.lib && view.lib.hands[k];
+    const oor = view.lib && view.lib.later && (!hand || hand.weight <= 0.05);
+    const reach = hand && view.lib.later && hand.weight > 0.05 && hand.weight < 99.5 ? ` <span class="muted">· reaches ${GtoLib.trimSize(hand.weight)}%</span>` : '';
+    const mix = oor ? '<span class="muted">Not in range</span>' : mixText(cell, s && s.labels);
+    $('#cell-info').innerHTML = `${selKey === k && !editing ? '<span class="selpill">Selected</span>' : ''}<b class="ik">${k}</b> <span class="muted">${H.classCount(k)} combos</span> <span class="isep">&middot;</span> ${mix}${reach}${evTxt}`;
   }
   function paintKey(k, el) {
-    const ch = ensureEditable(curKey());
+    const ch = ensureEditable(viewState().key);
     const cell = {};
     if (ui.freq >= 1 || ui.rest === ui.brush) cell[ui.brush] = 1;
     else { cell[ui.brush] = ui.freq; cell[ui.rest] = Math.round((1 - ui.freq) * 1000) / 1000; }
@@ -3092,7 +3430,7 @@ self.onmessage = function (e) {
     if (painting) { painting = false; if (dirty) { dirty = false; saveCharts(); renderChartView(); } }
   });
   $('#reset-sc').addEventListener('click', () => {
-    const key = curKey(), s = scOf(key);
+    const view = viewState(), key = view.key, s = view.s;
     if (activeFamily(key) === 'heuristic') {
       if (!hOverrides[key]) { toast('This chart is already the original heuristic.'); return; }
       if (!confirm(`Reset "${s.name} (${s.short})" to the original heuristic? Your edits of this range will be dropped.`)) return;
@@ -3807,6 +4145,17 @@ self.onmessage = function (e) {
   if (eqPhone.addEventListener) eqPhone.addEventListener('change', () => renderEquityInputs());
   setTab(ui.tab === 'equity' ? 'equity' : ui.rmode === 'train' ? 'trainer' : 'charts');
   renderEquityInputs();
+  fetch('data/gtow/app/index.json').then(r => r.json()).then(idx => {
+    gtoIndex = idx;
+    if (gtoBrowse()) ensureDepth();
+    const gt = selectedGametype();
+    return gt ? ensureGto(gt) : null;
+  }).then(() => {
+    if (ui.tab === 'equity' || ui.rmode === 'train') return;
+    renderCfg();
+    renderChartView();
+    fitGrid(true);
+  }).catch(() => {});
   window.__holdemApp = { calc, deal, answer, noteCardsChanged, invalidateEquity, renderEquityInputs, version: 2, get cur() { return cur; }, get eq() { return eq; }, get lastResult() { return lastResult; } };
 })();
 
