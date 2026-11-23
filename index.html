@@ -1725,13 +1725,150 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
     };
   }
 
+  /* Best 5-card hand once the board is full. Set / trips / board pair use the same split as flopTexture. */
+  function classifyShowdown(hole, board) {
+    var cards = [hole[0], hole[1]], i, r;
+    for (i = 0; i < board.length; i++) cards.push(board[i]);
+    var cat = handCategory(evalHand(cards, cards.length));
+    var hr0 = hole[0] >> 2, hr1 = hole[1] >> 2, pocket = hr0 === hr1;
+    if (cat === 8) return 'straightFlush';
+    if (cat === 7) return 'quads';
+    if (cat === 6) return 'fullHouse';
+    if (cat === 5) return 'flush';
+    if (cat === 4) return 'straight';
+    if (cat === 2) return 'twoPair';
+    if (cat === 0) return 'noPair';
+    var rc = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    for (i = 0; i < cards.length; i++) rc[cards[i] >> 2]++;
+    if (cat === 3) {
+      var tripsR = -1;
+      for (r = 0; r < 13; r++) if (rc[r] === 3) tripsR = r;
+      var onBoard = 0;
+      for (i = 0; i < board.length; i++) if ((board[i] >> 2) === tripsR) onBoard++;
+      if (onBoard >= 3 && hr0 !== tripsR && hr1 !== tripsR) return 'boardTrips';
+      if (pocket && hr0 === tripsR) return 'set';
+      return 'trips';
+    }
+    var pairR = -1;
+    for (r = 0; r < 13; r++) if (rc[r] === 2) pairR = r;
+    return (hr0 === pairR || hr1 === pairR) ? 'onePair' : 'boardPair';
+  }
+
+  function straightDrawFlags(rankMask, hr0, hr1) {
+    var outs = 0, w, W, have, miss, rs, k, rr, usesHole;
+    for (w = 0; w < STR_WINDOWS.length; w++) {
+      W = STR_WINDOWS[w];
+      have = rankMask & W;
+      miss = W & ~rankMask;
+      if (bitCount(have) !== 4 || bitCount(miss) !== 1) continue;
+      if (!((have >>> hr0) & 1) && !((have >>> hr1) & 1)) continue;
+      outs |= miss;
+    }
+    var straightOuts = bitCount(outs), oesd = false;
+    for (rs = 0; rs <= 8; rs++) {
+      if (((rankMask >>> rs) & 15) !== 15) continue;
+      usesHole = false;
+      for (k = 0; k < 4; k++) { rr = rs + k; if (rr === hr0 || rr === hr1) usesHole = true; }
+      if (usesHole) { oesd = true; break; }
+    }
+    return {
+      oesd: oesd, oesdExtra: oesd && straightOuts > 2, doubleGut: !oesd && straightOuts >= 2,
+      gutshot: !oesd && straightOuts === 1, straightOuts: straightOuts
+    };
+  }
+
+  /* Texture of the cards already out (3, 4, or 5 board cards). A finished board has no live draw. */
+  function textureNow(hole, board) {
+    if (board.length === 3) return flopTexture(hole, board);
+    var hr0 = hole[0] >> 2, hr1 = hole[1] >> 2;
+    var sc = [0, 0, 0, 0], holeSuit = [0, 0, 0, 0], rankMask = 0, i, c, r, s;
+    var cards = [hole[0], hole[1]];
+    for (i = 0; i < board.length; i++) cards.push(board[i]);
+    for (i = 0; i < cards.length; i++) {
+      c = cards[i]; r = c >> 2; sc[c & 3]++;
+      if (!((rankMask >>> r) & 1)) rankMask |= 1 << r;
+    }
+    holeSuit[hole[0] & 3]++; holeSuit[hole[1] & 3]++;
+    var made = classifyShowdown(hole, board);
+    var cardsLeft = 5 - board.length;
+    var flushDraw = false, flushDrawBoth = false, flushDrawOne = false, backdoorFlush = false;
+    var alreadyFlush = made === 'flush' || made === 'straightFlush';
+    if (!alreadyFlush && cardsLeft > 0) {
+      for (s = 0; s < 4; s++) {
+        if (sc[s] === 4 && holeSuit[s] > 0) {
+          flushDraw = true;
+          if (holeSuit[s] === 2) flushDrawBoth = true; else flushDrawOne = true;
+        } else if (sc[s] === 3 && holeSuit[s] > 0 && cardsLeft >= 2) backdoorFlush = true;
+      }
+    }
+    var sd = { oesd: false, oesdExtra: false, doubleGut: false, gutshot: false, straightOuts: 0 };
+    if (made !== 'straight' && made !== 'straightFlush' && cardsLeft > 0) sd = straightDrawFlags(rankMask, hr0, hr1);
+    return {
+      made: made, pocket: hr0 === hr1,
+      flushDraw: flushDraw, flushDrawBoth: flushDrawBoth, flushDrawOne: flushDrawOne, backdoorFlush: backdoorFlush,
+      oesd: sd.oesd, oesdExtra: sd.oesdExtra, doubleGut: sd.doubleGut, gutshot: sd.gutshot, straightOuts: sd.straightOuts
+    };
+  }
+
+  /* Made-hand and draw stats for the equity tab.
+     An unfinished flop stays the exact flopability distribution.
+     Once the flop is dealt, made hands are the showdown hand over every remaining turn and river,
+     and draws describe the cards already out (so a later street can change them). */
+  function spotStats(spec) {
+    var pre = flopability(spec);
+    if (!pre || pre.status !== 'ok' || pre.missing > 0) return pre;
+    var hole = [+spec.hole[0], +spec.hole[1]];
+    var board = [null, null, null, null, null], src = spec.board || [], i, c;
+    for (i = 0; i < src.length && i < 5; i++) if (src[i] != null && src[i] !== '') board[i] = +src[i];
+    if (board[0] == null || board[1] == null || board[2] == null) return pre;
+    var used = new Uint8Array(52);
+    used[hole[0]] = 1; used[hole[1]] = 1;
+    for (i = 0; i < 5; i++) if (board[i] != null) used[board[i]] = 1;
+    var dead = spec.dead || [];
+    for (i = 0; i < dead.length; i++) if (dead[i] != null && dead[i] !== '') used[+dead[i]] = 1;
+    var deck = [];
+    for (c = 0; c < 52; c++) if (!used[c]) deck.push(c);
+    var known = [board[0], board[1], board[2]];
+    if (board[3] != null) known.push(board[3]);
+    if (board[4] != null) known.push(board[4]);
+    var need = 5 - known.length;
+    var tex = textureNow(hole, known);
+    var made = emptyMade(), denom = 0, j;
+    if (need <= 0) { made[tex.made]++; denom = 1; }
+    else if (need === 1) {
+      for (i = 0; i < deck.length; i++) { made[classifyShowdown(hole, known.concat([deck[i]]))]++; denom++; }
+    } else {
+      for (i = 0; i < deck.length; i++) for (j = i + 1; j < deck.length; j++) {
+        made[classifyShowdown(hole, known.concat([deck[i], deck[j]]))]++; denom++;
+      }
+    }
+    var sum = 0;
+    for (i = 0; i < MADE_KEYS.length; i++) sum += made[MADE_KEYS[i]];
+    if (sum !== denom) return { status: 'error', message: 'Made-hand counts ' + sum + ' do not match denominator ' + denom + '.' };
+    var kind = need <= 0 ? 'realized' : 'runout';
+    return {
+      status: 'ok', exact: true, kind: kind,
+      denominator: denom, drawDenominator: kind === 'runout' ? 1 : denom,
+      missing: 0, deckSize: deck.length, streetsLeft: need,
+      turnRiverKnown: board[3] != null || board[4] != null,
+      pocket: (hole[0] >> 2) === (hole[1] >> 2),
+      made: made,
+      draws: {
+        flushDraw: tex.flushDraw ? 1 : 0, flushDrawBoth: tex.flushDrawBoth ? 1 : 0,
+        flushDrawOne: tex.flushDrawOne ? 1 : 0, backdoorFlush: tex.backdoorFlush ? 1 : 0,
+        oesd: tex.oesd ? 1 : 0, oesdExtra: tex.oesdExtra ? 1 : 0,
+        doubleGut: tex.doubleGut ? 1 : 0, gutshot: tex.gutshot ? 1 : 0
+      }
+    };
+  }
+
   var API = {
     RANKS: RANKS, SUITS: SUITS, SUIT_SYM: SUIT_SYM, CAT_NAMES: CAT_NAMES, CLASSES: CLASSES, HAND_ORDER: HAND_ORDER,
     cardStr: cardStr, parseCard: parseCard, parseCards: parseCards, evalHand: evalHand, handCategory: handCategory,
     gridKey: gridKey, keyToGrid: keyToGrid, classCount: classCount, classCombos: classCombos, comboClass: comboClass,
     topPercentClasses: topPercentClasses, parseRange: parseRange, rangeToString: rangeToString,
     mulberry32: mulberry32, nCk: nCk, EquityJob: EquityJob, runEquity: runEquity,
-    flopTexture: flopTexture, flopability: flopability
+    flopTexture: flopTexture, flopability: flopability, spotStats: spotStats
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.HoldemCore = API;
@@ -3708,6 +3845,7 @@ self.onmessage = function (e) {
   let resultSig = null, eqRunToken = 0, pickerGen = 0, pickerTarget = null, rangePointerUp = null;
   let worker = null, running = false, lastResult = null, lastSpecInfo = null, fallbackCancel = null;
   const flopCache = new Map(), flopPending = new Set();
+  let flopEpoch = 0;
   function detachRangePointer() {
     if (rangePointerUp) { window.removeEventListener('pointerup', rangePointerUp); rangePointerUp = null; }
   }
@@ -3729,7 +3867,9 @@ self.onmessage = function (e) {
     paintInline(null);
   }
   function noteCardsChanged() {
+    flopEpoch++;
     flopCache.clear();
+    flopPending.clear();
     invalidateEquity();
     saveEq();
     renderEquityInputs();
@@ -3759,7 +3899,10 @@ self.onmessage = function (e) {
   }
   function fmtInt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   function fpct(n, d) { return d ? (100 * n / d).toFixed(2) + '%' : '—'; }
-  function fcell(n, res) { return res.kind === 'realized' ? (n ? 'Yes' : '—') : fpct(n, res.denominator); }
+  function fcell(n, res, asDraw) {
+    if (res.kind === 'realized' || (asDraw && res.drawDenominator === 1)) return n ? 'Yes' : '—';
+    return fpct(n, res.denominator);
+  }
   function flopKey(i) {
     const p = eq.players[i];
     if (!p || p.mode === 'range' || p.cards[0] == null || p.cards[1] == null) return null;
@@ -3782,15 +3925,39 @@ self.onmessage = function (e) {
     }
     return `<p class="flop-note">Flopability needs two specific hole cards. Pick both cards, or press RND. An empty seat is not treated as a made hand.</p>`;
   }
+  function computeFlop(i) {
+    try { return H.spotStats(flopSpec(i)); }
+    catch (err) { return { status: 'error', message: err.message || String(err) }; }
+  }
+  function paintFlop(i, res) {
+    const el = document.getElementById('flop-body-' + i);
+    if (el && eq.players[i] && eq.players[i].flopOpen) el.innerHTML = res ? flopResultHTML(res) : flopNeedHTML(eq.players[i]);
+  }
+  /* Every Calculate press, and every hand or board edit, rebuilds these from the cards that are out now. */
+  function recomputeFlopStats() {
+    flopEpoch++;
+    flopPending.clear();
+    flopCache.clear();
+    eq.players.forEach((p, i) => {
+      const key = flopKey(i);
+      if (!key) { flopCache.delete(String(i)); paintFlop(i, null); return; }
+      const res = computeFlop(i);
+      flopCache.set(key, res);
+      paintFlop(i, res);
+    });
+  }
   function scheduleFlop(i, key) {
     if (flopPending.has(key)) return;
     flopPending.add(key);
     const spec = flopSpec(i);
+    const epoch = flopEpoch;
     setTimeout(() => {
       flopPending.delete(key);
+      if (epoch !== flopEpoch) return;
       let res;
-      try { res = H.flopability(spec); }
+      try { res = H.spotStats(spec); }
       catch (err) { res = { status: 'error', message: err.message || String(err) }; }
+      if (epoch !== flopEpoch) return;
       flopCache.set(key, res);
       const el = document.getElementById('flop-body-' + i);
       if (el && eq.players[i] && eq.players[i].flopOpen && flopKey(i) === key) el.innerHTML = flopResultHTML(res);
@@ -3800,36 +3967,45 @@ self.onmessage = function (e) {
     if (!res || res.status === 'need-hand') return '<p class="flop-note">Pick both hole cards to compute flopability.</p>';
     if (res.status !== 'ok') return `<p class="flop-note">${esc(res.message || 'Could not compute flopability.')}</p>`;
     const realized = res.kind === 'realized';
-    const lead = realized
-      ? 'This flop is already dealt, so each row is what this board is, not a probability.' + (res.turnRiverKnown ? ' Turn and river cards are not part of the flop.' : '')
-      : 'Exact: each of the ' + fmtInt(res.denominator) + ' ' + (res.missing === 3 ? 'three-card flops' : res.missing === 2 ? 'ways to add the two missing flop cards' : 'ways to fill the last flop card') + ' from the ' + fmtInt(res.deckSize) + ' cards still in the deck is equally likely.' + (res.turnRiverKnown ? ' Turn and river cards already chosen are removed, so they cannot appear on the flop.' : '');
+    const drawNow = realized || res.drawDenominator === 1;
+    let lead;
+    if (res.kind === 'runout') {
+      const what = res.streetsLeft === 2 ? 'turn-and-river deals' : 'ways to fill the last board card';
+      lead = 'Exact: each of the ' + fmtInt(res.denominator) + ' ' + what + ' from the ' + fmtInt(res.deckSize) + ' cards still in the deck is equally likely. Made hands are your hand when the board is finished. Draws are what you hold on the cards already out, not the chance of hitting them later.';
+    } else if (realized) {
+      lead = res.turnRiverKnown
+        ? 'Every board card is out, so each row is the hand you hold now, not a probability.'
+        : 'This flop is already dealt, so each row is what this board is, not a probability.';
+    } else {
+      lead = 'Exact: each of the ' + fmtInt(res.denominator) + ' ' + (res.missing === 3 ? 'three-card flops' : res.missing === 2 ? 'ways to add the two missing flop cards' : 'ways to fill the last flop card') + ' from the ' + fmtInt(res.deckSize) + ' cards still in the deck is equally likely.' + (res.turnRiverKnown ? ' Turn and river cards already chosen are removed, so they cannot appear on the flop.' : '');
+    }
     const madeRows = [['straightFlush', 'Straight flush'], ['quads', 'Four of a kind'], ['fullHouse', 'Full house'], ['flush', 'Flush'], ['straight', 'Straight'], ['set', 'Set'], ['trips', 'Trips'], ['boardTrips', 'Board trips'], ['twoPair', 'Two pair'], ['onePair', 'One pair'], ['boardPair', 'Board pair'], ['noPair', 'No pair']];
     const drawRows = [['flushDraw', 'Flush draw'], ['backdoorFlush', 'Backdoor flush draw'], ['oesd', 'Open-ended straight draw'], ['doubleGut', 'Double gutshot'], ['gutshot', 'Gutshot']];
-    const row = (key, label, bag) => {
+    const row = (key, label, bag, asDraw) => {
       const n = bag[key] || 0;
-      return `<tr class="${n ? 'hit' : 'zero'}"><td>${label}</td><td class="num">${fcell(n, res)}</td></tr>`;
+      return `<tr class="${n ? 'hit' : 'zero'}"><td>${label}</td><td class="num">${fcell(n, res, asDraw)}</td></tr>`;
     };
     let html = `<p class="flop-note">${lead} Removed first: these hole cards, dead cards, other seats' known cards, and board cards already set.</p>`;
-    html += '<div class="flop-cols"><div><div class="flop-h">Made hands · sum 100%</div><table class="flop"><tbody>';
-    madeRows.forEach(r => { html += row(r[0], r[1], res.made); });
+    html += '<div class="flop-cols"><div><div class="flop-h">' + (realized ? 'Made hand' : 'Made hands · sum 100%') + '</div><table class="flop"><tbody>';
+    madeRows.forEach(r => { html += row(r[0], r[1], res.made, false); });
     html += `<tr class="total"><td>Total</td><td class="num">${realized ? 'Dealt' : '100%'}</td></tr></tbody></table>`;
     if (res.pocket && !realized) {
       const better = res.made.set + res.made.fullHouse + res.made.quads;
       html += `<p class="flop-sub">Set or better (set + full house + quads, already in the rows above): ${fpct(better, res.denominator)}.</p>`;
     }
-    html += '</div><div><div class="flop-h">Draws · can overlap</div><table class="flop"><tbody>';
-    drawRows.forEach(r => { html += row(r[0], r[1], res.draws); });
+    html += '</div><div><div class="flop-h">' + (res.kind === 'runout' ? 'Draws · on the cards out' : 'Draws · can overlap') + '</div><table class="flop"><tbody>';
+    drawRows.forEach(r => { html += row(r[0], r[1], res.draws, true); });
     html += '</tbody></table>';
     if (res.draws.flushDraw) {
-      html += res.kind === 'realized'
+      html += drawNow
         ? `<p class="flop-sub">${res.draws.flushDrawBoth ? 'Both hole cards are in the flush draw.' : 'Only one hole card is in the flush draw.'}</p>`
         : `<p class="flop-sub">Flush draw with both hole cards: ${fpct(res.draws.flushDrawBoth, res.denominator)}. With one hole card: ${fpct(res.draws.flushDrawOne, res.denominator)}.</p>`;
     }
-    if (res.draws.oesdExtra) html += `<p class="flop-sub">${realized ? 'This open-ender also has an extra gutshot rank.' : 'Open-enders that also have an extra gutshot rank: ' + fpct(res.draws.oesdExtra, res.denominator) + '.'}</p>`;
+    if (res.draws.oesdExtra) html += `<p class="flop-sub">${drawNow ? 'This open-ender also has an extra gutshot rank.' : 'Open-enders that also have an extra gutshot rank: ' + fpct(res.draws.oesdExtra, res.denominator) + '.'}</p>`;
     html += '</div></div>';
     html += '<details class="flop-help"><summary>How to read this</summary>';
     html += '<p class="flop-gloss"><b>Set</b> is a pocket pair plus exactly one board card of that rank. <b>Trips</b> is one hole card plus a paired board of that rank. A pocket pair on a three-of-a-kind board is a full house, not board trips. <b>Board trips</b> and <b>board pair</b> are on the board only — your hole cards do not match them, so they are not your set, trips, or one pair.</p>';
-    html += '<p class="flop-gloss"><b>Open-ended</b> is four ranks in a row with both ends live (2345 counts: an ace or a six completes it). <b>Double gutshot</b> is two different completing ranks that are not one open-ended run — also eight outs, but not open-ended. <b>Gutshot</b> is one completing rank (four outs), including one-way edges such as AKQJ needing a ten. These are the flop shape, not the chance of hitting on a later street. A draw is listed only when a hole card is part of it.</p>';
+    html += '<p class="flop-gloss"><b>Open-ended</b> is four ranks in a row with both ends live (2345 counts: an ace or a six completes it). <b>Double gutshot</b> is two different completing ranks that are not one open-ended run — also eight outs, but not open-ended. <b>Gutshot</b> is one completing rank (four outs), including one-way edges such as AKQJ needing a ten. Draws describe the cards already out, not the chance of hitting on a later street. A draw is listed only when a hole card is part of it. Once the flop is dealt, the made-hand column is your hand when the board is finished.</p>';
     html += '</details>';
     return html;
   }
@@ -3839,7 +4015,7 @@ self.onmessage = function (e) {
     if (!key) return flopNeedHTML(p);
     if (flopCache.has(key)) return flopResultHTML(flopCache.get(key));
     scheduleFlop(i, key);
-    return '<p class="flop-note">Computing exact flop odds…</p>';
+    return '<p class="flop-note">Computing made-hand and draw stats…</p>';
   }
   function pickLabel(t) {
     if (t[0] === 'p') return +t.split(':')[1] === 0 ? 'Hero' : 'Villain ' + t.split(':')[1];
@@ -4090,6 +4266,7 @@ self.onmessage = function (e) {
     try { new H.EquityJob(Object.assign({}, built.spec, { trials: 1 })); } catch (e) { $('#eq-status').innerHTML = '<span style="color:var(--bad)">' + esc(e.message) + '</span>'; return; }
     const myToken = ++eqRunToken;
     lastSpecInfo = built; lastResult = null; resultSig = currentSig();
+    recomputeFlopStats();
     setRunning(true);
     $('#prog').style.width = '0%';
     $('#eq-status').textContent = 'Starting…';

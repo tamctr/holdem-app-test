@@ -214,4 +214,64 @@ check('equity engine still resolves a finished board', () => {
   assert.equal(r.exact, true);
 });
 
+check('spotStats keeps an unfinished flop on the flopability distribution', () => {
+  const hole = [pc('Ah'), pc('Kh')];
+  const pre = H.spotStats({ hole, board: [], dead: [] });
+  const flop = H.flopability({ hole, board: [], dead: [] });
+  assert.equal(pre.kind, 'exact');
+  assert.equal(pre.denominator, flop.denominator);
+  assert.equal(pre.made.flush, flop.made.flush);
+  assert.equal(pre.draws.gutshot, flop.draws.gutshot);
+  const partial = H.spotStats({ hole, board: [pc('Qh'), null, null, null, null], dead: [] });
+  assert.equal(partial.denominator, C(49, 2));
+  assert.equal(partial.kind, 'exact');
+});
+
+check('a dealt flop enumerates the turn and river, and the turn changes both columns', () => {
+  const hole = [pc('Ah'), pc('Kh')];
+  const flop = [pc('Qh'), pc('Jd'), pc('2s')];
+  const open = H.spotStats({ hole, board: flop.concat([null, null]), dead: [] });
+  assert.equal(open.kind, 'runout');
+  assert.equal(open.streetsLeft, 2);
+  assert.equal(open.denominator, C(47, 2));
+  assert.equal(sumMade(open), open.denominator);
+  assert.ok(open.made.straight > 0);
+  assert.equal(open.draws.gutshot, 1);
+  assert.equal(open.draws.flushDraw, 0);
+  assert.equal(open.draws.backdoorFlush, 1);
+  const turn = H.spotStats({ hole, board: flop.concat([pc('Th'), null]), dead: [] });
+  assert.equal(turn.kind, 'runout');
+  assert.equal(turn.streetsLeft, 1);
+  assert.equal(turn.denominator, 46);
+  assert.equal(sumMade(turn), 46);
+  assert.equal(turn.made.flush, 8);
+  assert.equal(turn.made.straightFlush, 1);
+  assert.equal(turn.made.straight, 37);
+  assert.equal(turn.draws.flushDraw, 1);
+  assert.equal(turn.draws.flushDrawBoth, 1);
+  assert.equal(turn.draws.gutshot, 0);
+  assert.equal(turn.draws.backdoorFlush, 0);
+  assert.notEqual(turn.made.straight, open.made.straight);
+  const done = H.spotStats({ hole, board: flop.concat([pc('Th'), pc('9c')]), dead: [] });
+  assert.equal(done.kind, 'realized');
+  assert.equal(done.made.straight, 1);
+  assert.equal(done.made.noPair, 0);
+  assert.equal(done.draws.gutshot, 0);
+  assert.equal(done.draws.flushDraw, 0);
+  const flopOnly = H.flopability({ hole, board: flop.concat([pc('Th'), pc('9c')]), dead: [] });
+  assert.equal(flopOnly.made.noPair, 1);
+  assert.notEqual(done.made.straight, flopOnly.made.straight);
+});
+
+check('a later street upgrades a set, and a different hand does not reuse those counts', () => {
+  const set = H.spotStats({ hole: [pc('9h'), pc('9d')], board: [pc('9c'), pc('Ks'), pc('2d'), pc('3c'), pc('4s')], dead: [] });
+  assert.equal(set.made.set, 1);
+  const house = H.spotStats({ hole: [pc('9h'), pc('9d')], board: [pc('9c'), pc('Ks'), pc('2d'), pc('2c'), pc('4s')], dead: [] });
+  assert.equal(house.made.fullHouse, 1);
+  assert.equal(house.made.set, 0);
+  const other = H.spotStats({ hole: [pc('Ah'), pc('Kd')], board: [pc('9c'), pc('Ks'), pc('2d'), pc('3c'), pc('4s')], dead: [] });
+  assert.equal(other.made.onePair, 1);
+  assert.notEqual(other.made.set, set.made.set);
+});
+
 console.log('PASSED', passed);
