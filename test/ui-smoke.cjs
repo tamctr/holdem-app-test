@@ -119,7 +119,7 @@ const sizes = await page.evaluate(() => {
     colors: [...document.querySelectorAll('#players .pcard')].map(el => el.className)
   };
 });
-expect(JSON.stringify(sizes.hole) === JSON.stringify(sizes.board), 'hole/board size ' + JSON.stringify(sizes));
+expect(sizes.board[0] + 0.2 >= sizes.hole[0] && sizes.board[1] > 40, 'board cards should take the label width ' + JSON.stringify(sizes));
 expect(JSON.stringify(sizes.hole) === JSON.stringify(sizes.dead), 'hole/dead slot size ' + JSON.stringify(sizes));
 expect(sizes.svg, 'svg faces missing');
 expect(sizes.hole[0] > 28 && sizes.hole[1] > 40, 'card box collapsed ' + JSON.stringify(sizes.hole));
@@ -218,11 +218,14 @@ await page.evaluate(() => {
 });
 const narrow = await page.evaluate(() => document.querySelector('#players .slot').getBoundingClientRect().width);
 expect(narrow < wide - 1, 'cards did not shrink for 6 players ' + narrow + ' vs ' + wide);
-const stillEqual = await page.evaluate(() => {
-  const box = sel => { const r = document.querySelector(sel).getBoundingClientRect(); return Math.round(r.width) + 'x' + Math.round(r.height); };
-  return new Set([box('#players .slot'), box('#board-slots .slot')]).size === 1;
+const boardFit = await page.evaluate(() => {
+  const hole = document.querySelector('#players .slot').getBoundingClientRect();
+  const board = document.querySelector('#board-slots .slot').getBoundingClientRect();
+  const row = document.querySelector('.boardrow').getBoundingClientRect();
+  const last = [...document.querySelectorAll('#board-slots .slot')].pop().getBoundingClientRect();
+  return { hole: hole.width, board: board.width, fits: last.right <= row.right + 1 };
 });
-expect(stillEqual, 'card sizes diverged at 6 players');
+expect(boardFit.board + 0.5 >= boardFit.hole && boardFit.fits && boardFit.board > 24, 'board cards at 6 players ' + JSON.stringify(boardFit));
 await page.evaluate(() => {
   const app = window.__holdemApp;
   app.eq.players = app.eq.players.slice(0, 2);

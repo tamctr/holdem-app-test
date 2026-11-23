@@ -869,9 +869,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #tab-equity .calcbar .progress{flex:0 1 72px;margin:0}
 #tab-equity .eq-add{display:flex;align-items:center;gap:10px;margin:0 0 14px;flex-wrap:wrap}
 #tab-equity .eq-add .eqhint{flex:1 1 160px;line-height:1.35}
-#tab-equity .boardrow{display:flex;align-items:center;flex-wrap:nowrap;gap:8px 10px;margin:0;padding:4px 0 2px;border:0}
-#tab-equity .boardrow .lbl{min-width:0;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8b98ae}
-#tab-equity #board-slots{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap;min-width:0}
+#tab-equity .boardrow{display:flex;align-items:center;flex-wrap:nowrap;gap:8px;margin:0;padding:4px 0 2px;border:0}
+#tab-equity #board-slots{display:flex;align-items:center;gap:4px;flex:1 1 auto;flex-wrap:nowrap;min-width:0}
+#tab-equity #board-slots > span{flex:0 0 8px;width:8px!important}
 #tab-equity .board-actions{display:flex;flex-direction:column;align-items:stretch;gap:4px;margin-left:auto;flex:0 0 auto}
 #tab-equity .board-actions .btn{min-height:26px;padding:2px 8px;font-size:11px;line-height:1.15;white-space:nowrap}
 #tab-equity .calcrow{display:flex;align-items:center;gap:8px;padding:12px 0 0;border:0}
@@ -885,6 +885,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #tab-equity details.fold > summary::before{margin-right:2px}
 #tab-equity .fold-body{padding:0 0 10px}
 #tab-equity #dead-slots{display:flex;flex-wrap:wrap;gap:5px}
+#tab-equity #dead-slots .slot.filled{position:relative}
+#tab-equity #dead-slots .deadx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 #tab-equity #results .dim{color:#93a0b6;font-size:13px;line-height:1.45}
 #tab-equity .res-note{margin:0;font-size:12.5px;line-height:1.45;color:#9aabb8}
 #tab-equity .res-board{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:8px 0}
@@ -904,8 +906,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .modal-foot{margin-top:12px}
 .picker{gap:3px}
 #eq-dock{max-height:calc(100dvh - 24px);overflow:auto}
-/* hole, board, dead, and results cards stay one size; that size steps down as seats are added */
+/* hole, dead, and results cards stay one size; that size steps down as seats are added.
+   Board cards take the row that the BOARD label used to occupy. */
 #tab-equity .slot,#tab-equity .boardrow .slot,#tab-equity #dead-sum .pcard,#tab-equity #dead-slots .slot,#tab-equity #results .pcard,#modal .slot{font-size:var(--eqfs, 23px)!important;width:1.93em!important;height:2.7em!important}
+#tab-equity #board-slots .slot{flex:1 1 0;width:auto!important;height:auto!important;aspect-ratio:1.93/2.7;min-width:0;max-width:calc(var(--eqfs, 23px) * 2.45);font-size:inherit!important}
+#tab-equity #board-slots .slot .pcard{width:100%!important;height:100%!important}
 @media (max-width:640px){
   #tab-equity .panel{padding:10px 10px 8px;border-radius:12px}
   #tab-equity .player{padding:10px 10px 2px;margin-bottom:8px}
@@ -1101,7 +1106,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
         <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="nutg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcc00"/><stop offset=".55" stop-color="#ff7a00"/><stop offset="1" stop-color="#ff2d00"/></linearGradient><linearGradient id="iceg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8fbff"/><stop offset=".5" stop-color="#9fe3ff"/><stop offset="1" stop-color="#4fb8ff"/></linearGradient></defs></svg>
         <div class="board-pin" id="board-pin">
           <div class="boardrow">
-            <span class="lbl">Board</span>
             <span id="board-slots"></span>
             <span class="board-actions"><button class="btn small" id="clear-board">Clear</button><button class="btn small" id="rand-flop">RND flop</button></span>
           </div>
@@ -4371,9 +4375,11 @@ self.onmessage = function (e) {
     if (p[0] === 'b') return [0, 1, 2, 3, 4].map(i => 'b:' + i);
     return eq.dead.map((_, i) => 'd:' + i);
   }
+  const DEAD_X = '<svg class="deadx" viewBox="0 0 100 140" aria-hidden="true"><path d="M16 16L84 124M84 16L16 124" fill="none" stroke="#e0232a" stroke-width="9" stroke-linecap="round" opacity="0.6"/></svg>';
   function slotHTML(t, extra) {
     const c = getSlot(t);
-    return `<button class="slot ${c != null ? 'filled' : ''} ${extra || ''}" data-t="${t}" title="${c != null ? 'Change card' : 'Pick card'}">${c != null ? cardHTML(c) : '+'}</button>`;
+    const mark = t.charAt(0) === 'd' && c != null ? DEAD_X : '';
+    return `<button class="slot ${c != null ? 'filled' : ''} ${extra || ''}" data-t="${t}" title="${c != null ? 'Change card' : 'Pick card'}">${c != null ? cardHTML(c) + mark : '+'}</button>`;
   }
   function markTarget(t) { $$('#tab-equity .eqin .slot').forEach(b => b.classList.toggle('target', b.dataset.t === t)); }
   function chartOptions() {
