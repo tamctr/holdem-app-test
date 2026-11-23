@@ -2284,13 +2284,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
       for (i = 1; i < known.length; i++) if ((known[i] >> 2) > topB) topB = known[i] >> 2;
       if (hr0 > topB && hr1 > topB) { overBits = (1 << hr0) | (1 << hr1); overOuts = cardsOf(overBits); }
     }
-    var boatOuts = [], impOuts = [];
-    if (madeKey === 'set' || madeKey === 'trips' || madeKey === 'tp' || madeKey === 'pair') {
+    var direct = { sf: [], quads: [], fh: [], fl: [], st: [], set: [], trips: [], tp: [] };
+    if (street !== 'river') {
       for (i = 0; i < deck.length; i++) {
         var nk = soMapMade(classifyShowdown([h0, h1], known.concat([deck[i]])));
-        if ((madeKey === 'set' || madeKey === 'trips') && (nk === 'fh' || nk === 'quads' || nk === 'sf')) boatOuts.push(deck[i]);
-        if (madeKey === 'tp' && (nk === 'fh' || nk === 'quads' || nk === 'sf')) boatOuts.push(deck[i]);
-        if (madeKey === 'pair' && (nk === 'tp' || nk === 'trips' || nk === 'set')) impOuts.push(deck[i]);
+        if (direct[nk]) direct[nk].push(deck[i]);
       }
     }
     var bdSuits = [];
@@ -2341,10 +2339,21 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
       rows.push({ id: id, label: label, sub: sub, outs: runner ? null : outs, hit: h, n: n, now: false, runner: !!runner, strength: strength });
     }
     if (sfOuts.length && madeRank < 8) addRow('sfd', 'Straight-flush draw', '', sfOuts.length, hit.sf, 96, false);
-    if (madeKey === 'set' || madeKey === 'trips') addRow('boat', 'Full house or quads', madeKey === 'set' ? 'from a set' : 'from trips', boatOuts.length, hit.boat, 76, false);
-    if (madeKey === 'tp') addRow('tpboat', 'Full house', 'from two pair', boatOuts.length, hit.boat, 74, false);
-    if (street === 'flop' && madeRank < 6 && madeKey !== 'set' && madeKey !== 'trips' && madeKey !== 'tp') addRow('rrq', 'Runner-runner quads', 'runner\u2011runner', null, hit.rrq, 86, true);
-    if (street === 'flop' && madeRank < 6 && madeKey !== 'set' && madeKey !== 'trips' && madeKey !== 'tp') addRow('rrfh', 'Runner-runner full house', 'runner\u2011runner', null, hit.rrfh, 72, true);
+    function targetRow(key, label, strength) {
+      var rankOf = { sf: 8, quads: 7, fh: 6, fl: 5, st: 4, set: 3, trips: 3, tp: 2 };
+      if (key === 'sf' && sfOuts.length) return;
+      if (rankOf[key] <= madeRank || !finalC[key]) return;
+      var list = direct[key] || [];
+      var runner = list.length === 0;
+      var named = list.length && list.length <= 4 ? list.map(cardStr).join(' ') : '';
+      addRow('to-' + key, label, runner ? 'runner\u2011runner' : named, runner ? null : list.length, finalC[key], strength, runner);
+    }
+    targetRow('sf', 'Straight flush', 97);
+    targetRow('quads', 'Quads', 87);
+    targetRow('fh', 'Full house', 77);
+    targetRow('set', 'Set', 33);
+    targetRow('trips', 'Trips', 31);
+    targetRow('tp', 'Two pair', 23);
     if (comboList.length && madeRank < 5) addRow('combo', 'Open-ended + flush draw', 'combo', comboList.length, hit.combo, 66, false);
     if (fdOuts.length && madeRank < 5) addRow('fd', fdNut ? 'Nut flush draw' : 'Flush draw', fdNut ? '' : 'not the nut', fdOuts.length, hit.fd, 64, false);
       if (street === 'flop' && bdSuits.length && madeRank < 5) addRow('bdf', 'Backdoor flush draw', 'runner\u2011runner', null, hit.bdf, 60, true);
@@ -2352,18 +2361,23 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
     if (dgOuts.length && madeRank < 4) addRow('dg', 'Double gutshot', 'two completing ranks', dgOuts.length, hit.dg, 44, false);
     if (gsOuts.length && madeRank < 4) addRow('gs', 'Gutshot', 'one completing rank', gsOuts.length, hit.gs, 42, false);
     if (street === 'flop' && madeRank < 4 && !sp.oesd && !sp.dg && !sp.gs) addRow('bds', 'Backdoor straight draw', 'runner\u2011runner', null, hit.bds, 38, true);
-    if (madeKey === 'pair') addRow('improve', 'Two pair or trips', 'from a pair', impOuts.length, hit.improve, 24, false);
     if (overOuts.length) addRow('over', 'Overcards', 'both higher than the board', overOuts.length, hit.over, 12, false);
     rows.sort(function (a, b) { return b.strength - a.strength; });
     var order = ['sf', 'quads', 'fh', 'fl', 'st', 'set', 'trips', 'tp', 'pair', 'hc'];
     var names = { sf: 'Straight flush', quads: 'Quads', fh: 'Full house', fl: 'Flush', st: 'Straight', set: 'Set', trips: 'Trips', tp: 'Two pair', pair: 'One pair', hc: 'High card' };
     var finalRows = [];
     if (street !== 'river') order.forEach(function (k) { if (finalC[k]) finalRows.push({ key: k, label: names[k], count: finalC[k] }); });
+    var madeName = { sf: 'Straight flush', quads: 'Quads', fh: 'Full house', fl: 'Flush', st: 'Straight', set: 'Set', trips: 'Trips', tp: 'Two pair', pair: 'One pair', hc: 'High card' }[madeKey];
     var best = null;
-    for (i = 0; i < rows.length; i++) if (rows[i].id !== 'made') { best = rows[i]; break; }
-    var summary = best
-      ? best.label + (best.outs != null ? ' · ' + best.outs + ' outs' : '') + ' · ' + (100 * best.hit / n).toFixed(2) + '%'
-      : rows[0].label;
+    for (i = 0; i < rows.length; i++) if (rows[i].id !== 'made' && rows[i].outs != null) { best = rows[i]; break; }
+    if (!best) for (i = 0; i < rows.length; i++) if (rows[i].id !== 'made') { best = rows[i]; break; }
+    var summary = madeName + ' · 100%';
+    if (best) {
+      summary += ' · ' + best.label;
+      if (best.outs != null) summary += ' · ' + best.outs + (best.outs === 1 ? ' out' : ' outs');
+      else if (best.runner) summary += ' · runner-runner';
+      summary += ' · ' + (100 * best.hit / n).toFixed(2) + '%';
+    }
     return {
       status: 'ok', street: street, n: n, madeKey: madeKey, madeLabel: rows[0] && rows.filter(function (r) { return r.id === 'made'; })[0].label,
       rows: rows, final: finalRows, summary: summary,
@@ -4499,11 +4513,11 @@ self.onmessage = function (e) {
     return (100 * c / n).toFixed(2) + '%';
   }
   function streetRow(row) {
-    const sub = row.outs != null ? ((row.sub ? row.sub + ' · ' : '') + row.outs + ' outs') : (row.sub || '');
+    const outsTxt = row.outs == null ? '' : (row.outs + (row.outs === 1 ? ' out' : ' outs'));
+    const sub = [row.sub, outsTxt].filter(Boolean).join(' · ');
     const name = row.label + (sub ? ' <small>' + sub + '</small>' : '');
-    if (row.now) return '<div class="frw now"><span>' + name + '</span><span>now</span><span>–</span><i style="width:100%"></i></div>';
     const w = row.n ? Math.min(100, 100 * row.hit / row.n) : 0;
-    return '<div class="frw"><span>' + name + '</span><span>' + foPc2(row.hit, row.n) + '</span><span>' + foIn(row.hit, row.n) + '</span><i style="width:' + w.toFixed(2) + '%"></i></div>';
+    return '<div class="frw' + (row.now ? ' now' : '') + '"><span>' + name + '</span><span>' + foPc2(row.hit, row.n) + '</span><span>' + foIn(row.hit, row.n) + '</span><i style="width:' + w.toFixed(2) + '%"></i></div>';
   }
   function streetRowsHTML(model) {
     const head = model.pctHead || '% by river';
