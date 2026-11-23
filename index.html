@@ -3765,7 +3765,7 @@ self.onmessage = function (e) {
     const fmt = [['6', '6-max'], ['2', 'HU'], ['9', '9-max'], ['8', '8-max'], ['mtt', 'MTT', 'Tournament ChipEV, 8-max']];
     const fmtActive = gtoMtt() ? 'mtt' : String(ui.n);
     let html = '<div class="librow" role="group" aria-label="Format"><div class="seg">' + segBtns(fmt, fmtActive, 'fmt') + '</div></div>';
-    if (gtoMtt()) html += '<p class="libnote">ChipEV only (no ICM), 1bb BB ante (pot starts 2.5bb). Partial coverage: 100bb has the tree; 40bb and 20bb are opens and BB vs an open.</p>';
+    if (gtoMtt()) html += '<p class="libnote">ChipEV only (no ICM), 1bb BB ante (pot starts 2.5bb). Partial coverage: 100bb has the tree; 60bb, 40bb and 20bb are opens and BB vs an open.</p>';
     if (ui.n === 8 && !gtoMtt()) {
       const v = ui.lib.v8;
       const all = eightList();

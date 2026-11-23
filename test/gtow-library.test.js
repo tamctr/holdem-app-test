@@ -24,15 +24,15 @@ function load(gt) {
 
 check('index covers the whole hand-read library', () => {
   assert.equal(index.format, 'holdem-lab.gtow-index');
-  assert.equal(index.n_spots, 1092);
+  assert.equal(index.n_spots, 1106);
   assert.equal(Object.keys(index.libraries).length, 29);
   let n = 0;
   Object.keys(index.catalog).forEach(gt => { n += index.catalog[gt].length; });
-  assert.equal(n, 1092);
+  assert.equal(n, 1106);
   const raw = fs.readdirSync(path.join(__dirname, '..', 'data', 'gtow', 'raw')).filter(f => f.endsWith('.txt'));
   assert.equal(raw.length, 804);
   const rawMtt = fs.readdirSync(path.join(__dirname, '..', 'data', 'gtow', 'raw_mtt')).filter(f => f.endsWith('.txt'));
-  assert.equal(rawMtt.length, 61);
+  assert.equal(rawMtt.length, 69);
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'data', 'gtow', 'build.py')));
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'data', 'gtow', 'README.md')));
 });
@@ -128,8 +128,8 @@ check('MTT 8-max ChipEV spots use mtt ids and the depths that exist', () => {
   assert.equal(lib.game, 'mtt');
   assert.equal(lib.label, 'MTT 8-max ChipEV, BB ante');
   assert.equal(lib.rake, 'ChipEV');
-  assert.deepEqual(lib.depths, [20, 40, 100]);
-  assert.equal(lib.n, 79);
+  assert.deepEqual(lib.depths, [20, 40, 60, 100]);
+  assert.equal(lib.n, 93);
   const byId = load('MTTGeneral_8m');
   const utg = byId['mtt|8|100|rfi:UTG'];
   assert.equal(utg.game, 'mtt');
@@ -154,6 +154,17 @@ check('MTT 8-max ChipEV spots use mtt ids and the depths that exist', () => {
   const btn = byId['mtt|8|20|rfi:BTN'];
   assert.equal(btn.sizes.allin, 20);
   assert.ok(btn.overall.allin > 0);
+  const ids60 = index.catalog.MTTGeneral_8m.map(G.parseId).filter(s => s.depth === 60);
+  assert.equal(ids60.length, 14);
+  assert.ok(ids60.every(s => s.kind === 'rfi' || (s.kind === 'vs' && s.hero === 'BB')));
+  const opens = { UTG: 2, UTG1: 2, LJ: 2, HJ: 2.1, CO: 2.1, BTN: 2.2, SB: 3.5 };
+  Object.keys(opens).forEach(hero => {
+    assert.equal(byId['mtt|8|60|rfi:' + hero].sizes.raise, opens[hero], hero);
+  });
+  const bb60 = byId['mtt|8|60|vs:BB:BTN'];
+  assert.equal(bb60.hero, 'BB');
+  assert.equal(bb60.villain, 'BTN');
+  assert.equal(bb60.sizes.raise, 11);
 });
 
 check('spot types group limp separately from a raise-open', () => {
