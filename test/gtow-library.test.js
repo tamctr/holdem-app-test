@@ -24,13 +24,15 @@ function load(gt) {
 
 check('index covers the whole hand-read library', () => {
   assert.equal(index.format, 'holdem-lab.gtow-index');
-  assert.equal(index.n_spots, 1013);
-  assert.equal(Object.keys(index.libraries).length, 28);
+  assert.equal(index.n_spots, 1092);
+  assert.equal(Object.keys(index.libraries).length, 29);
   let n = 0;
   Object.keys(index.catalog).forEach(gt => { n += index.catalog[gt].length; });
-  assert.equal(n, 1013);
+  assert.equal(n, 1092);
   const raw = fs.readdirSync(path.join(__dirname, '..', 'data', 'gtow', 'raw')).filter(f => f.endsWith('.txt'));
   assert.equal(raw.length, 804);
+  const rawMtt = fs.readdirSync(path.join(__dirname, '..', 'data', 'gtow', 'raw_mtt')).filter(f => f.endsWith('.txt'));
+  assert.equal(rawMtt.length, 61);
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'data', 'gtow', 'build.py')));
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'data', 'gtow', 'README.md')));
 });
@@ -119,6 +121,39 @@ check('combo-weighted totals stay within 1.2pp of every header', () => {
     });
   });
   assert.deepEqual(bad, []);
+});
+
+check('MTT 8-max ChipEV spots use mtt ids and the depths that exist', () => {
+  const lib = index.libraries.MTTGeneral_8m;
+  assert.equal(lib.game, 'mtt');
+  assert.equal(lib.label, 'MTT 8-max ChipEV, BB ante');
+  assert.equal(lib.rake, 'ChipEV');
+  assert.deepEqual(lib.depths, [20, 40, 100]);
+  assert.equal(lib.n, 79);
+  const byId = load('MTTGeneral_8m');
+  const utg = byId['mtt|8|100|rfi:UTG'];
+  assert.equal(utg.game, 'mtt');
+  assert.equal(utg.hero, 'UTG');
+  assert.equal(utg.sizes.raise, 2.1);
+  assert.equal(utg.overall.raise, 16.9);
+  assert.equal(G.sourceLabel(utg), 'GTO Wizard reference (MTT 8-max ChipEV, BB ante)');
+  assert.ok(/ChipEV only/.test(G.caveat(utg)));
+  assert.ok(/no ICM/.test(G.caveat(utg)));
+  const chart = G.chartFromSpot(utg);
+  assert.ok(chart.AA.raise > 0.8);
+  assert.equal(chart['72o'].fold, 1);
+  const bb = byId['mtt|8|20|vs:BB:BTN'];
+  assert.equal(bb.hero, 'BB');
+  assert.equal(bb.villain, 'BTN');
+  assert.equal(bb.sizes.allin, 20);
+  assert.ok(bb.overall.allin > 10);
+  assert.ok(G.actionsFor(bb).indexOf('jam') >= 0);
+  const ids20 = index.catalog.MTTGeneral_8m.map(G.parseId).filter(s => s.depth === 20);
+  assert.ok(ids20.every(s => s.kind === 'rfi' || (s.kind === 'vs' && s.hero === 'BB')));
+  assert.equal(ids20.length, 14);
+  const btn = byId['mtt|8|20|rfi:BTN'];
+  assert.equal(btn.sizes.allin, 20);
+  assert.ok(btn.overall.allin > 0);
 });
 
 check('spot types group limp separately from a raise-open', () => {

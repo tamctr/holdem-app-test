@@ -666,7 +666,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   .editbar{height:32px;margin-bottom:4px;padding:2px 4px}
   .editbar .brush,.editbar .btn{min-height:26px;height:26px}
   .editbar select{padding:2px 4px}
-  .legend{height:16px;line-height:16px;gap:2px 5px;font-size:11px}
+  .legend{height:auto;min-height:16px;max-height:36px;line-height:16px;gap:1px 6px;font-size:11px;white-space:normal;flex-wrap:wrap;overflow:hidden}
   /* MDF on, phones: "Cont" + tighter gaps so the one-line legend still fits */
   .legend.has-mdf{gap:2px 8px}
   #legend.has-mdf .lg-tot .lg-lbl{font-size:0}
@@ -2384,6 +2384,7 @@ self.onmessage = function (e) {
   if (!ui.lib || typeof ui.lib !== 'object') ui.lib = {};
   if (ui.lib.depth == null) ui.lib.depth = 100;
   if (ui.lib.node == null) ui.lib.node = '';
+  if (ui.lib.fmt !== 'mtt') ui.lib.fmt = ui.lib.fmt || '';
   if (!ui.lib.v8 || typeof ui.lib.v8 !== 'object') ui.lib.v8 = { pool: 'General', rake: 'cEV', open: '2', cold: true };
   const saveUI = () => save(LS.ui, ui);
 
@@ -2602,7 +2603,7 @@ self.onmessage = function (e) {
     if (src === 'reference') {
       const lib = libraryRecord(key);
       let note = 'Hand-read from the matrix, not downloaded. It replaces our model for this spot.';
-      if (lib && GtoLib.caveat(lib)) note += ' ' + GtoLib.caveat(lib);
+      if (lib && lib.game !== 'mtt' && GtoLib.caveat(lib)) note += ' ' + GtoLib.caveat(lib);
       else if (!lib) {
         const ref = referenceRecord(key);
         if (ref && ref.sizeUnconfirmed) note += ' SB raise size assumed 3bb.';
@@ -2705,12 +2706,16 @@ self.onmessage = function (e) {
   const stackOf = () => ui.stacks[ui.g];
   let gtoIndex = null;
   const gtoFiles = {};
+  function gtoMtt() { return ui.chartMode !== 'heuristic' && ui.g === 'cash' && ui.lib && ui.lib.fmt === 'mtt'; }
   function gtoBrowse() {
-    return ui.chartMode !== 'heuristic' && ui.g === 'cash' && (ui.n === 2 || ui.n === 6 || ui.n === 8 || ui.n === 9);
+    return ui.chartMode !== 'heuristic' && ui.g === 'cash' && (gtoMtt() || ui.n === 2 || ui.n === 6 || ui.n === 8 || ui.n === 9);
   }
   function eightList() {
     if (!gtoIndex) return [];
-    return Object.keys(gtoIndex.libraries).filter(gt => gtoIndex.libraries[gt].players === 8).map(gt => {
+    return Object.keys(gtoIndex.libraries).filter(gt => {
+      const lib = gtoIndex.libraries[gt];
+      return lib.players === 8 && lib.game !== 'mtt' && gt.indexOf('MTT') !== 0;
+    }).map(gt => {
       const lib = gtoIndex.libraries[gt];
       return { gametype: gt, pool: lib.pool, rake: lib.rake, open: String(lib.open), cold: !!lib.coldCalls, depths: lib.depths };
     });
@@ -2732,6 +2737,7 @@ self.onmessage = function (e) {
   }
   function selectedGametype() {
     if (!gtoIndex) return null;
+    if (gtoMtt()) return 'MTTGeneral_8m';
     if (ui.n === 6) return 'Cash6m50zGeneral';
     if (ui.n === 9) return 'Cash9m50zGeneral';
     if (ui.n === 8) return resolve8();
@@ -2776,7 +2782,7 @@ self.onmessage = function (e) {
   function syncGtoSel() {
     if (!gtoBrowse() || !gtoIndex || ui.type === 'vj') return;
     ensureDepth();
-    if (ui.n === 8) {
+    if (ui.g === 'cash' && ui.n === 8 && !gtoMtt()) {
       const gt = resolve8();
       const lib = gt && gtoIndex.libraries[gt];
       if (lib) ui.lib.v8 = { pool: lib.pool, rake: lib.rake, open: String(lib.open), cold: !!lib.coldCalls };
@@ -2812,13 +2818,16 @@ self.onmessage = function (e) {
   function libraryRecord(key) {
     if (!gtoIndex || !key || !window.GtoLib) return null;
     const parts = String(key).split('|');
-    if (parts[0] !== 'cash') return null;
-    const n = +parts[1];
     let gt = null;
+    if (parts[0] === 'mtt') gt = 'MTTGeneral_8m';
+    else if (parts[0] !== 'cash') return null;
+    else {
+    const n = +parts[1];
     if (n === 6) gt = 'Cash6m50zGeneral';
     else if (n === 9) gt = 'Cash9m50zGeneral';
     else if (n === 2) gt = parts.indexOf('complex') >= 0 ? 'CashHu500zComplex' : parts.indexOf('simple') >= 0 ? 'CashHu500zSimple' : null;
     else if (n === 8) gt = selectedGametype();
+    }
     const file = gt && gtoFiles[gt];
     return file && file[key] || null;
   }
@@ -2916,9 +2925,11 @@ self.onmessage = function (e) {
     bar.hidden = !on;
     if (!on) { bar.innerHTML = ''; return; }
     if (!gtoIndex) { bar.innerHTML = '<p class="libnote">Loading the GTO Wizard library…</p>'; return; }
-    const fmt = [['6', '6-max'], ['2', 'HU'], ['9', '9-max'], ['8', '8-max']];
-    let html = '<div class="librow" role="group" aria-label="Format"><div class="seg">' + segBtns(fmt, String(ui.n), 'fmt') + '</div></div>';
-    if (ui.n === 8) {
+    const fmt = [['6', '6-max'], ['2', 'HU'], ['9', '9-max'], ['8', '8-max'], ['mtt', 'MTT', 'Tournament ChipEV, 8-max']];
+    const fmtActive = gtoMtt() ? 'mtt' : String(ui.n);
+    let html = '<div class="librow" role="group" aria-label="Format"><div class="seg">' + segBtns(fmt, fmtActive, 'fmt') + '</div></div>';
+    if (gtoMtt()) html += '<p class="libnote">ChipEV only (no ICM), 1bb BB ante (pot starts 2.5bb). Partial coverage: 100bb has the tree; 40bb and 20bb are opens and BB vs an open.</p>';
+    if (ui.n === 8 && !gtoMtt()) {
       const v = ui.lib.v8;
       const all = eightList();
       const uniq = xs => xs.filter((x, i) => xs.indexOf(x) === i);
@@ -2932,7 +2943,7 @@ self.onmessage = function (e) {
       html += '</div>';
       html += '<div class="librow" aria-label="Opening size"><div class="seg">' + segBtns(opens.map(o => [o, o + 'x']), String(v.open), 'open') + '</div></div>';
     }
-    if (ui.n === 2) {
+    if (ui.n === 2 && !gtoMtt()) {
       const gt = selectedGametype();
       html += '<p class="libnote">Heads-up NL500 ' + (gt && gt.indexOf('Simple') >= 0 ? 'Simple' : 'Complex') + '. Complex is 20–150bb. Simple is 200–500bb.</p>';
     }
@@ -2947,12 +2958,14 @@ self.onmessage = function (e) {
   function setupSummary() {
     const sg = sideLabels();
     const depth = gtoBrowse() && ui.lib.depth ? ui.lib.depth + ' bb' : stackTxt(ui.g, stackOf());
-    return `${M.GAME_LABEL[ui.g]}${icmOn() ? ' ICM' : ''} · ${ui.n === 2 ? 'Heads-up' : ui.n + ' players'} · ${depth}${sg.length ? ' · ' + sg.join(' + ') : ''}`;
+    const who = gtoMtt() ? 'MTT 8-max' : (ui.n === 2 ? 'Heads-up' : ui.n + ' players');
+    return `${gtoMtt() ? 'Tournament' : M.GAME_LABEL[ui.g]}${icmOn() ? ' ICM' : ''} · ${who} · ${depth}${sg.length ? ' · ' + sg.join(' + ') : ''}`;
   }
   const setupChip = () => {
     const n = sideGames().length;
     const d = gtoBrowse() && ui.lib.depth ? ui.lib.depth + 'bb' : stackTxt(ui.g, stackOf()).replace(' ', '');
-    return `${ui.n === 2 ? 'HU' : ui.n + 'p'} · ${d}${n ? ' · +' + n : ''}`;
+    const who = gtoMtt() ? 'MTT' : (ui.n === 2 ? 'HU' : ui.n + 'p');
+    return `${who} · ${d}${n ? ' · +' + n : ''}`;
   };
   // slider: fine-grained 0..RES positions, buckets evenly spaced; snaps to a bucket on release
   const RES = 1000;
@@ -3022,7 +3035,7 @@ self.onmessage = function (e) {
       if (have('v3')) typeItems.push(['v3', mob ? '3-bet' : 'vs 3-bet', 'You opened and face a 3-bet']);
       if (have('v4')) typeItems.push(['v4', mob ? '4-bet' : 'vs 4-bet', 'You 3-bet and face a 4-bet']);
       if (have('vl')) typeItems.push(['vl', 'Limp', 'Facing a limp, or a raise after you limped']);
-      if (ui.n === 6 && ui.lib.depth === 100) typeItems.push(['vj', 'Jam', 'You 4-bet and face a 5-bet all-in. Solved model, not the library.']);
+      if (!gtoMtt() && ui.n === 6 && ui.lib.depth === 100) typeItems.push(['vj', 'Jam', 'You 4-bet and face a 5-bet all-in. Solved model, not the library.']);
       if (!typeItems.length) typeItems.push(['rfi', 'RFI', 'First in']);
     } else {
       typeItems = [['rfi', 'Open', 'First in: everyone before you folded'], ['vs', mob ? 'vs' : 'vs Open', 'Facing a single open raise']];
@@ -3162,7 +3175,8 @@ self.onmessage = function (e) {
   });
   $('#libbar').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.fmt) { ui.n = +b.dataset.fmt; ui.lib.node = ''; }
+    if (b.dataset.fmt === 'mtt') { ui.lib.fmt = 'mtt'; ui.lib.node = ''; }
+    else if (b.dataset.fmt) { ui.lib.fmt = ''; ui.n = +b.dataset.fmt; ui.lib.node = ''; }
     else if (b.dataset.depth) {
       ui.lib.depth = +b.dataset.depth;
       if (M.STACKS.cash.includes(ui.lib.depth)) ui.stacks.cash = ui.lib.depth;

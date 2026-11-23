@@ -65,7 +65,7 @@
 
   function parseId(id) {
     var p = String(id || '').split('|');
-    if (p[0] !== 'cash' || p.length < 4) return null;
+    if ((p[0] !== 'cash' && p[0] !== 'mtt') || p.length < 4) return null;
     var players = parseInt(p[1], 10);
     var depth = parseInt(p[2], 10);
     var rest = p.slice(3);
@@ -74,6 +74,7 @@
     var tail = (rest[0] || '').split(':');
     return {
       id: id,
+      game: p[0],
       players: players,
       depth: depth,
       variant: variant,
@@ -122,6 +123,7 @@
     };
     return {
       id: packed.id,
+      game: id.game,
       gametype: meta.gametype || meta.file && String(meta.file).replace(/\.json$/, '') || '',
       players: id.players,
       depth: id.depth,
@@ -303,8 +305,13 @@
     return text;
   }
 
+  function isMtt(spot) {
+    return !!(spot && (spot.game === 'mtt' || String(spot.id || '').indexOf('mtt|') === 0 || String(spot.gametype || '').indexOf('MTT') === 0));
+  }
+
   function sourceLabel(spot) {
     if (!spot) return 'GTO Wizard reference';
+    if (isMtt(spot)) return 'GTO Wizard reference (MTT 8-max ChipEV, BB ante)';
     var gt = spot.gametype || '';
     if (gt === 'Cash6m50zGeneral' || (spot.players === 6 && spot.rake === 'NL50')) return 'GTO Wizard reference (NL50, General)';
     if (spot.players === 9) return 'GTO Wizard reference (9-max NL50)';
@@ -323,6 +330,7 @@
 
   function caveat(spot) {
     if (!spot) return '';
+    if (isMtt(spot)) return 'ChipEV only (no ICM), 1bb BB ante (pot starts 2.5bb). Partial coverage.';
     var lines = [];
     if (spot.rescale) {
       lines.push('Limp-raise weights were rescaled ×' + spot.rescale + ' so the totals match GTO Wizard\'s overview.');
@@ -343,12 +351,14 @@
   }
 
   function scenario(spot) {
+    var mtt = isMtt(spot);
     var players = spot.players === 2 ? 'Heads-up' : spot.players + ' players';
+    var table = mtt ? '8-max' : tableName(spot.players);
     return {
       id: spot.id,
-      g: 'cash',
+      g: mtt ? 'mtt' : 'cash',
       icm: false,
-      game: 'Cash',
+      game: mtt ? 'MTT' : 'Cash',
       n: spot.players,
       stack: spot.depth,
       stackLabel: spot.depth + 'bb',
@@ -360,10 +370,10 @@
       rfi: spot.kind === 'rfi',
       group: 'GTO Wizard',
       name: title(spot),
-      table: tableName(spot.players),
+      table: table,
       players: players,
-      short: 'Cash · ' + tableName(spot.players) + ' · ' + spot.depth + 'bb',
-      headline: 'Cash · ' + players + ' · ' + spot.depth + 'bb',
+      short: (mtt ? 'MTT' : 'Cash') + ' · ' + table + ' · ' + spot.depth + 'bb',
+      headline: (mtt ? 'MTT' : 'Cash') + ' · ' + players + ' · ' + spot.depth + 'bb',
       desc: desc(spot),
       actions: actionsFor(spot),
       labels: labelsFor(spot)
