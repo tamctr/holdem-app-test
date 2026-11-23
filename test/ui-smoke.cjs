@@ -55,7 +55,7 @@ const layout = await page.evaluate(() => {
       const num = players[0].querySelector('.eqmini b').getBoundingClientRect();
       return lab.bottom <= num.top + 1;
     })(),
-    flopBadge: players[0].querySelector('.flop-btn').textContent,
+    flopBadge: players[0].querySelector('.foh b').textContent,
     labels,
     scroll: document.documentElement.scrollWidth,
     client: document.documentElement.clientWidth,
@@ -72,19 +72,20 @@ expect(layout.eqLeft >= layout.slotRight - 2, 'equity not beside cards');
 expect(Math.abs((layout.eqTop + layout.eqBottom) / 2 - (layout.slotTop + layout.slotBottom) / 2) < 28, 'equity not vertically aligned with cards');
 expect(layout.labels.join(',') === 'Equity %,Win %,Tie %', 'labels ' + layout.labels.join(','));
 expect(layout.labelAbove, 'percent label is not above the number');
-expect(layout.flopBadge === 'F', 'flopability badge ' + layout.flopBadge);
+expect(layout.flopBadge === 'Flopability', 'flopability title ' + layout.flopBadge);
+expect(/2 pair\+/.test(layout.rowText) && /draws/.test(layout.rowText), 'collapsed flopability summary missing');
 expect(/QQ\+/.test(layout.rangeLine || ''), 'villain range summary missing ' + layout.rangeLine);
 expect(layout.scroll <= layout.client + 1, 'horizontal overflow ' + layout.scroll + '>' + layout.client);
 await page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-mobile-390.png', fullPage: true });
 
-await page.click('#players .flop-btn');
-await page.waitForFunction(() => /19,600/.test(document.querySelector('.flop-body').textContent), { timeout: 5000 });
-const flopText = await page.$eval('.flop-body', el => el.textContent);
-expect(/Set/.test(flopText) && /Trips/.test(flopText) && /Two pair/.test(flopText) && /One pair/.test(flopText) && /No pair/.test(flopText), 'made rows missing');
-expect(/Flush draw/.test(flopText) && /Open-ended straight draw/.test(flopText) && /Double gutshot/.test(flopText) && /Gutshot/.test(flopText), 'draw rows missing');
-expect(/Board pair/.test(flopText) && /Board trips/.test(flopText), 'board-only labels missing');
-expect(/both ends live/.test(flopText) && /not one open-ended/.test(flopText), 'oesd vs double gutshot copy missing');
-expect(/100%/.test(flopText), 'made-hand total missing');
+await page.click('#players .foh');
+await page.waitForFunction(() => /19,600/.test(document.querySelector('.fob').textContent), { timeout: 5000 });
+const flopText = await page.$eval('.fob', el => el.textContent);
+expect(/Set/.test(flopText) && /Trips/.test(flopText) && /Two pair/.test(flopText) && /One pair/.test(flopText) && /High card/.test(flopText), 'made rows missing');
+expect(/Nut flush draw/.test(flopText) && /Flush draw/.test(flopText) && /Open-ended/.test(flopText) && /Gutshot/.test(flopText) && /Combo draw/.test(flopText) && /Any draw/.test(flopText), 'draw rows missing');
+expect(/pocket pair \+ flop card/.test(flopText) && /or double gutshot/.test(flopText), 'sub-labels missing');
+expect(/Exact over all 19,600 flops/.test(flopText), 'footnote missing');
+expect(!/Wrap/.test(flopText), 'wrap row should not be in Hold\'em');
 const flopOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
 expect(flopOverflow, 'flopability horizontal overflow');
 await page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-mobile-flop.png', fullPage: true });
@@ -96,7 +97,7 @@ await page.evaluate(() => {
   app.noteCardsChanged();
   document.querySelector('details[data-fold="e-dead"]').open = true;
 });
-await page.waitForFunction(() => /18,424/.test(document.querySelector('.flop-body').textContent), { timeout: 5000 });
+await page.waitForFunction(() => /19,600/.test(document.querySelector('.fob').textContent), { timeout: 5000 });
 const sizes = await page.evaluate(() => {
   const box = sel => { const r = document.querySelector(sel).getBoundingClientRect(); return [Math.round(r.width * 10) / 10, Math.round(r.height * 10) / 10]; };
   return {
@@ -123,7 +124,7 @@ await page.evaluate(() => {
   app.eq.players[0].flopOpen = true;
   app.noteCardsChanged();
 });
-await page.waitForFunction(() => /17,296/.test(document.querySelector('.flop-body').textContent), { timeout: 5000 });
+await page.waitForFunction(() => /19,600/.test(document.querySelector('.fob').textContent), { timeout: 5000 });
 
 await page.evaluate(() => {
   const app = window.__holdemApp, pc = window.HoldemCore.parseCard;
@@ -432,8 +433,8 @@ expect(dock.open && dock.cells === 169, 'desktop dock range ' + JSON.stringify(d
 expect(dock.scroll <= dock.client + 1, 'desktop overflow');
 await desktop.page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-desktop.png' });
 await desktop.page.keyboard.press('Escape');
-await desktop.page.click('#players .flop-btn');
-await desktop.page.waitForFunction(() => /19,600/.test(document.querySelector('.flop-body').textContent), { timeout: 5000 });
+await desktop.page.click('#players .foh');
+await desktop.page.waitForFunction(() => /19,600/.test(document.querySelector('.fob').textContent), { timeout: 5000 });
 const deskOverflow = await desktop.page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
 expect(deskOverflow, 'desktop flop overflow');
 await desktop.page.screenshot({ path: '/opt/cursor/artifacts/equity-polish-after-desktop-flop.png', fullPage: true });

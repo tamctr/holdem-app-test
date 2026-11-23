@@ -812,30 +812,47 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .eqmini .ci:empty{display:none}
 .range-line{display:flex;align-items:center;width:100%;margin:8px 0 0;padding:0;border:0;background:transparent;border-radius:0;font-family:var(--font);font-size:12.5px;font-weight:600;color:#c5d2e6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
 .range-line:hover{color:#fff}
-#tab-equity .flop-btn{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:36px;min-width:36px;height:36px;min-height:36px;margin:0;padding:0;border:1.5px solid var(--accent);border-radius:9px;background:#121a2c;color:#9ec0ff;font-weight:800;font-size:16px;letter-spacing:0;line-height:1}
-#tab-equity .flop-btn::before{content:none}
-#tab-equity .flop-btn:hover{background:#1a2744;color:#fff}
-#tab-equity .flop-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.flop-body{margin:0 0 8px;padding:10px 0 2px;border:0}
-.flop-note{margin:0 0 10px;font-size:12.5px;line-height:1.45;color:#a9b6cb}
-.flop-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 22px}
-.flop-h{margin:0 0 4px;font-size:10px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;color:#8b98ae}
-.flop-sub{margin:6px 0 0;font-size:11.5px;color:#93a0b6;line-height:1.4}
-table.flop{width:100%;border-collapse:collapse;font-size:13px}
-table.flop td{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:baseline}
-table.flop td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;padding-left:12px}
-table.flop tr.zero td{color:#7e8ba0;font-weight:500}
-table.flop tr.zero td.num{font-weight:600}
-table.flop tr.hit td{color:#e7eef8}
-table.flop tr.hit td.num{color:#fff}
-table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1);font-weight:700;color:#d5deec}
-.flop-help{margin-top:8px;border-top:1px solid rgba(255,255,255,.06)}
-.flop-help > summary{cursor:pointer;list-style:none;min-height:32px;display:flex;align-items:center;font-size:12px;font-weight:650;color:#9aabC4;margin:0}
-.flop-help > summary::-webkit-details-marker{display:none}
-.flop-help > summary::before{content:'\25B8';font-size:10px;margin-right:6px;color:#8b98ae}
-.flop-help[open] > summary::before{transform:rotate(90deg)}
-.flop-gloss{margin:0 0 8px;font-size:12px;line-height:1.5;color:#a9b6cb}
-.flop-gloss b{color:#dbe3f0;font-weight:700}
+/* Flopability, in the PLO5 row format: one collapsed line, then made hands and draws. */
+#tab-equity .fo{display:grid;grid-template-columns:minmax(0,1fr) 34px 34px;align-items:center;margin:8px 0 2px}
+#tab-equity .foh{grid-column:1;display:flex;align-items:center;gap:8px;min-width:0;background:none;border:none;padding:4px 0;color:#aaa;font:inherit;font-size:13px;text-align:left;cursor:pointer;min-height:32px}
+#tab-equity .foh b{color:#ff9500;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;white-space:nowrap}
+#tab-equity .foh .fos{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#eee}
+#tab-equity .fo>.ib{grid-column:2;width:34px;height:32px;border:none;background:none;color:#8e8e93;font:inherit;font-size:15px;font-weight:700;font-style:italic;cursor:pointer;padding:0}
+#tab-equity .fo>.chev{grid-column:3;grid-row:1;width:34px;height:32px;border:none;background:none;color:#8e8e93;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#tab-equity .fo.open>.chev svg{transform:rotate(180deg)}
+#tab-equity .fob{grid-column:1 / -1;display:none;padding:2px 0 8px}
+#tab-equity .fo.open .fob{display:block}
+#tab-equity .frw,#tab-equity .fag,#tab-equity .frh{display:grid;grid-template-columns:minmax(0,1fr) 58px 62px;gap:4px;align-items:center}
+#tab-equity .frw{position:relative;font-size:14px;color:#eee;padding:4px 0 5px}
+#tab-equity .frw span:nth-child(n+2),#tab-equity .fag span:nth-child(n+2),#tab-equity .frh span:nth-child(n+2){text-align:right;font-variant-numeric:tabular-nums}
+#tab-equity .frw span:nth-child(3),#tab-equity .fag span:nth-child(3){color:#8e8e93;font-size:12px;font-weight:400}
+#tab-equity .frw.z{color:#666}
+#tab-equity .frw.z span:nth-child(2){color:#666}
+#tab-equity .frw small{color:#8e8e93;font-size:11px}
+#tab-equity .frw i{position:absolute;left:0;bottom:0;height:2px;background:#ff9500;opacity:.55;border-radius:1px;pointer-events:none}
+#tab-equity .frh{font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:.4px;margin:8px 0 1px}
+#tab-equity .flop-foot,#tab-equity .flop-note{margin:8px 0 0;font-size:12px;line-height:1.45;color:#8e8e93}
+#tab-equity .fa{margin-top:10px;border-top:1px solid #333}
+#tab-equity .fah{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:8px 0 6px;color:#aaa;font:inherit;font-size:12px;text-align:left;cursor:pointer;min-height:36px}
+#tab-equity .fah b{color:#ff9500;font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;border:1px solid #ff9500;border-radius:4px;padding:1px 5px}
+#tab-equity .fah span{flex:1;min-width:0}
+#tab-equity .fah svg{flex:none}
+#tab-equity .fa.open .fah svg{transform:rotate(180deg)}
+#tab-equity .fab{display:none}
+#tab-equity .fa.open .fab{display:block}
+#tab-equity .fag{font-size:14px;font-weight:700;color:#fff;padding:6px 0 1px;border-top:1px solid #2a2a2a;margin-top:3px}
+#tab-equity .fag.z{color:#666}
+#tab-equity .fac{font-size:13px;padding-left:10px}
+#tab-equity .fas{font-size:12px;padding:1px 0 1px 22px}
+#tab-equity .fas small.fao{color:#aaa}
+#tab-equity .fac small.fao{display:block;font-size:11px;color:#8e8e93;font-variant-numeric:tabular-nums}
+#tab-equity .fac small.fao b{color:#ffb340;font-weight:700}
+#tab-equity .nut{display:inline-block;vertical-align:-3px}
+#tab-equity .nut.ice{filter:drop-shadow(0 0 2px rgba(80,190,255,.45))}
+@media (max-width:640px){
+  #tab-equity .foh{gap:6px;font-size:12px}
+  #tab-equity .frw{font-size:13px}
+}
 #tab-equity .eq-add{display:flex;align-items:center;gap:10px;margin:0 0 14px;flex-wrap:wrap}
 #tab-equity .eq-add .eqhint{flex:1 1 160px;line-height:1.35}
 #tab-equity .boardrow{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;margin:0;padding:12px 0 4px;border:0;border-top:1px solid rgba(255,255,255,.06)}
@@ -884,7 +901,6 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
   #tab-equity .hand-acts .iconbtn{min-width:42px;font-size:10.5px}
   .eqmini span{font-size:8px;letter-spacing:0}
   .eqmini div{padding:0 1px}
-  #tab-equity .flop-btn{width:34px;min-width:34px;height:34px;min-height:34px;margin:0}
   #tab-equity .eqfolds{grid-template-columns:1fr 1fr;gap:0 8px}
   #tab-equity .board-actions .btn{min-height:36px}
   .pick-tools{gap:6px}
@@ -1063,6 +1079,7 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
     <div class="eq-layout">
       <div class="panel eqin">
         <h3>Hands <span class="eqver" title="Equity version 2">v2</span></h3>
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="nutg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcc00"/><stop offset=".55" stop-color="#ff7a00"/><stop offset="1" stop-color="#ff2d00"/></linearGradient><linearGradient id="iceg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8fbff"/><stop offset=".5" stop-color="#9fe3ff"/><stop offset="1" stop-color="#4fb8ff"/></linearGradient></defs></svg>
         <div id="players"></div>
         <div class="eq-add">
           <button class="btn small" id="add-player">+ Player</button>
@@ -1862,13 +1879,292 @@ table.flop tr.total td{border-bottom:0;border-top:1px solid rgba(255,255,255,.1)
     };
   }
 
+  /* Hold'em flopability: best 5 of the 2 hole cards + 3 flop cards, exact over every flop.
+     Made hands are exclusive. A draw is counted only when it would improve that made hand.
+     Wraps are not a Hold'em row (two hole cards do not make a 3-rank wrap). */
+  var FL_MADE_KEYS = ['sf', 'quads', 'fh', 'fl', 'st', 'set', 'trips', 'tp', 'pair', 'hc'];
+  function flMadeBlank() {
+    var o = {};
+    for (var i = 0; i < FL_MADE_KEYS.length; i++) o[FL_MADE_KEYS[i]] = 0;
+    return o;
+  }
+  function flStraightRanks(base) {
+    var sm = 0, nr = 0, r, w, W, mask;
+    for (r = 0; r < 13; r++) {
+      if ((base >>> r) & 1) continue;
+      mask = base | (1 << r);
+      for (w = 0; w < STR_WINDOWS.length; w++) {
+        W = STR_WINDOWS[w];
+        if ((mask & W) === W && (base & W) !== W) { sm |= 1 << r; nr++; break; }
+      }
+    }
+    return { sm: sm, nr: nr };
+  }
+  function flNutStraightIdx(bm) {
+    var w, W;
+    for (w = STR_WINDOWS.length - 1; w >= 0; w--) {
+      W = STR_WINDOWS[w];
+      if (bitCount(W & bm) >= 3) return w;
+    }
+    return -1;
+  }
+  function flHeroStraightIdx(hm, bm) {
+    var mask = hm | bm, w, W;
+    for (w = STR_WINDOWS.length - 1; w >= 0; w--) {
+      W = STR_WINDOWS[w];
+      if ((mask & W) === W && (hm & W)) return w;
+    }
+    return -1;
+  }
+  function flFlushNut(h0, h1, board, suit) {
+    var top = 12, i, c, on;
+    while (top >= 0) {
+      c = top * 4 + suit; on = false;
+      for (i = 0; i < board.length; i++) if (board[i] === c) on = true;
+      if (!on) break;
+      top--;
+    }
+    return top >= 0 && (h0 === top * 4 + suit || h1 === top * 4 + suit);
+  }
+  function flClassify(h0, h1, b0, b1, b2) {
+    var buf = [h0, h1, b0, b1, b2];
+    var cat = handCategory(evalHand(buf, 5));
+    var hr0 = h0 >> 2, hr1 = h1 >> 2, pocket = hr0 === hr1;
+    var key;
+    if (cat === 8) key = 'sf';
+    else if (cat === 7) key = 'quads';
+    else if (cat === 6) key = 'fh';
+    else if (cat === 5) key = 'fl';
+    else if (cat === 4) key = 'st';
+    else if (cat === 2) key = 'tp';
+    else if (cat === 1) key = 'pair';
+    else if (cat === 0) key = 'hc';
+    else {
+      var rc = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], i, tripsR = -1;
+      for (i = 0; i < 5; i++) rc[buf[i] >> 2]++;
+      for (i = 0; i < 13; i++) if (rc[i] >= 3) tripsR = i;
+      key = (pocket && hr0 === tripsR) ? 'set' : 'trips';
+    }
+    var hs = [0, 0, 0, 0], fs = [0, 0, 0, 0], s;
+    hs[h0 & 3]++; hs[h1 & 3]++;
+    fs[b0 & 3]++; fs[b1 & 3]++; fs[b2 & 3]++;
+    var fd = 0, su = -1;
+    if (cat < 5) {
+      for (s = 0; s < 4; s++) if (hs[s] > 0 && hs[s] + fs[s] === 4) {
+        su = s;
+        fd = flFlushNut(h0, h1, [b0, b1, b2], s) ? 2 : 1;
+        break;
+      }
+    }
+    var sd = cat < 4 ? flStraightRanks((1 << hr0) | (1 << hr1) | (1 << (b0 >> 2)) | (1 << (b1 >> 2)) | (1 << (b2 >> 2))) : { sm: 0, nr: 0 };
+    return { key: key, cat: cat, fd: fd, su: su, nr: sd.nr, sm: sd.sm, hr0: hr0, hr1: hr1, pocket: pocket };
+  }
+  function flopChances(hole, opt) {
+    opt = opt || {};
+    var h0 = +hole[0], h1 = +hole[1];
+    if (!(h0 >= 0) || !(h1 >= 0) || h0 === h1) return { status: 'need-hand', n: 0 };
+    var fixed = (opt.board || []).slice(0, 3);
+    while (fixed.length < 3) fixed.push(null);
+    var seen = new Uint8Array(52), i, c;
+    if (seen[h0] || h0 > 51 || h1 > 51) return { status: 'conflict', n: 0 };
+    seen[h0] = 1; seen[h1] = 1;
+    var dead = opt.dead || [];
+    for (i = 0; i < dead.length; i++) {
+      c = +dead[i];
+      if (c !== c || seen[c]) return { status: 'conflict', n: 0 };
+      seen[c] = 1;
+    }
+    var flop = [null, null, null];
+    for (i = 0; i < 3; i++) if (fixed[i] != null && fixed[i] !== '') {
+      c = +fixed[i];
+      if (seen[c]) return { status: 'conflict', n: 0 };
+      seen[c] = 1; flop[i] = c;
+    }
+    var deck = [];
+    for (c = 0; c < 52; c++) if (!seen[c]) deck.push(c);
+    var live = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
+    live[h0 >> 2]--; live[h1 >> 2]--;
+    for (i = 0; i < dead.length; i++) live[+dead[i] >> 2]--;
+    for (i = 0; i < 3; i++) if (flop[i] != null) live[flop[i] >> 2]--;
+    var made = flMadeBlank();
+    var draw = { nfd: 0, fd: 0, oe: 0, gs: 0, combo: 0, any: 0 };
+    var oh = { oe: {}, gs: {} };
+    var n = 0;
+    function add(b0, b1, b2) {
+      var C = flClassify(h0, h1, b0, b1, b2), outs = 0, r;
+      n++; made[C.key]++;
+      if (C.fd === 2) draw.nfd++; else if (C.fd === 1) draw.fd++;
+      if (C.nr) {
+        for (r = 0; r < 13; r++) if ((C.sm >>> r) & 1) outs += live[r];
+        var bucket = C.nr >= 2 ? 'oe' : 'gs';
+        draw[bucket]++;
+        oh[bucket][outs] = (oh[bucket][outs] || 0) + 1;
+      }
+      if (C.fd && C.nr >= 2) draw.combo++;
+      if (C.fd || C.nr) draw.any++;
+    }
+    var miss = [];
+    for (i = 0; i < 3; i++) if (flop[i] == null) miss.push(i);
+    var a, b, d0, d1, d2;
+    if (miss.length === 3) {
+      for (a = 2; a < deck.length; a++) for (b = 1; b < a; b++) for (i = 0; i < b; i++) add(deck[i], deck[b], deck[a]);
+    } else if (miss.length === 2) {
+      for (a = 1; a < deck.length; a++) for (b = 0; b < a; b++) {
+        d0 = flop[0]; d1 = flop[1]; d2 = flop[2];
+        if (miss[0] === 0) d0 = deck[b]; else if (miss[0] === 1) d1 = deck[b]; else d2 = deck[b];
+        if (miss[1] === 1) d1 = deck[a]; else d2 = deck[a];
+        add(d0, d1, d2);
+      }
+    } else if (miss.length === 1) {
+      for (a = 0; a < deck.length; a++) {
+        d0 = flop[0]; d1 = flop[1]; d2 = flop[2];
+        if (miss[0] === 0) d0 = deck[a]; else if (miss[0] === 1) d1 = deck[a]; else d2 = deck[a];
+        add(d0, d1, d2);
+      }
+    } else add(flop[0], flop[1], flop[2]);
+    return { status: 'ok', n: n, made: made, draw: draw, oh: oh };
+  }
+  function boardDraws(hole, board) {
+    var h0 = +hole[0], h1 = +hole[1], i, cards = [h0, h1], known = [];
+    for (i = 0; i < board.length; i++) if (board[i] != null && board[i] !== '') { cards.push(+board[i]); known.push(+board[i]); }
+    var blank = { nfd: 0, fd: 0, oe: 0, gs: 0, combo: 0, any: 0, outs: 0, nr: 0 };
+    if (known.length >= 5 || known.length < 3) return blank;
+    var cat = handCategory(evalHand(cards, cards.length));
+    var hs = [0, 0, 0, 0], sc = [0, 0, 0, 0], s;
+    hs[h0 & 3]++; hs[h1 & 3]++;
+    for (i = 0; i < known.length; i++) sc[known[i] & 3]++;
+    var fd = 0, su = -1;
+    if (cat < 5) {
+      for (s = 0; s < 4; s++) if (hs[s] > 0 && hs[s] + sc[s] === 4) {
+        su = s; fd = flFlushNut(h0, h1, known, s) ? 2 : 1; break;
+      }
+    }
+    var bm = 0, hm = (1 << (h0 >> 2)) | (1 << (h1 >> 2));
+    for (i = 0; i < known.length; i++) bm |= 1 << (known[i] >> 2);
+    var sd = cat < 4 ? flStraightRanks(hm | bm) : { sm: 0, nr: 0 };
+    var seen = new Uint8Array(52), outs = 0, r, live;
+    seen[h0] = 1; seen[h1] = 1;
+    for (i = 0; i < known.length; i++) seen[known[i]] = 1;
+    for (r = 0; r < 13; r++) if ((sd.sm >>> r) & 1) {
+      live = 0;
+      for (s = 0; s < 4; s++) if (!seen[r * 4 + s]) live++;
+      outs += live;
+    }
+    var o = { nfd: fd === 2 ? 1 : 0, fd: fd === 1 ? 1 : 0, oe: sd.nr >= 2 ? 1 : 0, gs: sd.nr === 1 ? 1 : 0, combo: 0, any: 0, outs: outs, nr: sd.nr };
+    if (fd && sd.nr >= 2) o.combo = 1;
+    if (fd || sd.nr) o.any = 1;
+    return o;
+  }
+  function flopAdvanced(hole, opt) {
+    opt = opt || {};
+    var base = flopChances(hole, opt);
+    if (!base || base.status !== 'ok') return base;
+    var h0 = +hole[0], h1 = +hole[1];
+    var fixed = (opt.board || []).slice(0, 3);
+    while (fixed.length < 3) fixed.push(null);
+    var seen = new Uint8Array(52), i, c;
+    seen[h0] = 1; seen[h1] = 1;
+    var dead = opt.dead || [];
+    for (i = 0; i < dead.length; i++) seen[+dead[i]] = 1;
+    var flop = [null, null, null];
+    for (i = 0; i < 3; i++) if (fixed[i] != null && fixed[i] !== '') { seen[+fixed[i]] = 1; flop[i] = +fixed[i]; }
+    var deck = [];
+    for (c = 0; c < 52; c++) if (!seen[c]) deck.push(c);
+    var G = {}, groups = ['set', 'top2', 'tp2', 'trips', 'st', 'pair', 'none'], kinds = ['fs', 'f', 's', 'x'];
+    function cell() { return { n: 0, sig: {} }; }
+    for (i = 0; i < groups.length; i++) {
+      G[groups[i]] = { n: 0 };
+      for (var k = 0; k < kinds.length; k++) G[groups[i]][kinds[k]] = cell();
+    }
+    var fplus = 0, hc0 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    hc0[h0 >> 2]++; hc0[h1 >> 2]++;
+    var buf = [h0, h1, 0, 0, 0, 0];
+    function tally(b0, b1, b2) {
+      var C = flClassify(h0, h1, b0, b1, b2), key = C.key, g;
+      if (key === 'sf' || key === 'quads' || key === 'fh' || key === 'fl') { fplus++; return; }
+      if (key === 'set' || key === 'trips' || key === 'st' || key === 'pair') g = key;
+      else if (key === 'hc') g = 'none';
+      else {
+        var r0 = b0 >> 2, r1 = b1 >> 2, r2 = b2 >> 2;
+        var hi = r0 > r1 ? r0 : r1; hi = hi > r2 ? hi : r2;
+        var lo = r0 < r1 ? r0 : r1; lo = lo < r2 ? lo : r2;
+        var mid = r0 + r1 + r2 - hi - lo;
+        g = (hi !== mid && mid !== lo && hc0[hi] && hc0[mid]) ? 'top2' : 'tp2';
+      }
+      var fl = C.fd > 0, sd = C.nr > 0, dk = fl ? (sd ? 'fs' : 'f') : (sd ? 's' : 'x');
+      var cellR = G[g][dk];
+      G[g].n++; cellR.n++;
+      var fN = 0, fX = 0, sN = 0, sX = 0, nb = 0, bi;
+      buf[2] = b0; buf[3] = b1; buf[4] = b2;
+      if (g === 'set' || g === 'top2' || g === 'tp2' || g === 'trips') {
+        var rm = (1 << (h0 >> 2)) | (1 << (h1 >> 2)) | (1 << (b0 >> 2)) | (1 << (b1 >> 2)) | (1 << (b2 >> 2));
+        for (bi = 0; bi < deck.length; bi++) {
+          var t = deck[bi];
+          if (t === b0 || t === b1 || t === b2 || !((rm >>> (t >> 2)) & 1)) continue;
+          buf[5] = t;
+          var tc = handCategory(evalHand(buf, 6));
+          if (tc === 6 || tc === 7) nb++;
+        }
+      }
+      if (fl) {
+        for (var r1 = 0; r1 < 13; r1++) {
+          var cf = r1 * 4 + C.su;
+          if (cf === h0 || cf === h1 || cf === b0 || cf === b1 || cf === b2) continue;
+          buf[5] = cf;
+          var fc = handCategory(evalHand(buf, 6));
+          if (fc === 6 || fc === 7) continue;
+          if (flFlushNut(h0, h1, [b0, b1, b2, cf], C.su)) fN++; else fX++;
+        }
+      }
+      if (sd) {
+        var bm = (1 << (b0 >> 2)) | (1 << (b1 >> 2)) | (1 << (b2 >> 2));
+        var hm = (1 << C.hr0) | (1 << C.hr1);
+        for (var r = 0; r < 13; r++) if ((C.sm >>> r) & 1) {
+          var nut = flHeroStraightIdx(hm, bm | (1 << r)) === flNutStraightIdx(bm | (1 << r));
+          for (var su = 0; su < 4; su++) {
+            if (su === C.su && fl) continue;
+            var cd = r * 4 + su;
+            if (cd === h0 || cd === h1 || cd === b0 || cd === b1 || cd === b2) continue;
+            buf[5] = cd;
+            var sc = handCategory(evalHand(buf, 6));
+            if (sc === 6 || sc === 7) continue;
+            if (nut) sN++; else sX++;
+          }
+        }
+      }
+      var sk = nb + ',' + fN + ',' + fX + ',' + sN + ',' + sX;
+      cellR.sig[sk] = (cellR.sig[sk] || 0) + 1;
+    }
+    var miss = [];
+    for (i = 0; i < 3; i++) if (flop[i] == null) miss.push(i);
+    var a, b, d0, d1, d2;
+    if (miss.length === 3) {
+      for (a = 2; a < deck.length; a++) for (b = 1; b < a; b++) for (i = 0; i < b; i++) tally(deck[i], deck[b], deck[a]);
+    } else if (miss.length === 2) {
+      for (a = 1; a < deck.length; a++) for (b = 0; b < a; b++) {
+        d0 = flop[0]; d1 = flop[1]; d2 = flop[2];
+        if (miss[0] === 0) d0 = deck[b]; else if (miss[0] === 1) d1 = deck[b]; else d2 = deck[b];
+        if (miss[1] === 1) d1 = deck[a]; else d2 = deck[a];
+        tally(d0, d1, d2);
+      }
+    } else if (miss.length === 1) {
+      for (a = 0; a < deck.length; a++) {
+        d0 = flop[0]; d1 = flop[1]; d2 = flop[2];
+        if (miss[0] === 0) d0 = deck[a]; else if (miss[0] === 1) d1 = deck[a]; else d2 = deck[a];
+        tally(d0, d1, d2);
+      }
+    } else tally(flop[0], flop[1], flop[2]);
+    return { status: 'ok', n: base.n, fplus: fplus, g: G };
+  }
+
   var API = {
     RANKS: RANKS, SUITS: SUITS, SUIT_SYM: SUIT_SYM, CAT_NAMES: CAT_NAMES, CLASSES: CLASSES, HAND_ORDER: HAND_ORDER,
     cardStr: cardStr, parseCard: parseCard, parseCards: parseCards, evalHand: evalHand, handCategory: handCategory,
     gridKey: gridKey, keyToGrid: keyToGrid, classCount: classCount, classCombos: classCombos, comboClass: comboClass,
     topPercentClasses: topPercentClasses, parseRange: parseRange, rangeToString: rangeToString,
     mulberry32: mulberry32, nCk: nCk, EquityJob: EquityJob, runEquity: runEquity,
-    flopTexture: flopTexture, flopability: flopability, spotStats: spotStats
+    flopTexture: flopTexture, flopability: flopability, spotStats: spotStats,
+    flopChances: flopChances, flopAdvanced: flopAdvanced, boardDraws: boardDraws
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.HoldemCore = API;
@@ -3925,98 +4221,235 @@ self.onmessage = function (e) {
     }
     return `<p class="flop-note">Flopability needs two specific hole cards. Pick both cards, or press RND. An empty seat is not treated as a made hand.</p>`;
   }
-  function computeFlop(i) {
-    try { return H.spotStats(flopSpec(i)); }
-    catch (err) { return { status: 'error', message: err.message || String(err) }; }
+  const flopOddsCache = new Map(), flopAdvCache = new Map();
+  const FL_CHEV = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const NUT_BADGE = '<svg class="nut" width="14" height="14" viewBox="0 0 24 24" aria-label="nut"><path fill="url(#nutg)" d="M12 1.6s-1.1 3-.4 5.2c.5 1.3-.3 2.5-1.6 2.5-2 0-3-2.2-2.1-4.4C6.4 8.4 4.2 11.6 4.2 14.8 4.2 18.7 7.6 22 12 22s7.8-3.3 7.8-7.2c0-3.2-2.2-6.4-3.7-9.9-1 2-1.9 4.4-2.1 4.4-1.3 0-2.1-1.2-1.6-2.5.7-2.2-.4-5.2-.4-5.2z"/></svg>';
+  const ICE_BADGE = '<svg class="nut ice" width="14" height="14" viewBox="0 0 24 24" aria-label="non-nut"><path fill="url(#iceg)" d="M8 3h8l5 6-9 12L3 9z"/></svg>';
+  const FL_MADE_ROWS = [
+    ['sf', 'Straight flush', 'five in a row, one suit'],
+    ['quads', 'Quads', 'four of a kind'],
+    ['fh', 'Full house', 'three of a kind plus a pair'],
+    ['fl', 'Flush', 'five of one suit'],
+    ['st', 'Straight', 'five in a row'],
+    ['set', 'Set', 'pocket pair + flop card'],
+    ['trips', 'Trips', 'paired flop + hole card'],
+    ['tp', 'Two pair', 'two different pairs'],
+    ['pair', 'One pair', 'exactly one pair'],
+    ['hc', 'High card', 'no pair']
+  ];
+  const FLA_G = [['set', 'Set'], ['top2', 'Top two pair'], ['tp2', 'Other two pair'], ['trips', 'Trips'], ['st', 'Straight'], ['pair', 'One pair'], ['none', 'No pair']];
+  const FLA_D = [['fs', 'flush draw + straight draw'], ['f', 'flush draw'], ['s', 'straight draw'], ['x', 'no draw']];
+  function holeKey(cards) {
+    const a = +cards[0], b = +cards[1];
+    return (a < b ? a : b) + ',' + (a < b ? b : a);
   }
-  function paintFlop(i, res) {
-    const el = document.getElementById('flop-body-' + i);
-    if (el && eq.players[i] && eq.players[i].flopOpen) el.innerHTML = res ? flopResultHTML(res) : flopNeedHTML(eq.players[i]);
+  function boardEntered() { return eq.board.some(c => c != null); }
+  function chancesFor(hole) {
+    const k = holeKey(hole);
+    if (!flopOddsCache.has(k)) flopOddsCache.set(k, H.flopChances(hole));
+    return flopOddsCache.get(k);
   }
-  /* Every Calculate press, and every hand or board edit, rebuilds these from the cards that are out now. */
-  function recomputeFlopStats() {
-    flopEpoch++;
-    flopPending.clear();
-    flopCache.clear();
-    eq.players.forEach((p, i) => {
-      const key = flopKey(i);
-      if (!key) { flopCache.delete(String(i)); paintFlop(i, null); return; }
-      const res = computeFlop(i);
-      flopCache.set(key, res);
-      paintFlop(i, res);
+  function advFor(hole) {
+    const k = holeKey(hole);
+    if (!flopAdvCache.has(k)) flopAdvCache.set(k, H.flopAdvanced(hole));
+    return flopAdvCache.get(k);
+  }
+  function foPc(c, n) {
+    if (!n || !c) return '0';
+    const v = c / n * 100;
+    return (v < 0.1 ? v.toFixed(2) : v.toFixed(1)) + '%';
+  }
+  function foIn(c, n) {
+    if (!c || !n) return '–';
+    const x = n / c;
+    return '1 in ' + (x < 10 ? x.toFixed(1) : String(Math.round(x)));
+  }
+  function foOutNote(oh) {
+    const ks = Object.keys(oh || {}).map(Number).filter(k => oh[k]);
+    if (!ks.length) return '';
+    const lo = Math.min.apply(null, ks), hi = Math.max.apply(null, ks);
+    let md = ks[0];
+    ks.forEach(k => { if (oh[k] > oh[md]) md = k; });
+    const rng = lo === hi ? (lo + ' outs') : (lo + '–' + hi + ' outs');
+    return ks.length > 1 ? rng + ', most often ' + md : rng;
+  }
+  function twoPairPlus(M) { return M.sf + M.quads + M.fh + M.fl + M.st + M.set + M.trips + M.tp; }
+  function flopSumText(model) {
+    if (!model || model.mode === 'wait' || model.mode === 'err' || !model.n) return '—';
+    return '2 pair+ ' + Math.round(twoPairPlus(model.made) / model.n * 100) + '% · draws ' + Math.round((model.draw.any || 0) / model.n * 100) + '%';
+  }
+  function foRow(name, c, n, sub) {
+    const w = n ? Math.min(100, 100 * c / n) : 0;
+    return '<div class="frw' + (c ? '' : ' z') + '"><span>' + name + (sub ? ' <small>' + sub + '</small>' : '') + '</span><span>' + foPc(c, n) + '</span><span>' + foIn(c, n) + '</span><i style="width:' + w.toFixed(2) + '%"></i></div>';
+  }
+  function faPart(nm, N, X) {
+    const tot = N + X;
+    if (!tot) return '';
+    if (N && !X) return nm + '\u00a0' + tot + '\u00a0' + NUT_BADGE;
+    if (!N) return nm + '\u00a0' + tot + '\u00a0' + ICE_BADGE;
+    return nm + '\u00a0' + tot + ' (' + NUT_BADGE + '\u00a0' + N + ' · ' + ICE_BADGE + '\u00a0' + X + ')';
+  }
+  function faSig(v) {
+    const tot = v[0] + v[1] + v[2] + v[3] + v[4];
+    if (!tot) return 'no outs';
+    const parts = [];
+    if (v[0]) parts.push('fill-up\u00a0' + v[0]);
+    const f = faPart('flush', v[1], v[2]), st = faPart('straight', v[3], v[4]);
+    if (f) parts.push(f);
+    if (st) parts.push(st);
+    return '<b>' + tot + ' outs</b> = ' + parts.join(' + ');
+  }
+  function faRng(a) {
+    const lo = Math.min.apply(null, a), hi = Math.max.apply(null, a);
+    return lo === hi ? (lo + ' outs') : (lo + '–' + hi + ' outs');
+  }
+  function advBodyHTML(A) {
+    const n = A.n;
+    let o = '<div class="frh"><span>Made hand + draws</span><span>% flops</span><span>odds</span></div>';
+    FLA_G.forEach(g => {
+      const G = A.g[g[0]];
+      o += '<div class="fag' + (G.n ? '' : ' z') + '"><span>' + g[1] + '</span><span>' + foPc(G.n, n) + '</span><span>' + foIn(G.n, n) + '</span></div>';
+      FLA_D.forEach(x => {
+        const c = G[x[0]];
+        if (!c.n) return;
+        const lab = x[0] === 'x' ? 'no draw' : '+ ' + x[1];
+        const S = Object.keys(c.sig).map(k => ({ v: k.split(',').map(Number), n: c.sig[k] })).sort((a, b) => b.n - a.n || (b.v.reduce((s, v) => s + v, 0) - a.v.reduce((s, v) => s + v, 0)));
+        const tot = s => s.v[0] + s.v[1] + s.v[2] + s.v[3] + s.v[4];
+        if (S.length <= 1) {
+          o += '<div class="frw fac"><span>' + lab + '<small class="fao">' + (S.length ? faSig(S[0].v) : 'no outs') + '</small></span><span>' + foPc(c.n, n) + '</span><span>' + foIn(c.n, n) + '</span></div>';
+          return;
+        }
+        o += '<div class="frw fac"><span>' + lab + '<small class="fao">' + faRng(S.map(tot)) + ', ' + S.length + ' mixes</small></span><span>' + foPc(c.n, n) + '</span><span>' + foIn(c.n, n) + '</span></div>';
+        const top = S.slice(0, 3), rest = S.slice(3);
+        top.forEach(s => { o += '<div class="frw fas"><span><small class="fao">' + faSig(s.v) + '</small></span><span>' + foPc(s.n, n) + '</span><span>' + foIn(s.n, n) + '</span></div>'; });
+        if (rest.length) {
+          const rn = rest.reduce((a, s) => a + s.n, 0);
+          const label = rest.length > 1 ? (rest.length + ' other mixes, ' + faRng(rest.map(tot))) : ('1 other mix, ' + faRng(rest.map(tot)));
+          o += '<div class="frw fas"><span><small class="fao">' + label + '</small></span><span>' + foPc(rn, n) + '</span><span>' + foIn(rn, n) + '</span></div>';
+        }
+      });
     });
+    o += '<div class="flop-foot">Rows within each made hand add up to it. The three most common outs mixes are listed, then the rest. Already a flush or better: ' + foPc(A.fplus, n) + ' of flops (not shown). Outs are the next card, each counted once: fill-up, then flush, then straight. ' + NUT_BADGE + ' nut, ' + ICE_BADGE + ' non-nut.</div>';
+    return o;
   }
-  function scheduleFlop(i, key) {
-    if (flopPending.has(key)) return;
-    flopPending.add(key);
-    const spec = flopSpec(i);
-    const epoch = flopEpoch;
-    setTimeout(() => {
-      flopPending.delete(key);
-      if (epoch !== flopEpoch) return;
-      let res;
-      try { res = H.spotStats(spec); }
-      catch (err) { res = { status: 'error', message: err.message || String(err) }; }
-      if (epoch !== flopEpoch) return;
-      flopCache.set(key, res);
-      const el = document.getElementById('flop-body-' + i);
-      if (el && eq.players[i] && eq.players[i].flopOpen && flopKey(i) === key) el.innerHTML = flopResultHTML(res);
-    }, 0);
-  }
-  function flopResultHTML(res) {
-    if (!res || res.status === 'need-hand') return '<p class="flop-note">Pick both hole cards to compute flopability.</p>';
-    if (res.status !== 'ok') return `<p class="flop-note">${esc(res.message || 'Could not compute flopability.')}</p>`;
-    const realized = res.kind === 'realized';
-    const drawNow = realized || res.drawDenominator === 1;
-    let lead;
-    if (res.kind === 'runout') {
-      const what = res.streetsLeft === 2 ? 'turn-and-river deals' : 'ways to fill the last board card';
-      lead = 'Exact: each of the ' + fmtInt(res.denominator) + ' ' + what + ' from the ' + fmtInt(res.deckSize) + ' cards still in the deck is equally likely. Made hands are your hand when the board is finished. Draws are what you hold on the cards already out, not the chance of hitting them later.';
-    } else if (realized) {
-      lead = res.turnRiverKnown
-        ? 'Every board card is out, so each row is the hand you hold now, not a probability.'
-        : 'This flop is already dealt, so each row is what this board is, not a probability.';
-    } else {
-      lead = 'Exact: each of the ' + fmtInt(res.denominator) + ' ' + (res.missing === 3 ? 'three-card flops' : res.missing === 2 ? 'ways to add the two missing flop cards' : 'ways to fill the last flop card') + ' from the ' + fmtInt(res.deckSize) + ' cards still in the deck is equally likely.' + (res.turnRiverKnown ? ' Turn and river cards already chosen are removed, so they cannot appear on the flop.' : '');
+  function flopRowsHTML(model) {
+    if (!model || model.mode === 'wait') return '<p class="flop-note">Press Calculate equity to update made-hand and draw stats for this board.</p>';
+    if (model.mode === 'err') return '<p class="flop-note">' + esc(model.message || 'Could not compute flopability.') + '</p>';
+    const n = model.n, M = model.made, D = model.draw;
+    const pctHead = model.pctHead || '% flops';
+    let html = '<div class="frh"><span>' + (model.madeHead || 'Made hand on the flop') + '</span><span>' + pctHead + '</span><span>odds</span></div>';
+    FL_MADE_ROWS.forEach(m => { html += foRow(m[1], M[m[0]] || 0, n, m[2]); });
+    html += '<div class="frh"><span>' + (model.drawHead || 'Draws (to a better hand)') + '</span><span>' + pctHead + '</span><span>odds</span></div>';
+    const oeNote = foOutNote(model.oh && model.oh.oe), gsNote = foOutNote(model.oh && model.oh.gs);
+    html += foRow('Nut flush draw ' + NUT_BADGE, D.nfd || 0, n, '');
+    html += foRow('Flush draw ' + ICE_BADGE, D.fd || 0, n, 'not the nut');
+    html += foRow('Open-ended', D.oe || 0, n, 'or double gutshot, 2 ranks' + (oeNote ? ' · ' + oeNote : ''));
+    html += foRow('Gutshot', D.gs || 0, n, '1 rank' + (gsNote ? ' · ' + gsNote : ''));
+    html += foRow('Combo draw', D.combo || 0, n, 'flush + open-ended');
+    html += foRow('Any draw', D.any || 0, n, 'flush or straight');
+    html += '<div class="flop-foot">' + model.foot + '</div>';
+    if (model.showAdv) {
+      const open = !!eq.players[model.seat].flopAdv;
+      const body = open ? advBodyHTML(advFor(model.hole)) : '';
+      html += '<div class="fa' + (open ? ' open' : '') + '"><button type="button" class="fah" data-act="flopadv" data-i="' + model.seat + '" aria-expanded="' + (open ? 'true' : 'false') + '"><b>Advanced</b><span>made hand + draw combos, with outs</span>' + FL_CHEV + '</button><div class="fab">' + body + '</div></div>';
     }
-    const madeRows = [['straightFlush', 'Straight flush'], ['quads', 'Four of a kind'], ['fullHouse', 'Full house'], ['flush', 'Flush'], ['straight', 'Straight'], ['set', 'Set'], ['trips', 'Trips'], ['boardTrips', 'Board trips'], ['twoPair', 'Two pair'], ['onePair', 'One pair'], ['boardPair', 'Board pair'], ['noPair', 'No pair']];
-    const drawRows = [['flushDraw', 'Flush draw'], ['backdoorFlush', 'Backdoor flush draw'], ['oesd', 'Open-ended straight draw'], ['doubleGut', 'Double gutshot'], ['gutshot', 'Gutshot']];
-    const row = (key, label, bag, asDraw) => {
-      const n = bag[key] || 0;
-      return `<tr class="${n ? 'hit' : 'zero'}"><td>${label}</td><td class="num">${fcell(n, res, asDraw)}</td></tr>`;
-    };
-    let html = `<p class="flop-note">${lead} Removed first: these hole cards, dead cards, other seats' known cards, and board cards already set.</p>`;
-    html += '<div class="flop-cols"><div><div class="flop-h">' + (realized ? 'Made hand' : 'Made hands · sum 100%') + '</div><table class="flop"><tbody>';
-    madeRows.forEach(r => { html += row(r[0], r[1], res.made, false); });
-    html += `<tr class="total"><td>Total</td><td class="num">${realized ? 'Dealt' : '100%'}</td></tr></tbody></table>`;
-    if (res.pocket && !realized) {
-      const better = res.made.set + res.made.fullHouse + res.made.quads;
-      html += `<p class="flop-sub">Set or better (set + full house + quads, already in the rows above): ${fpct(better, res.denominator)}.</p>`;
-    }
-    html += '</div><div><div class="flop-h">' + (res.kind === 'runout' ? 'Draws · on the cards out' : 'Draws · can overlap') + '</div><table class="flop"><tbody>';
-    drawRows.forEach(r => { html += row(r[0], r[1], res.draws, true); });
-    html += '</tbody></table>';
-    if (res.draws.flushDraw) {
-      html += drawNow
-        ? `<p class="flop-sub">${res.draws.flushDrawBoth ? 'Both hole cards are in the flush draw.' : 'Only one hole card is in the flush draw.'}</p>`
-        : `<p class="flop-sub">Flush draw with both hole cards: ${fpct(res.draws.flushDrawBoth, res.denominator)}. With one hole card: ${fpct(res.draws.flushDrawOne, res.denominator)}.</p>`;
-    }
-    if (res.draws.oesdExtra) html += `<p class="flop-sub">${drawNow ? 'This open-ender also has an extra gutshot rank.' : 'Open-enders that also have an extra gutshot rank: ' + fpct(res.draws.oesdExtra, res.denominator) + '.'}</p>`;
-    html += '</div></div>';
-    html += '<details class="flop-help"><summary>How to read this</summary>';
-    html += '<p class="flop-gloss"><b>Set</b> is a pocket pair plus exactly one board card of that rank. <b>Trips</b> is one hole card plus a paired board of that rank. A pocket pair on a three-of-a-kind board is a full house, not board trips. <b>Board trips</b> and <b>board pair</b> are on the board only — your hole cards do not match them, so they are not your set, trips, or one pair.</p>';
-    html += '<p class="flop-gloss"><b>Open-ended</b> is four ranks in a row with both ends live (2345 counts: an ace or a six completes it). <b>Double gutshot</b> is two different completing ranks that are not one open-ended run — also eight outs, but not open-ended. <b>Gutshot</b> is one completing rank (four outs), including one-way edges such as AKQJ needing a ten. Draws describe the cards already out, not the chance of hitting on a later street. A draw is listed only when a hole card is part of it. Once the flop is dealt, the made-hand column is your hand when the board is finished.</p>';
-    html += '</details>';
     return html;
   }
-  function flopBodyInner(i) {
-    const p = eq.players[i];
-    const key = flopKey(i);
-    if (!key) return flopNeedHTML(p);
-    if (flopCache.has(key)) return flopResultHTML(flopCache.get(key));
-    scheduleFlop(i, key);
-    return '<p class="flop-note">Computing made-hand and draw stats…</p>';
+  function preModel(hole, seat) {
+    const R = chancesFor(hole);
+    return {
+      mode: 'pre', seat: seat, hole: hole.slice(), n: R.n, made: R.made, draw: R.draw, oh: R.oh, showAdv: true,
+      pctHead: '% flops', madeHead: 'Made hand on the flop', drawHead: 'Draws (to a better hand)',
+      foot: 'Exact over all ' + fmtInt(R.n) + ' flops. Made rows add up to 100%; a draw can come with a made hand.'
+    };
   }
+  function postModel(i) {
+    const spec = flopSpec(i), b = spec.board;
+    const flopSet = b[0] != null && b[1] != null && b[2] != null;
+    if (!flopSet) {
+      try {
+        const dead = spec.dead.slice();
+        if (b[3] != null) dead.push(b[3]);
+        if (b[4] != null) dead.push(b[4]);
+        const R = H.flopChances(spec.hole, { board: [b[0], b[1], b[2]], dead: dead });
+        if (!R || R.status !== 'ok') return { mode: 'err', seat: i, message: (R && R.message) || 'Those cards conflict.' };
+        return {
+          mode: 'post', seat: i, hole: spec.hole.slice(), n: R.n, made: R.made, draw: R.draw, oh: R.oh, showAdv: false,
+          pctHead: '% flops', madeHead: 'Made hand on the flop', drawHead: 'Draws (to a better hand)',
+          foot: 'Exact over all ' + fmtInt(R.n) + ' flops that use the board cards already set. Made rows add up to 100%.'
+        };
+      } catch (e) { return { mode: 'err', seat: i, message: e.message }; }
+    }
+    let st;
+    try { st = H.spotStats(spec); } catch (e) { return { mode: 'err', seat: i, message: e.message }; }
+    if (!st || st.status !== 'ok') return { mode: 'err', seat: i, message: (st && st.message) || 'Could not compute flopability.' };
+    const S = st.made, n = st.denominator;
+    const made = {
+      sf: S.straightFlush, quads: S.quads, fh: S.fullHouse, fl: S.flush, st: S.straight, set: S.set,
+      trips: (S.trips || 0) + (S.boardTrips || 0), tp: S.twoPair, pair: (S.onePair || 0) + (S.boardPair || 0), hc: S.noPair
+    };
+    const known = b.filter(c => c != null);
+    const D = H.boardDraws(spec.hole, known);
+    const on = f => f ? n : 0;
+    const realized = st.kind === 'realized';
+    return {
+      mode: 'post', seat: i, hole: spec.hole.slice(), n: n, made: made,
+      draw: { nfd: on(D.nfd), fd: on(D.fd), oe: on(D.oe), gs: on(D.gs), combo: on(D.combo), any: on(D.any) },
+      oh: { oe: D.oe ? { [D.outs]: n } : {}, gs: D.gs ? { [D.outs]: n } : {} },
+      showAdv: false, pctHead: realized ? 'hand' : '% boards',
+      madeHead: realized ? 'Made hand' : 'Made hand at showdown',
+      drawHead: 'Draws (on the cards out)',
+      foot: realized
+        ? 'The board is complete, so this is the hand you hold now.'
+        : 'Exact over all ' + fmtInt(n) + ' remaining boards. Made hands are your hand when the board is finished. Draws are what you hold on the cards already out.'
+    };
+  }
+  function flopModel(i) {
+    const p = eq.players[i];
+    if (!p || p.mode === 'range' || p.cards[0] == null || p.cards[1] == null) return null;
+    if (!boardEntered()) return preModel(p.cards, i);
+    const key = flopKey(i);
+    if (key && flopCache.has(key)) { const m = flopCache.get(key); m.seat = i; return m; }
+    return { mode: 'wait', seat: i };
+  }
+  function recomputeFlopStats() {
+    eq.players.forEach((p, i) => {
+      if (!p || p.mode === 'range' || p.cards[0] == null || p.cards[1] == null) return;
+      let model;
+      if (!boardEntered()) model = preModel(p.cards, i);
+      else {
+        model = postModel(i);
+        const key = flopKey(i);
+        if (key) flopCache.set(key, model);
+      }
+      const sum = document.getElementById('fos-' + i);
+      if (sum) sum.textContent = flopSumText(model);
+      const body = document.getElementById('flop-body-' + i);
+      if (body && p.flopOpen) body.innerHTML = flopRowsHTML(model);
+    });
+  }
+  function flopSectionHTML(i) {
+    const model = flopModel(i);
+    if (!model) return '';
+    const open = !!eq.players[i].flopOpen;
+    return '<div class="fo' + (open ? ' open' : '') + '" id="fo' + i + '">' +
+      '<button type="button" class="foh" data-act="flop" data-i="' + i + '" aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="flop-body-' + i + '"><b>Flopability</b><span class="fos" id="fos-' + i + '">' + flopSumText(model) + '</span></button>' +
+      '<button type="button" class="ib" data-act="flopinfo" aria-label="About flopability">i</button>' +
+      '<button type="button" class="chev" data-act="flop" data-i="' + i + '" aria-label="Flopability">' + FL_CHEV + '</button>' +
+      '<div class="fob" id="flop-body-' + i + '">' + (open ? flopRowsHTML(model) : '') + '</div></div>';
+  }
+  function openFlopInfo() {
+    openModal('<h2>Flopability</h2>' +
+      '<p>How often this hand flops each made hand and draw. It is exact: every one of the <b>19,600</b> flops (3 cards from the 50 you can’t see) is dealt once. The other seat’s cards are ignored, so the numbers describe this hand on its own.</p>' +
+      '<p><b>Hold’em.</b> The flop hand is your 2 hole cards plus the 3 flop cards. <b>2 pair+</b> is two pair or better. A draw is listed only when it would improve the made hand, and draws can overlap a made hand and each other.</p>' +
+      '<p><b>Set</b> is a pocket pair plus one matching flop card. <b>Trips</b> is a paired flop plus one matching hole card. Made rows add up to 100%.</p>' +
+      '<p>The nut flush draw means you hold the highest card of that suit that is not on the flop. Open-ended (or a double gutshot) is two completing ranks, usually 8 outs. A gutshot is one rank, 4 outs. Two hole cards do not make a wrap. A combo draw is a flush draw plus an open-ended straight draw.</p>' +
+      '<p>When a flop or turn is on the board, press <b>Calculate equity</b>. Made hands are then your hand over the cards still to come, and draws are what you hold on the cards already out. Changing the hand or the board clears those numbers until the next calculation.</p>' +
+      '<div class="modal-foot"><button type="button" class="btn primary" id="m-done">Done</button></div>');
+    const done = document.getElementById('m-done');
+    if (done) done.onclick = closeModal;
+  }
+
   function pickLabel(t) {
     if (t[0] === 'p') return +t.split(':')[1] === 0 ? 'Hero' : 'Villain ' + t.split(':')[1];
     if (t[0] === 'b') return ['Flop 1', 'Flop 2', 'Flop 3', 'Turn', 'River'][+t.split(':')[1]];
@@ -4182,8 +4615,7 @@ self.onmessage = function (e) {
     box.innerHTML = eq.players.map((p, i) => {
       const rm = eq.players.length > 2 ? `<button type="button" class="x" data-act="remove" data-i="${i}" title="Remove player">&times;</button>` : '';
       const rangeLine = p.mode === 'range' ? `<button type="button" class="range-line" data-act="openrange" data-i="${i}">Range · ${esc(p.range || 'Empty range')} · ${H.parseRange(p.range || '').combos.length} combos</button>` : '';
-      const open = !!p.flopOpen;
-      return `<div class="player" data-pi="${i}" style="--pc:${PCOLORS[i]}"><div class="phand-top"><span class="pname" style="color:${PCOLORS[i]}">${i === 0 ? 'Hero' : `<span class="lg">Villain </span><span class="sh">V</span>${i}`}</span>${rm}</div><div class="phand-mid"><span class="cardsbox">${slotHTML('p:' + i + ':0')}${slotHTML('p:' + i + ':1')}</span><span class="hand-acts"><button type="button" class="iconbtn" data-act="clearcards" data-i="${i}" title="Clear hand">Clear</button><button type="button" class="iconbtn" data-act="randcards" data-i="${i}" title="Random hand">RND</button></span>${inlineEqHTML(i)}<button type="button" class="flop-btn${open ? ' on' : ''}" data-act="flop" data-i="${i}" aria-expanded="${open ? 'true' : 'false'}" aria-controls="flop-body-${i}" aria-label="Flopability" title="Flopability">F</button></div>${rangeLine}<div class="flop-body" id="flop-body-${i}"${open ? '' : ' hidden'}>${open ? flopBodyInner(i) : ''}</div></div>`;
+      return `<div class="player" data-pi="${i}" style="--pc:${PCOLORS[i]}"><div class="phand-top"><span class="pname" style="color:${PCOLORS[i]}">${i === 0 ? 'Hero' : `<span class="lg">Villain </span><span class="sh">V</span>${i}`}</span>${rm}</div><div class="phand-mid"><span class="cardsbox">${slotHTML('p:' + i + ':0')}${slotHTML('p:' + i + ':1')}</span><span class="hand-acts"><button type="button" class="iconbtn" data-act="clearcards" data-i="${i}" title="Clear hand">Clear</button><button type="button" class="iconbtn" data-act="randcards" data-i="${i}" title="Random hand">RND</button></span>${inlineEqHTML(i)}</div>${rangeLine}${flopSectionHTML(i)}</div>`;
     }).join('');
     const n = eq.players.length;
     const phone = window.matchMedia('(max-width:640px)').matches;
@@ -4208,7 +4640,9 @@ self.onmessage = function (e) {
     const b = e.target.closest('[data-act]'); if (!b || !b.closest('#players, #tab-equity')) return;
     if (b.closest('.modal, .eqdock')) return;
     const i = +b.dataset.i, act = b.dataset.act;
+    if (act === 'flopinfo') { openFlopInfo(); return; }
     if (act === 'flop') { eq.players[i].flopOpen = !eq.players[i].flopOpen; saveEq(); renderEquityInputs(); return; }
+    if (act === 'flopadv') { eq.players[i].flopAdv = !eq.players[i].flopAdv; saveEq(); renderEquityInputs(); return; }
     if (act === 'openrange') { openPicker('p:' + i + ':0'); return; }
     if (act === 'remove') eq.players.splice(i, 1);
     else if (act === 'clearcards') { const p = eq.players[i]; p.cards = [null, null]; p.range = ''; p.mode = 'cards'; p.top = null; }
