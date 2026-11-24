@@ -24,15 +24,15 @@ function load(gt) {
 
 check('index covers the whole hand-read library', () => {
   assert.equal(index.format, 'holdem-lab.gtow-index');
-  assert.equal(index.n_spots, 1106);
+  assert.equal(index.n_spots, 1197);
   assert.equal(Object.keys(index.libraries).length, 29);
   let n = 0;
   Object.keys(index.catalog).forEach(gt => { n += index.catalog[gt].length; });
-  assert.equal(n, 1106);
+  assert.equal(n, 1197);
   const raw = fs.readdirSync(path.join(__dirname, '..', 'data', 'gtow', 'raw')).filter(f => f.endsWith('.txt'));
   assert.equal(raw.length, 804);
   const rawMtt = fs.readdirSync(path.join(__dirname, '..', 'data', 'gtow', 'raw_mtt')).filter(f => f.endsWith('.txt'));
-  assert.equal(rawMtt.length, 69);
+  assert.equal(rawMtt.length, 136);
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'data', 'gtow', 'build.py')));
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'data', 'gtow', 'README.md')));
 });
@@ -101,6 +101,12 @@ check('heads-up, 9-max and 8-max spots decode with distinct sizes', () => {
 });
 
 check('combo-weighted totals stay within 1.2pp of every header', () => {
+  // These five SB-vs-BB 3-bet files list the hands that continue and omit most pure folds,
+  // so the header fold share is higher than the hands that were written. The folds are not filled in.
+  const foldGap = new Set([
+    'mtt|8|15|v3:SB:BB', 'mtt|8|25|v3:SB:BB', 'mtt|8|30|v3:SB:BB',
+    'mtt|8|50|v3:SB:BB', 'mtt|8|60|v3:SB:BB'
+  ]);
   const bad = [];
   Object.keys(index.libraries).forEach(gt => {
     const byId = load(gt);
@@ -109,8 +115,12 @@ check('combo-weighted totals stay within 1.2pp of every header', () => {
       const live = G.comboOverall(spot);
       ['fold', 'call', 'raise', 'raise2', 'raise3', 'allin'].forEach(a => {
         const off = Math.abs(live.pct[a] - (spot.overall[a] || 0));
-        if (off > 1.2) bad.push(id + ' ' + a + ' off ' + off.toFixed(3));
+        if (off > 1.2 && !(foldGap.has(id) && (a === 'fold' || a === 'call' || a === 'raise' || a === 'allin'))) bad.push(id + ' ' + a + ' off ' + off.toFixed(3));
       });
+      if (foldGap.has(id)) {
+        const foldOff = (spot.overall.fold || 0) - live.pct.fold;
+        if (foldOff < 5) bad.push(id + ' expected a large omitted-fold gap, got ' + foldOff.toFixed(2));
+      }
       const chart = G.chartFromSpot(spot);
       G.HANDS.forEach(h => {
         const cell = chart[h];
@@ -128,8 +138,8 @@ check('MTT 8-max ChipEV spots use mtt ids and the depths that exist', () => {
   assert.equal(lib.game, 'mtt');
   assert.equal(lib.label, 'MTT 8-max ChipEV, BB ante');
   assert.equal(lib.rake, 'ChipEV');
-  assert.deepEqual(lib.depths, [20, 40, 60, 100]);
-  assert.equal(lib.n, 93);
+  assert.deepEqual(lib.depths, [15, 20, 25, 30, 40, 50, 60, 100]);
+  assert.equal(lib.n, 184);
   const byId = load('MTTGeneral_8m');
   const utg = byId['mtt|8|100|rfi:UTG'];
   assert.equal(utg.game, 'mtt');
@@ -155,8 +165,9 @@ check('MTT 8-max ChipEV spots use mtt ids and the depths that exist', () => {
   assert.equal(btn.sizes.allin, 20);
   assert.ok(btn.overall.allin > 0);
   const ids60 = index.catalog.MTTGeneral_8m.map(G.parseId).filter(s => s.depth === 60);
-  assert.equal(ids60.length, 14);
-  assert.ok(ids60.every(s => s.kind === 'rfi' || (s.kind === 'vs' && s.hero === 'BB')));
+  assert.equal(ids60.length, 21);
+  assert.equal(ids60.filter(s => s.kind === 'vs' && s.hero === 'SB').length, 6);
+  assert.ok(ids60.some(s => s.kind === 'v3' && s.hero === 'SB' && s.villain === 'BB'));
   const opens = { UTG: 2, UTG1: 2, LJ: 2, HJ: 2.1, CO: 2.1, BTN: 2.2, SB: 3.5 };
   Object.keys(opens).forEach(hero => {
     assert.equal(byId['mtt|8|60|rfi:' + hero].sizes.raise, opens[hero], hero);
@@ -165,6 +176,22 @@ check('MTT 8-max ChipEV spots use mtt ids and the depths that exist', () => {
   assert.equal(bb60.hero, 'BB');
   assert.equal(bb60.villain, 'BTN');
   assert.equal(bb60.sizes.raise, 11);
+  const sb25 = byId['mtt|8|25|rfi:SB'];
+  assert.ok(sb25.overall.allin > 0 && sb25.overall.raise > 0);
+  const vsRaise = byId['mtt|8|25|vs:BB:SB:raise_R3'];
+  assert.equal(vsRaise.hero, 'BB');
+  assert.equal(vsRaise.villain, 'SB');
+  assert.equal(vsRaise.node, 'raise_R3');
+  assert.equal(byId['mtt|8|25|vs:BB:SB'], undefined);
+  assert.ok(/raise 3bb/.test(G.title(vsRaise)));
+  assert.ok(/not the all-in shove/.test(G.desc(vsRaise)));
+  const sbBtn = byId['mtt|8|25|vs:SB:BTN'];
+  assert.equal(sbBtn.hero, 'SB');
+  assert.equal(sbBtn.villain, 'BTN');
+  [15, 25, 30].forEach(d => {
+    const shove = index.catalog.MTTGeneral_8m.filter(id => id === 'mtt|8|' + d + '|vs:BB:SB:allin' || id === 'mtt|8|' + d + '|vs:BB:SB:AI');
+    assert.equal(shove.length, 0, 'no invented BB vs SB shove at ' + d);
+  });
 });
 
 check('spot types group limp separately from a raise-open', () => {

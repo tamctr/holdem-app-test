@@ -250,7 +250,7 @@
     var r = /^R(\d+(?:\.\d+)?)/.exec(node);
     if (r) return [1, parseFloat(r[1])];
     if (node === 'limp') return [2, 0];
-    if (/AI|allin/i.test(node)) return [3, 0];
+    if (hasAllin(node)) return [3, 0];
     return [4, 0];
   }
 
@@ -268,10 +268,17 @@
     return n + '-max';
   }
 
+  function hasAllin(node) {
+    return String(node || '').split(/[:_]/).some(function (part) {
+      return part === 'AI' || part === 'A' || part.toLowerCase() === 'allin';
+    });
+  }
+
   function title(spot) {
     if (spot.kind === 'rfi') return spot.hero + ' open';
     if (spot.kind === 'vs' && spot.node === 'limp') return spot.hero + ' vs ' + spot.villain + ' limp';
-    if (spot.kind === 'vs' && /allin|AI/i.test(spot.node || '')) return spot.hero + ' vs ' + spot.villain + ' all-in';
+    if (spot.kind === 'vs' && hasAllin(spot.node)) return spot.hero + ' vs ' + spot.villain + ' all-in';
+    if (spot.kind === 'vs' && /^raise_R/.test(spot.node || '')) return spot.hero + ' vs ' + spot.villain + ' ' + nodeLabel(spot.node).toLowerCase();
     if (spot.kind === 'vs') return spot.hero + ' vs ' + spot.villain + ' open';
     if (spot.kind === 'v3') return spot.hero + ' vs ' + spot.villain + ' 3-bet';
     if (spot.kind === 'v4') return spot.hero + ' vs ' + spot.villain + ' 4-bet';
@@ -285,13 +292,16 @@
     var text;
     if (spot.kind === 'rfi' && spot.hero === 'SB') {
       text = 'Folded to you in the SB. Raise to ' + (spot.sizeUnconfirmed ? '~' : '') + (open || '?') + 'bb' +
+        (spot.overall.allin > 0.05 ? ', shove,' : '') +
         (spot.overall.call > 0.05 ? ', limp, or fold?' : ' or fold?');
     } else if (spot.kind === 'rfi') {
       text = 'Folded to you in the ' + spot.hero + '. Open to ' + (open || '?') + 'bb or fold?';
     } else if (spot.kind === 'vs' && spot.node === 'limp') {
       text = spot.villain + ' limps, you are in the ' + spot.hero + '.';
-    } else if (spot.kind === 'vs' && /allin|AI/i.test(spot.node || '')) {
+    } else if (spot.kind === 'vs' && hasAllin(spot.node)) {
       text = spot.villain + ' open-shoves, you are in the ' + spot.hero + '.';
+    } else if (spot.kind === 'vs' && /^raise_R/.test(spot.node || '')) {
+      text = spot.villain + ' raises to ' + nodeLabel(spot.node).replace(/^Raise /, '') + ', you are in the ' + spot.hero + '. This is the raise, not the all-in shove.';
     } else if (spot.kind === 'vs') {
       text = spot.villain + ' opens, you are in the ' + spot.hero + '.';
     } else if (spot.kind === 'v3') {
