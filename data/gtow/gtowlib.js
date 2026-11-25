@@ -301,7 +301,7 @@
     } else if (spot.kind === 'vs' && hasAllin(spot.node)) {
       text = spot.villain + ' open-shoves, you are in the ' + spot.hero + '.';
     } else if (spot.kind === 'vs' && /^raise_R/.test(spot.node || '')) {
-      text = spot.villain + ' raises to ' + nodeLabel(spot.node).replace(/^Raise /, '') + ', you are in the ' + spot.hero + '. This is the raise, not the all-in shove.';
+      text = spot.villain + ' raises to ' + nodeLabel(spot.node).replace(/^Raise /, '') + ', you are in the ' + spot.hero + '. This line is the raise. The shove, when it was captured, is a separate chart.';
     } else if (spot.kind === 'vs') {
       text = spot.villain + ' opens, you are in the ' + spot.hero + '.';
     } else if (spot.kind === 'v3') {

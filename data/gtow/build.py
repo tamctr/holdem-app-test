@@ -61,7 +61,7 @@ ACTION_PART_RE = re.compile(r"^(R\d+=|[RCFA?])(\d+(?:\.\d+)?)?$")
 # Filename: {gametype}_{depth}_{spot}.txt. The gametype may itself contain
 # underscores (Cash8mLiveGeneral_8mcEVR2). The spot starts at RFI/vsOpen/…
 FILE_RE = re.compile(
-    r"^(?P<gametype>.+)_(?P<depth>\d+)_(?P<rest>RFI|vs(?:Open|3bet|4bet|LimpRaise)(?:_.*)?)\.txt$"
+    r"^(?P<gametype>.+)_(?P<depth>\d+)_(?P<rest>RFI|vs(?:Open|3bet|4bet|LimpRaise|Limp|Shove)(?:_.*)?)\.txt$"
 )
 # Known GTO Wizard libraries in this extract. Values are defaults; a
 # missing future id is still parsed from the filename/manifest/header.
@@ -110,7 +110,7 @@ POS_TOKEN = (
 )
 SPOT_REST_RE = re.compile(
     r"^(?:(?P<rfi>RFI)"
-    r"|(?P<stype>vsOpen|vs3bet|vs4bet|vsLimpRaise)"
+    r"|(?P<stype>vsOpen|vs3bet|vs4bet|vsLimpRaise|vsLimp|vsShove)"
     r"_(?P<p1>" + POS_TOKEN + r")_(?P<p2>" + POS_TOKEN + r")"
     r"(?:_(?P<tag>(?:limp|raise|allin|AI|A|R\d+(?:\.\d+)?)(?:_(?:limp|raise|allin|AI|A|R\d+(?:\.\d+)?))*))?)$"
 )
@@ -530,6 +530,14 @@ def parse_filename(name, manifest_row=None, known_gametypes=None):
         return info, None
     stype = rest_m.group("stype")
     p1, p2, tag = rest_m.group("p1"), rest_m.group("p2"), rest_m.group("tag")
+    # vsLimp / vsShove are facing-an-open lines with a fixed tag, so they
+    # share the vsOpen id scheme (vs:BB:SB:limp and vs:BB:SB:allin).
+    if stype == "vsLimp":
+        stype = "vsOpen"
+        tag = tag or "limp"
+    elif stype == "vsShove":
+        stype = "vsOpen"
+        tag = tag or "allin"
     info["spot_type"] = stype
     info["tag"] = tag
     info["p1"], info["p2"] = p1, p2
@@ -934,6 +942,94 @@ def parse_raw_file(path, manifest=None, known_gametypes=None):
     spot, val = build_spot(meta, file_header, body, name, file_notes=file_notes)
     results.append((spot, val))
     return results, warnings
+
+
+def rfi_raise_reach(rec):
+    """Percent of a hand's combos that raise the open. Limps and shoves do not face this 3-bet."""
+    weight = float(rec.get("weight") or 0)
+    if weight <= 0:
+        return 0.0
+    raised = 0.0
+    for key in ("raise", "raise2", "raise3"):
+        raised += float(rec.get(key) or 0)
+    if raised <= 0.05:
+        return 0.0
+    return weight * raised / 100.0
+
+
+def fill_vs3bet_folds(spots, validations):
+    """Hands in the opener's RFI range but missing from a vs3bet list are pure folds.
+
+    Several MTT 3-bet files write only the hands that continue. The header fold
+    share includes the rest of the opening range. Filling those omissions from
+    the RFI chart reconciles the totals without inventing a mixed frequency.
+    """
+    rfi = {}
+    for spot in spots:
+        if spot.get("spot_type") == "rfi" and spot.get("hero"):
+            rfi[(spot.get("gametype"), spot.get("depth"), spot.get("hero"))] = spot
+    note = "Hands in the opener's RFI range that were missing from this list are pure folds."
+    for spot, val in zip(spots, validations):
+        if spot.get("spot_type") != "vs3bet":
+            continue
+        opener = rfi.get((spot.get("gametype"), spot.get("depth"), spot.get("hero")))
+        if not opener:
+            continue
+        header = val["header_overall"]
+        old_computed = spot.get("overall_computed") or {}
+        old_fold_short = float(header.get("fold") or 0) - float(old_computed.get("fold") or 0)
+        if old_fold_short <= 1.0:
+            continue
+        snapshot = {hand: dict(rec) for hand, rec in spot["hands"].items()}
+        added = 0
+        for hand, rec in opener["hands"].items():
+            cur = spot["hands"][hand]
+            if float(cur.get("weight") or 0) > 0:
+                continue
+            reach = rfi_raise_reach(rec)
+            if reach <= 0.05:
+                continue
+            filled = {"weight": clean_number(reach)}
+            for key in ACTIONS:
+                filled[key] = 100 if key == "fold" else 0
+            spot["hands"][hand] = filled
+            added += 1
+        if not added:
+            continue
+        computed, reaching = compute_overall(spot["hands"])
+        gaps = overall_gaps(header, computed)
+        max_gap = max(abs(v) for v in gaps.values()) if gaps else 0.0
+        old_gap = float(val.get("max_gap_pp") or 0)
+        if max_gap >= old_gap - 0.05:
+            spot["hands"] = snapshot
+            continue
+        spot["overall_computed"] = computed
+        spot["combos_reaching"] = clean_number(reaching)
+        val["computed_overall"] = computed
+        val["gaps"] = {k: clean_number(v) for k, v in gaps.items()}
+        val["max_gap_pp"] = clean_number(max_gap)
+        val["combos_reaching"] = clean_number(reaching)
+        issues = [item for item in val["issues"] if item.get("kind") != "overall_gap"]
+        if max_gap > 1.0:
+            bits = ", ".join(
+                "%s header %s vs computed %s (Δ %+0.2f pp)"
+                % (k, clean_number(header.get(k) or 0), computed[k], gaps[k])
+                for k in ACTIONS
+                if abs(gaps[k]) > 1.0
+            )
+            issues.append({
+                "kind": "overall_gap",
+                "message": "overall frequency gap > 1pp: %s" % bits,
+                "gaps": gaps,
+                "max_gap": max_gap,
+            })
+        val["issues"] = issues
+        val["flagged"] = bool(issues)
+        if spot.get("note"):
+            if note not in spot["note"]:
+                spot["note"] = spot["note"] + "; " + note
+        else:
+            spot["note"] = note
 
 
 def sort_key(spot):
@@ -1520,6 +1616,8 @@ def main(argv=None):
         for spot, val in results:
             spots.append(spot)
             validations.append(val)
+
+    fill_vs3bet_folds(spots, validations)
 
     spots.sort(key=sort_key)
     order = {s["id"]: i for i, s in enumerate(spots)}
